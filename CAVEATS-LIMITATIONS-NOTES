@@ -1,6 +1,6 @@
 CAVEATS - LIMITATIONS - NOTES:
 
-* SANDARD LIBRARY:
+* STANDARD LIBRARY:
   the O64ml one is almost compatible with OCaml Stdlib, but some modules are
   not implemented. Please read the O64ml Stdlib manpages.
 
@@ -14,7 +14,7 @@ CAVEATS - LIMITATIONS - NOTES:
 * FLOATS:
   O64ml uses the C64 "MFLP" representation, with a 24-bit mantissa and an 8-bit
   exponent, and relies on BASIC ROM routines for most operations. See the
-  Stdlib documentation for more info.
+  Stdlib and Float modules documentation for more info.
 
 * CHARS:
   As OCaml uses the ASCII and ISO 8859-1 standards but the C64 target machine
