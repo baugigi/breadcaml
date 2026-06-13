@@ -1,7 +1,9 @@
 = The O64ml Project / _Progetto O64ml_
 Piero Furiesi <p.furiesi@tiscali.it>
 
-[cols="1,1"]
+=== Alpha version
+=== Full of bugs - please wait for a stable release
+
 |===
 | *OCaml for the Commodore 64* | *_OCaml per il Commodore 64_*
 
