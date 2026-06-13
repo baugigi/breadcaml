@@ -1,168 +1,36 @@
-= *O64ml*
-
-== An OCaml compiler for the Commodore 64.
-
-|=====
-| *ITA* | *ENG*
-| O64ml è un compilatore del linguaggio OCaml (https://ocaml.org) che produce
-codice oggetto eseguibile sul Commodore 64 e suoi emulatori.
-È stato ecc.ecc.
-| O64ml is a compiler of the OCaml language (https://ocaml.org) which generates
-object code targeted for the Commodore 64 and its emulators.
-Blah blah...
-|=====
-
-|=====
-| Branch `trunk` | Branch `5.5` | Branch `5.4` | Branch `5.3` | Branch `4.14`
-
-| image:https://github.com/ocaml/ocaml/workflows/Build/badge.svg?branch=trunk["GitHub CI Build Status (trunk branch)",
-     link="https://github.com/ocaml/ocaml/actions?query=workflow%3ABuild"]
-  image:https://github.com/ocaml/ocaml/workflows/Hygiene/badge.svg?branch=trunk["GitHub CI Hygiene Status (trunk branch)",
-     link="https://github.com/ocaml/ocaml/actions?query=workflow%3AHygiene"]
-  image:https://ci.appveyor.com/api/projects/status/github/ocaml/ocaml?branch=trunk&svg=true["AppVeyor Build Status (trunk branch)",
-     link="https://ci.appveyor.com/project/avsm/ocaml"]
-| image:https://github.com/ocaml/ocaml/workflows/Build/badge.svg?branch=5.5["GitHub CI Build Status (5.5 branch)",
-     link="https://github.com/ocaml/ocaml/actions?query=workflow%3ABuild"]
-  image:https://ci.appveyor.com/api/projects/status/github/ocaml/ocaml?branch=5.4&svg=true["AppVeyor Build Status (5.5 branch)",
-     link="https://ci.appveyor.com/project/avsm/ocaml"]
-| image:https://github.com/ocaml/ocaml/workflows/Build/badge.svg?branch=5.4["GitHub CI Build Status (5.4 branch)",
-     link="https://github.com/ocaml/ocaml/actions?query=workflow%3ABuild"]
-  image:https://ci.appveyor.com/api/projects/status/github/ocaml/ocaml?branch=5.4&svg=true["AppVeyor Build Status (5.4 branch)",
-     link="https://ci.appveyor.com/project/avsm/ocaml"]
-| image:https://github.com/ocaml/ocaml/workflows/Build/badge.svg?branch=5.3["GitHub CI Build Status (5.3 branch)",
-     link="https://github.com/ocaml/ocaml/actions?query=workflow%3ABuild"]
-  image:https://ci.appveyor.com/api/projects/status/github/ocaml/ocaml?branch=5.3&svg=true["AppVeyor Build Status (5.3 branch)",
-     link="https://ci.appveyor.com/project/avsm/ocaml"]
-| image:https://github.com/ocaml/ocaml/workflows/Build/badge.svg?branch=4.14["GitHub CI Build Status (4.14 branch)",
-     link="https://github.com/ocaml/ocaml/actions?query=workflow%3ABuild"]
-  image:https://ci.appveyor.com/api/projects/status/github/ocaml/ocaml?branch=4.14&svg=true["AppVeyor Build Status (4.14 branch)",
-     link="https://ci.appveyor.com/project/avsm/ocaml"]
-|=====
-
-== Overview
-
-OCaml is a functional, statically-typed programming language from the
-ML family, offering a powerful module system extending that of
-Standard ML and a feature-rich, class-based object system.
-
-OCaml comprises two compilers. One generates bytecode which is then
-interpreted by a C program. This compiler runs quickly, generates
-compact code with moderate memory requirements, and is portable to
-many 32 or 64 bit platforms. Performance of generated programs is
-quite good for a bytecoded implementation.  This compiler can be used
-either as a standalone, batch-oriented compiler that produces
-standalone programs, or as an interactive REPL system.
-
-The other compiler generates high-performance native code for a number of
-processors. Compilation takes longer and generates bigger code, but the
-generated programs deliver excellent performance, while retaining the
-moderate memory requirements of the bytecode compiler. The native-code
-compiler currently runs on the following platforms:
+= *The O64ml Project / _Progetto O64ml_*
 
 |====
-|                |  Tier 1 (actively maintained)   | Tier 2 (maintained when possible)
+| *OCaml for the Commodore 64*| *_OCaml per il Commodore 64_*
+| An OCaml compiler which generates object code targeted for the
+  Commodore 64 and its emulators.
+| _Un compilatore del linguaggio OCaml che genera codice eseguibile
+  per il Commodore 64._
 
-| x86 64 bits    | Linux, macOS, Windows, FreeBSD  |  NetBSD, OpenBSD, DragonFly, OmniOS (Solaris)
-| ARM 64 bits    | Linux, macOS                    |  FreeBSD, OpenBSD, NetBSD
-| Power 64 bits  | Linux (little-endian, ABIv2)    |  Linux (big-endian, ABIv2)
-| RISC-V 64 bits | Linux                           |
-| IBM Z (s390x)  | Linux                           |
-|====
+| *Overview*| *_In breve_*
+| The O64ml Project allows you to develop OCaml programs on Linux
+  systems and compile them to produce code executable on a Commodore
+  64. The Project includes, in addition to the o64ml compiler, a
+  specially modified distribution of the OCaml Standard Library and
+  (coming soon) libraries dedicated to graphics and sound.
+| _Il Progetto O64ml consente di sviluppare su sistemi Linux programmi
+  in OCaml e compilarli producendo codice eseguibile da un Commodore
+  64.  Il Progetto comprende, oltre al compilatore o64ml, una
+  distribuzione della Standard Library di OCaml appositamente
+  modificata e (prossimamente) delle librerie dedicate alla grafica e
+  al suono._
 
-Other operating systems for the processors above have not been tested, but
-the compiler may work under other operating systems with little work.
+| *Installation*| *_Installazione_*
+| See xref:INSTALL[].| _Vedere xref:INSTALL[] (in inglese)._ 
 
-❗ From OCaml 5.0 onwards, native compilation is available only on 64-bit
-systems.  Native compilation on 32-bit systems is no longer available, nor
-are there plans to bring it back.
-
-== Copyright
-
-All files marked "Copyright INRIA" in this distribution are
-Copyright (C) 1996-2023 Institut National de Recherche en Informatique et
-en Automatique (INRIA) and distributed under the conditions stated in
-file LICENSE.
-
-== Installation
-
-See the file xref:INSTALL.adoc[] for installation instructions on
-machines running Unix, Linux, macOS, WSL and Cygwin.  For native Microsoft
-Windows, see xref:README.win32.adoc[].
-
-== Documentation
-
-The OCaml manual is distributed in HTML, PDF, and Emacs
-Info files.  It is available at
-
-https://ocaml.org/manual/latest/
-
-== Availability
-
-The complete OCaml distribution can be accessed at
-
-https://ocaml.org/docs/install.html
-
-== Releases
-
-More information about when and how new releases of OCaml are published is
-available at link:release-info/introduction.md[], see also
-link:release-info/calendar.md[] for a prospective calendar for future OCaml
-versions. For past versions, link:release-info/News[] contains a short
-description of major changes in previous versions.
-
-== Keeping in Touch with the Caml Community
-
-There is an active and friendly discussion forum at
-
-https://discuss.ocaml.org/
-
-The OCaml mailing list is the longest-running forum for OCaml users.
-You can email it at
-
-mailto:caml-list@inria.fr[]
-
-You can subscribe and access list archives via the Web interface at
-
-https://sympa.inria.fr/sympa/subscribe/caml-list
-
-There also exist other mailing lists, chat channels, and various other forums
-around the internet for getting in touch with the OCaml and ML family language
-community. These can be accessed at
-
-https://ocaml.org/community/
-
-In particular, the IRC channel `#ocaml` on https://libera.chat/[Libera] has a
-long history and welcomes questions.
-
-== Bug Reports and User Feedback
-
-Please report bugs using the issue tracker at
-https://github.com/ocaml/ocaml/issues
-
-To be effective, bug reports should include a complete program (preferably
-small) that exhibits the unexpected behavior, and the configuration you are
-using (machine type, etc).
-
-== Contributing
-
-For information on contributing to OCaml, see xref:HACKING.adoc[] and
-link:CONTRIBUTING.md[].
-
-== Separately maintained components
-
-Some libraries and tools which used to be part of the OCaml distribution are
-now maintained separately and distributed as opam packages.
-Please use the issue trackers at their respective new homes:
-
-|====
-| Library           |  Removed since    |  opam package
-
-| https://github.com/ocaml/camlp-streams/issues[The Stream and Genlex standard library modules] | OCaml 5.0 | `camlp-streams`
-| https://github.com/ocaml/graphics/issues[The Graphics library] | OCaml 4.09 | `graphics`
-| https://github.com/ocaml/num/issues[The Num library] | OCaml 4.06 | `num`
-| https://github.com/ocaml/ocamlbuild/issues[The OCamlbuild tool] | OCaml 4.03 | `ocamlbuild`
-| https://github.com/camlp4/camlp4/issues[The camlp4 tool] | OCaml 4.02 | `camlp4`
-| https://github.com/garrigue/labltk/issues[The LablTk library] | OCaml 4.02 | `labltk`
-| https://github.com/ocaml/dbm/issues[The CamlDBM library] | OCaml 4.00 | `dbm`
-| https://github.com/xavierleroy/ocamltopwin/issues[The OCamlWinTop Windows toplevel] | OCaml 4.00 | none
+| *Documentation*| *_Documentazione_*
+| The installation procedure generates manual pages for the o64ml
+  compiler (readable with the _man o64ml command_ ) and for the StdLib
+  modules ( _man 3o64 module-name_ ).
+  Please read also xref:CAVEATS-LIMITATIONS-NOTES[].
+| _La procedura di installazione genera le pagine di manuale per il
+  compilatore o64ml (leggibile con il comando_ man o64ml _) e per i
+  moduli della StdLib (_ man 3o64 nome-modulo _).  Si
+  consiglia la lettura di xref:CAVEATS-LIMITATIONS-NOTES[] (in
+  inglese)._
 |====
