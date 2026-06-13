@@ -1,13 +1,16 @@
 = *The O64ml Project / _Progetto O64ml_*
 
-|====
-| *OCaml for the Commodore 64*| *_OCaml per il Commodore 64_*
+[cols="1,1"]
+|===
+| *OCaml for the Commodore 64* | *_OCaml per il Commodore 64_*
+
 | An OCaml compiler which generates object code targeted for the
   Commodore 64 and its emulators.
 | _Un compilatore del linguaggio OCaml che genera codice eseguibile
   per il Commodore 64._
 
-| *Overview*| *_In breve_*
+| *Overview* | *_In breve_*
+
 | The O64ml Project allows you to develop OCaml programs on Linux
   systems and compile them to produce code executable on a Commodore
   64. The Project includes, in addition to the o64ml compiler, a
@@ -20,17 +23,19 @@
   modificata e (prossimamente) delle librerie dedicate alla grafica e
   al suono._
 
-| *Installation*| *_Installazione_*
-| See xref:INSTALL[].| _Vedere xref:INSTALL[] (in inglese)._ 
+| *Installation* | *_Installazione_*
 
-| *Documentation*| *_Documentazione_*
+| See xref:INSTALL[].
+| _Vedere xref:INSTALL[] (in inglese)._ 
+
+| *Documentation* | *_Documentazione_*
+
 | The installation procedure generates manual pages for the o64ml
   compiler (readable with the _man o64ml command_ ) and for the StdLib
   modules ( _man 3o64 module-name_ ).
-  Please read also xref:CAVEATS-LIMITATIONS-NOTES[].
+  Please read also xref:CAVEATS-LIMITATIONS-NOTES[] and xref:BUGS[].
 | _La procedura di installazione genera le pagine di manuale per il
   compilatore o64ml (leggibile con il comando_ man o64ml _) e per i
   moduli della StdLib (_ man 3o64 nome-modulo _).  Si
-  consiglia la lettura di xref:CAVEATS-LIMITATIONS-NOTES[] (in
-  inglese)._
-|====
+  consiglia la lettura di xref:CAVEATS-LIMITATIONS-NOTES[] e BUGS[]._
+|===
