@@ -1,0 +1,242 @@
+Ptop_def
+  []
+Ptop_def
+  []
+Ptop_def
+  [
+    structure_item (./stringhe1.ml[1,0+0]..[10,2052+545])
+      Pstr_value Nonrec
+      [
+        <def>
+          pattern (./stringhe1.ml[1,0+4]..[1,0+6])
+            Ppat_construct "()" (./stringhe1.ml[1,0+4]..[1,0+6])
+            None
+          expression (./stringhe1.ml[2,9+2]..[10,2052+545])
+            Pexp_sequence
+            expression (./stringhe1.ml[2,9+2]..[2,9+143])
+              Pexp_apply
+              expression (./stringhe1.ml[2,9+2]..[2,9+14])
+                Pexp_ident "print_string" (./stringhe1.ml[2,9+2]..[2,9+14])
+              [
+                <arg>
+                Nolabel
+                  expression (./stringhe1.ml[2,9+15]..[2,9+143])
+                    Pexp_constant PConst_string("---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0123456",None)
+              ]
+            expression (./stringhe1.ml[2,9+146]..[10,2052+545])
+              Pexp_sequence
+              expression (./stringhe1.ml[2,9+146]..[2,9+161])
+                Pexp_apply
+                expression (./stringhe1.ml[2,9+146]..[2,9+159])
+                  Pexp_ident "print_newline" (./stringhe1.ml[2,9+146]..[2,9+159])
+                [
+                  <arg>
+                  Nolabel
+                    expression (./stringhe1.ml[2,9+159]..[2,9+161])
+                      Pexp_construct "()" (./stringhe1.ml[2,9+159]..[2,9+161])
+                      None
+                ]
+              expression (./stringhe1.ml[3,183+2]..[10,2052+545])
+                Pexp_sequence
+                expression (./stringhe1.ml[3,183+2]..[3,183+144])
+                  Pexp_apply
+                  expression (./stringhe1.ml[3,183+2]..[3,183+14])
+                    Pexp_ident "print_string" (./stringhe1.ml[3,183+2]..[3,183+14])
+                  [
+                    <arg>
+                    Nolabel
+                      expression (./stringhe1.ml[3,183+15]..[3,183+144])
+                        Pexp_constant PConst_string("---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------01234567",None)
+                  ]
+                expression (./stringhe1.ml[3,183+147]..[10,2052+545])
+                  Pexp_sequence
+                  expression (./stringhe1.ml[3,183+147]..[3,183+162])
+                    Pexp_apply
+                    expression (./stringhe1.ml[3,183+147]..[3,183+160])
+                      Pexp_ident "print_newline" (./stringhe1.ml[3,183+147]..[3,183+160])
+                    [
+                      <arg>
+                      Nolabel
+                        expression (./stringhe1.ml[3,183+160]..[3,183+162])
+                          Pexp_construct "()" (./stringhe1.ml[3,183+160]..[3,183+162])
+                          None
+                    ]
+                  expression (./stringhe1.ml[4,358+2]..[10,2052+545])
+                    Pexp_sequence
+                    expression (./stringhe1.ml[4,358+2]..[4,358+145])
+                      Pexp_apply
+                      expression (./stringhe1.ml[4,358+2]..[4,358+14])
+                        Pexp_ident "print_string" (./stringhe1.ml[4,358+2]..[4,358+14])
+                      [
+                        <arg>
+                        Nolabel
+                          expression (./stringhe1.ml[4,358+15]..[4,358+145])
+                            Pexp_constant PConst_string("---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------012345678",None)
+                      ]
+                    expression (./stringhe1.ml[4,358+148]..[10,2052+545])
+                      Pexp_sequence
+                      expression (./stringhe1.ml[4,358+148]..[4,358+163])
+                        Pexp_apply
+                        expression (./stringhe1.ml[4,358+148]..[4,358+161])
+                          Pexp_ident "print_newline" (./stringhe1.ml[4,358+148]..[4,358+161])
+                        [
+                          <arg>
+                          Nolabel
+                            expression (./stringhe1.ml[4,358+161]..[4,358+163])
+                              Pexp_construct "()" (./stringhe1.ml[4,358+161]..[4,358+163])
+                              None
+                        ]
+                      expression (./stringhe1.ml[5,534+2]..[10,2052+545])
+                        Pexp_sequence
+                        expression (./stringhe1.ml[5,534+2]..[5,534+146])
+                          Pexp_apply
+                          expression (./stringhe1.ml[5,534+2]..[5,534+14])
+                            Pexp_ident "print_string" (./stringhe1.ml[5,534+2]..[5,534+14])
+                          [
+                            <arg>
+                            Nolabel
+                              expression (./stringhe1.ml[5,534+15]..[5,534+146])
+                                Pexp_constant PConst_string("---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0123456789",None)
+                          ]
+                        expression (./stringhe1.ml[5,534+149]..[10,2052+545])
+                          Pexp_sequence
+                          expression (./stringhe1.ml[5,534+149]..[5,534+164])
+                            Pexp_apply
+                            expression (./stringhe1.ml[5,534+149]..[5,534+162])
+                              Pexp_ident "print_newline" (./stringhe1.ml[5,534+149]..[5,534+162])
+                            [
+                              <arg>
+                              Nolabel
+                                expression (./stringhe1.ml[5,534+162]..[5,534+164])
+                                  Pexp_construct "()" (./stringhe1.ml[5,534+162]..[5,534+164])
+                                  None
+                            ]
+                          expression (./stringhe1.ml[6,711+2]..[10,2052+545])
+                            Pexp_sequence
+                            expression (./stringhe1.ml[6,711+2]..[6,711+147])
+                              Pexp_apply
+                              expression (./stringhe1.ml[6,711+2]..[6,711+14])
+                                Pexp_ident "print_string" (./stringhe1.ml[6,711+2]..[6,711+14])
+                              [
+                                <arg>
+                                Nolabel
+                                  expression (./stringhe1.ml[6,711+15]..[6,711+147])
+                                    Pexp_constant PConst_string("---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------01234567890",None)
+                              ]
+                            expression (./stringhe1.ml[6,711+150]..[10,2052+545])
+                              Pexp_sequence
+                              expression (./stringhe1.ml[6,711+150]..[6,711+165])
+                                Pexp_apply
+                                expression (./stringhe1.ml[6,711+150]..[6,711+163])
+                                  Pexp_ident "print_newline" (./stringhe1.ml[6,711+150]..[6,711+163])
+                                [
+                                  <arg>
+                                  Nolabel
+                                    expression (./stringhe1.ml[6,711+163]..[6,711+165])
+                                      Pexp_construct "()" (./stringhe1.ml[6,711+163]..[6,711+165])
+                                      None
+                                ]
+                              expression (./stringhe1.ml[7,889+2]..[10,2052+545])
+                                Pexp_sequence
+                                expression (./stringhe1.ml[7,889+2]..[7,889+272])
+                                  Pexp_apply
+                                  expression (./stringhe1.ml[7,889+2]..[7,889+14])
+                                    Pexp_ident "print_string" (./stringhe1.ml[7,889+2]..[7,889+14])
+                                  [
+                                    <arg>
+                                    Nolabel
+                                      expression (./stringhe1.ml[7,889+15]..[7,889+272])
+                                        Pexp_constant PConst_string("---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------012345",None)
+                                  ]
+                                expression (./stringhe1.ml[7,889+275]..[10,2052+545])
+                                  Pexp_sequence
+                                  expression (./stringhe1.ml[7,889+275]..[7,889+290])
+                                    Pexp_apply
+                                    expression (./stringhe1.ml[7,889+275]..[7,889+288])
+                                      Pexp_ident "print_newline" (./stringhe1.ml[7,889+275]..[7,889+288])
+                                    [
+                                      <arg>
+                                      Nolabel
+                                        expression (./stringhe1.ml[7,889+288]..[7,889+290])
+                                          Pexp_construct "()" (./stringhe1.ml[7,889+288]..[7,889+290])
+                                          None
+                                    ]
+                                  expression (./stringhe1.ml[8,1192+2]..[10,2052+545])
+                                    Pexp_sequence
+                                    expression (./stringhe1.ml[8,1192+2]..[8,1192+273])
+                                      Pexp_apply
+                                      expression (./stringhe1.ml[8,1192+2]..[8,1192+14])
+                                        Pexp_ident "print_string" (./stringhe1.ml[8,1192+2]..[8,1192+14])
+                                      [
+                                        <arg>
+                                        Nolabel
+                                          expression (./stringhe1.ml[8,1192+15]..[8,1192+273])
+                                            Pexp_constant PConst_string("---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0123456",None)
+                                      ]
+                                    expression (./stringhe1.ml[8,1192+276]..[10,2052+545])
+                                      Pexp_sequence
+                                      expression (./stringhe1.ml[8,1192+276]..[8,1192+291])
+                                        Pexp_apply
+                                        expression (./stringhe1.ml[8,1192+276]..[8,1192+289])
+                                          Pexp_ident "print_newline" (./stringhe1.ml[8,1192+276]..[8,1192+289])
+                                        [
+                                          <arg>
+                                          Nolabel
+                                            expression (./stringhe1.ml[8,1192+289]..[8,1192+291])
+                                              Pexp_construct "()" (./stringhe1.ml[8,1192+289]..[8,1192+291])
+                                              None
+                                        ]
+                                      expression (./stringhe1.ml[9,1496+2]..[10,2052+545])
+                                        Pexp_sequence
+                                        expression (./stringhe1.ml[9,1496+2]..[9,1496+525])
+                                          Pexp_apply
+                                          expression (./stringhe1.ml[9,1496+2]..[9,1496+14])
+                                            Pexp_ident "print_string" (./stringhe1.ml[9,1496+2]..[9,1496+14])
+                                          [
+                                            <arg>
+                                            Nolabel
+                                              expression (./stringhe1.ml[9,1496+15]..[9,1496+525])
+                                                Pexp_constant PConst_string("---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------012345678",None)
+                                          ]
+                                        expression (./stringhe1.ml[9,1496+528]..[10,2052+545])
+                                          Pexp_sequence
+                                          expression (./stringhe1.ml[9,1496+528]..[9,1496+543])
+                                            Pexp_apply
+                                            expression (./stringhe1.ml[9,1496+528]..[9,1496+541])
+                                              Pexp_ident "print_newline" (./stringhe1.ml[9,1496+528]..[9,1496+541])
+                                            [
+                                              <arg>
+                                              Nolabel
+                                                expression (./stringhe1.ml[9,1496+541]..[9,1496+543])
+                                                  Pexp_construct "()" (./stringhe1.ml[9,1496+541]..[9,1496+543])
+                                                  None
+                                            ]
+                                          expression (./stringhe1.ml[10,2052+2]..[10,2052+545])
+                                            Pexp_sequence
+                                            expression (./stringhe1.ml[10,2052+2]..[10,2052+526])
+                                              Pexp_apply
+                                              expression (./stringhe1.ml[10,2052+2]..[10,2052+14])
+                                                Pexp_ident "print_string" (./stringhe1.ml[10,2052+2]..[10,2052+14])
+                                              [
+                                                <arg>
+                                                Nolabel
+                                                  expression (./stringhe1.ml[10,2052+15]..[10,2052+526])
+                                                    Pexp_constant PConst_string("---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0---------0123456789",None)
+                                              ]
+                                            expression (./stringhe1.ml[10,2052+529]..[10,2052+545])
+                                              Pexp_apply
+                                              expression (./stringhe1.ml[10,2052+529]..[10,2052+542])
+                                                Pexp_ident "print_newline" (./stringhe1.ml[10,2052+529]..[10,2052+542])
+                                              [
+                                                <arg>
+                                                Nolabel
+                                                  expression (./stringhe1.ml[10,2052+542]..[10,2052+544])
+                                                    Pexp_construct "()" (./stringhe1.ml[10,2052+542]..[10,2052+544])
+                                                    None
+                                              ]
+      ]
+  ]
+Ptop_def
+  []
+Ptop_def
+  []

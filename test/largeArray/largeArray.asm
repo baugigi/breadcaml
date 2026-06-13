@@ -1,0 +1,221 @@
+;; ——————————————————————————————————————————————————————————————————————
+;; Progetto O64ml / The O64ml Project
+;; Copyright (C) 21-Apr-2026 Piero Furiesi
+;;
+;; Questo  programma è  software libero;  è possibile  ridistribuirlo e/o
+;; modificarlo secondo i  termini della GNU General  Public License (GPL)
+;; versione  2,  come specificato  nel  file  LICENZA-it nella  directory
+;; principale del progetto.
+;;
+;; This program is  free software; you can redistribute  it and/or modify
+;; it under the terms of the  GNU General Public License (GPL) version 2,
+;; as specified in the LICENSE-en file in the project root.
+;; ——————————————————————————————————————————————————————————————————————
+
+!zone caml_LARGEARRAY {
+
+.TMPL	= TMP
+.TMPH	= TMP + 1
+
+caml_largearray_mul_255
+	LSR ACCU + 1
+	ROR ACCU
+	
+	LDA # 0
+	SEC
+	SBC ACCU
+	TAX
+	LDA ACCU
+	SBC ACCU + 1
+	STX ACCU
+
+	SEC
+	ROL ACCU
+	ROL ACCU + 1
+	RTS
+
+caml_largearray_mul_85
+	LSR ACCU + 1
+	ROR ACCU
+	
+	LDA ACCU
+	STA .TMPL
+	LDA ACCU + 1
+	STA .TMPH
+
+	ASL ACCU:ROL
+	ASL ACCU:ROL
+	ASL ACCU:ROL
+	ASL ACCU:ROL
+	STA ACCU + 1
+
+	LDA .TMPL
+	CLC
+	ADC ACCU
+	STA ACCU
+	STA .TMPL
+	LDA .TMPH
+	ADC ACCU + 1
+	STA .TMPH
+
+	ASL ACCU:ROL
+	ASL ACCU:ROL
+	STA ACCU + 1
+
+	LDA .TMPL
+	CLC
+	ADC ACCU
+	STA ACCU
+	LDA .TMPH
+	ADC ACCU + 1
+
+	SEC
+	ROL ACCU
+	ROL
+	STA ACCU + 1
+
+	RTS
+	
+caml_largearray_div_255
+	LSR ACCU + 1
+	ROR ACCU
+
+	JSR .div_15
+	JSR .div_17
+
+	SEC
+	ROL ACCU
+	ROL ACCU + 1
+	RTS
+	
+caml_largearray_div_85
+	LSR ACCU + 1
+	ROR ACCU
+
+	JSR .div_5
+	JSR .div_17
+
+	SEC
+	ROL ACCU
+	ROL ACCU + 1
+	RTS
+
+.div_5	LDA ACCU + 1
+	STA .TMPH
+	LDA ACCU
+	STA .TMPL
+
+	LSR ACCU + 1:ROR
+
+	ADC # 13
+	BCC +
+	INC ACCU + 1
+
++	ADC .TMPL
+	STA ACCU
+	LDA .TMPH
+	ADC ACCU + 1
+	STA ACCU + 1
+
+	LDA ACCU
+	ROR ACCU + 1:ROR
+	LSR ACCU + 1:ROR
+	LSR ACCU + 1:ROR
+
+	ADC .TMPL
+	STA ACCU
+	LDA .TMPH
+	ADC ACCU + 1
+	STA ACCU + 1
+
+	LDA ACCU
+	ROR ACCU + 1:ROR
+
+	ADC .TMPL
+	STA ACCU
+	LDA .TMPH
+	ADC ACCU + 1
+	STA ACCU + 1
+
+	LDA ACCU
+	ROR ACCU + 1:ROR
+	LSR ACCU + 1:ROR
+	LSR ACCU + 1:ROR
+
+	RTS
+
+.div_15	LDA ACCU + 1
+	STA .TMPH
+	LDA ACCU
+	STA .TMPL
+
+	LSR ACCU + 1:ROR
+	ADC # 4
+	BCC +
+	INC ACCU + 1
+
++	LSR ACCU + 1:ROR
+	LSR ACCU + 1:ROR
+	LSR ACCU + 1:ROR
+
+	ADC .TMPL
+	STA ACCU
+	LDA .TMPH
+	ADC ACCU + 1
+	STA ACCU + 1
+
+	LDA ACCU
+	ROR ACCU + 1:ROR
+	LSR ACCU + 1:ROR
+	LSR ACCU + 1:ROR
+	LSR ACCU + 1:ROR
+	STA ACCU
+
+	RTS
+
+.div_17	LDA ACCU + 1
+	STA .TMPH
+	LDA ACCU
+	STA .TMPL
+
+	LSR ACCU + 1:ROR
+
+	ADC .TMPL
+	STA ACCU
+	LDA .TMPH
+	ADC ACCU + 1
+	STA ACCU + 1
+
+	LDA ACCU
+	ROR ACCU + 1:ROR
+
+	ADC .TMPL
+	STA ACCU
+	LDA .TMPH
+	ADC ACCU + 1
+	STA ACCU + 1
+
+	LDA ACCU
+	ROR ACCU + 1:ROR
+
+	ADC .TMPL
+	STA ACCU
+	LDA .TMPH
+	ADC ACCU + 1
+	STA ACCU + 1
+
+	LDA ACCU
+	ROR ACCU + 1:ROR
+
+	ADC # 0
+	BCC +
+	INC ACCU + 1
+
++	LSR ACCU + 1:ROR
+	LSR ACCU + 1:ROR
+	LSR ACCU + 1:ROR
+	LSR ACCU + 1:ROR
+	STA ACCU
+
+	RTS
+}	;; !zone caml_LARGEARRAY
