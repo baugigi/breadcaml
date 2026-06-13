@@ -1,0 +1,546 @@
+;; ——————————————————————————————————————————————————————————————————————
+;; Progetto O64ml / The O64ml Project
+;; Copyright (C) 21-Apr-2026 Piero Furiesi
+;;
+;; Questo  programma è  software libero;  è possibile  ridistribuirlo e/o
+;; modificarlo secondo i  termini della GNU General  Public License (GPL)
+;; versione  2,  come specificato  nel  file  LICENZA-it nella  directory
+;; principale del progetto.
+;;
+;; This program is  free software; you can redistribute  it and/or modify
+;; it under the terms of the  GNU General Public License (GPL) version 2,
+;; as specified in the LICENSE-en file in the project root.
+;; ——————————————————————————————————————————————————————————————————————
+
+;; Transitive closure of the set of dependencies of each Stdlib primitive.
+
+	;; -----------------
+	;; stdlib_arrays.asm
+	;; -----------------
+
+!ifdef	caml_PRIM__caml_make_vect {
+  !set	caml_PRIM__caml_make_float_vect = 1
+}
+!ifdef	caml_PRIM__caml_array_get {
+  !set	caml_PRIM__caml_array_get_addr = 1
+  !set	caml_PRIM__caml_array_get_float = 1
+}
+!ifdef	caml_PRIM__caml_array_unsafe_get {
+  !set	caml_PRIM__caml_array_unsafe_get_float = 1
+}
+!ifdef	caml_PRIM__caml_array_set {
+  !set	caml_PRIM__caml_array_set_addr = 1
+  !set	caml_PRIM__caml_array_set_float = 1
+}
+!ifdef	caml_PRIM__caml_array_unsafe_set {
+  !set	caml_PRIM__caml_array_unsafe_set_float = 1
+  !set	caml_PRIM__caml_array_unsafe_set_addr = 1
+}
+!ifdef	caml_PRIM__caml_array_blit {
+  !set	caml_AUX__caml_blkcpy = 1
+}
+!ifdef	caml_PRIM__caml_array_sub {
+  !set	caml_AUX__caml_blkcpy = 1
+}
+!ifdef	caml_PRIM__caml_array_append {
+  !set	caml_AUX__caml_blkcpy = 1
+}
+!ifdef	caml_PRIM__caml_array_concat {
+  !set	caml_AUX__caml_blkcpy = 1
+}
+
+	;; ------------------
+	;; stdlib_compare.asm
+	;; ------------------
+
+!ifdef caml_PRIM__caml_int_compare {
+  !set	caml_AUX__caml_return_false_zero = 1
+}
+!ifdef	caml_PRIM__caml_eq_float {
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_return_true = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_neq_float {
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_le_float {
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_return_true = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_lt_float {
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_ge_float {
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_return_true = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_gt_float {
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_float_compare {
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_compare_set_result = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_bytes_equal {
+  !set	caml_PRIM__caml_string_equal = 1
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_string_eq_neq = 1
+  !set	caml_AUX__caml_return_true = 1
+}
+!ifdef	caml_PRIM__caml_bytes_notequal {
+  !set	caml_PRIM__caml_string_notequal = 1
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_string_eq_neq = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+}
+!ifdef	caml_PRIM__caml_bytes_lessthan {
+  !set	caml_PRIM__caml_string_lessthan = 1
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+}
+!ifdef	caml_PRIM__caml_bytes_greaterequal {
+  !set	caml_PRIM__caml_string_greaterequal = 1
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_string_tag
+  !set	caml_AUX__caml_return_true = 1
+}
+!ifdef	caml_PRIM__caml_bytes_lessequal {
+  !set	caml_PRIM__caml_string_lessequal = 1
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_return_true = 1
+}
+!ifdef	caml_PRIM__caml_bytes_greaterthan {
+  !set	caml_PRIM__caml_string_greaterthan = 1
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+}
+!ifdef	caml_PRIM__caml_bytes_compare {
+  !set	caml_PRIM__caml_string_compare = 1
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_compare_set_result = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+}
+!ifdef	caml_PRIM__caml_string_equal {
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_string_eq_neq = 1
+  !set	caml_AUX__caml_return_true = 1
+}
+!ifdef	caml_PRIM__caml_string_notequal {
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_string_eq_neq = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+}
+!ifdef	caml_PRIM__caml_string_lessthan {
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+}
+!ifdef	caml_PRIM__caml_string_greaterequal {
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_string_tag
+  !set	caml_AUX__caml_return_true = 1
+}
+!ifdef	caml_PRIM__caml_string_lessequal {
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_return_true = 1
+}
+!ifdef	caml_PRIM__caml_string_greaterthan {
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+}
+!ifdef	caml_PRIM__caml_string_compare {
+  !set	caml_AUX__caml_compare_identity_setV2 = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_compare_set_result = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+}
+!ifdef	caml_PRIM__caml_equal {
+  !set	caml_AUX__caml_compare_val = 1
+  !set	caml_AUX__caml_return_true = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_compare_val_double_array_tag = 1
+  !set	caml_AUX__caml_compare_val_object_tag = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_compare_val_custom_tag = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_notequal {
+  !set	caml_AUX__caml_compare_val = 1
+  !set	caml_AUX__caml_return_true = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_compare_val_double_array_tag = 1
+  !set	caml_AUX__caml_compare_val_object_tag = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_compare_val_custom_tag = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_lessthan {
+  !set	caml_AUX__caml_compare_val = 1
+  !set	caml_AUX__caml_return_true = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_compare_val_double_array_tag = 1
+  !set	caml_AUX__caml_compare_val_object_tag = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_compare_val_custom_tag = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_greaterequal {
+  !set	caml_AUX__caml_compare_val = 1
+  !set	caml_AUX__caml_return_true = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_compare_val_double_array_tag = 1
+  !set	caml_AUX__caml_compare_val_object_tag = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_compare_val_custom_tag = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_lessequal {
+  !set	caml_AUX__caml_compare_val = 1
+  !set	caml_AUX__caml_return_true = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_compare_val_double_array_tag = 1
+  !set	caml_AUX__caml_compare_val_object_tag = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_compare_val_custom_tag = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_greaterthan {
+  !set	caml_AUX__caml_compare_val = 1
+  !set	caml_AUX__caml_return_true = 1
+  !set	caml_AUX__caml_return_false_zero = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_compare_val_double_array_tag = 1
+  !set	caml_AUX__caml_compare_val_object_tag = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_compare_val_custom_tag = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_compare {
+  !set	caml_AUX__caml_compare_val = 1
+  !set	caml_AUX__caml_compare_set_result = 1
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_compare_val_double_array_tag = 1
+  !set	caml_AUX__caml_compare_val_object_tag = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_compare_val_custom_tag = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_AUX__caml_compare_val {
+  !set	caml_AUX__caml_compare_val_string_tag = 1
+  !set	caml_AUX__caml_compare_val_double_array_tag = 1
+  !set	caml_AUX__caml_compare_val_object_tag = 1
+  !set	caml_AUX__caml_compare_val_double_tag = 1
+  !set	caml_AUX__caml_compare_val_custom_tag = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_AUX__caml_compare_val_double_tag {
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+	;; ----------------
+	;; stdlib_dummy.asm
+	;; ----------------
+
+!ifdef	caml_PRIM__caml_alloc_dummy_function {
+  !set	caml_PRIM__caml_alloc_dummy = 1
+}
+!ifdef	caml_PRIM__caml_update_dummy {
+  !set	caml_AUX__caml_blkcpy = 1
+}
+	;; -----------------
+	;; stdlib_floats.asm
+	;; -----------------
+
+!ifdef	caml_PRIM__caml_neg_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_abs_float {
+  !set	caml_AUX__caml_float_loadFAC = 1
+  !set	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_exp_float {
+  !set	caml_AUX__caml_float_loadFAC = 1
+  !set	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_expm1_float {
+  !set	caml_AUX__caml_float_loadFAC = 1
+  !set	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_log_float {
+  !set	caml_AUX__caml_float_loadFAC = 1
+  !set	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_log1p_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_log10_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_sin_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_cos_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_tan_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_sqrt_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_atan_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_floor_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_ceil_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_int_of_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_float_of_int {
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_copysign_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_float_of_string {
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_add_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_loadARG = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_sub_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_loadARG = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_mul_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_loadARG = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_div_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_loadARG = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_power_float {
+  !set 	caml_AUX__caml_float_loadFAC = 1
+  !set 	caml_AUX__caml_float_loadARG = 1
+  !set 	caml_AUX__caml_float_alloc_result = 1
+}
+
+	;; -------------------
+	;; stdlib_integers.asm
+	;; -------------------
+
+!ifdef	caml_PRIM__caml_int32_neg {
+  !set	caml_PRIM__caml_int32_custom = 1
+}
+!ifdef	caml_PRIM__caml_int32_add {
+  !set	caml_PRIM__caml_int32_custom = 1
+}
+!ifdef	caml_PRIM__caml_int32_sub {
+  !set	caml_PRIM__caml_int32_custom = 1
+}
+!ifdef	caml_PRIM__caml_int32_and {
+  !set	caml_PRIM__caml_int32_custom = 1
+}
+!ifdef	caml_PRIM__caml_int32_or {
+  !set	caml_PRIM__caml_int32_custom = 1
+}
+!ifdef	caml_PRIM__caml_int32_xor {
+  !set	caml_PRIM__caml_int32_custom = 1
+}
+!ifdef	caml_PRIM__caml_int32_shift_left {
+  !set	caml_PRIM__caml_int32_custom = 1
+}
+!ifdef	caml_PRIM__caml_int32_shift_right {
+  !set	caml_PRIM__caml_int32_custom = 1
+}
+!ifdef	caml_PRIM__caml_int32_shift_right_unsigned {
+  !set	caml_PRIM__caml_int32_custom = 1
+}
+!ifdef	caml_PRIM__caml_int32_mul {
+  !set	caml_PRIM__caml_int32_custom = 1
+}
+!ifdef	caml_PRIM__caml_int32_of_float {
+  !set	caml_PRIM__caml_int32_custom = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_int32_to_float {
+  !set	caml_PRIM__caml_int32_custom = 1
+  !set	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_int32_of_int {
+  !set	caml_PRIM__caml_int32_custom = 1
+}
+!ifdef	caml_PRIM__caml_int32_to_int {
+  !set	caml_PRIM__caml_int32_custom = 1
+}
+!ifdef	caml_PRIM__caml_int32_bits_of_float {
+  !set	caml_PRIM__caml_int32_custom = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_int32_float_of_bits {
+  !set	caml_PRIM__caml_int32_custom = 1
+  !set	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_int32_compare {
+  !set	caml_PRIM__caml_int32_custom = 1
+}
+!ifdef	caml_PRIM__caml_int32_hash {
+  !set	caml_PRIM__caml_int32_custom = 1
+}
+!ifdef	caml_PRIM__caml_int64_neg {
+  !set	caml_PRIM__caml_int64_custom = 1
+}
+!ifdef	caml_PRIM__caml_int64_add {
+  !set	caml_PRIM__caml_int64_custom = 1
+}
+!ifdef	caml_PRIM__caml_int64_sub {
+  !set	caml_PRIM__caml_int64_custom = 1
+}
+!ifdef	caml_PRIM__caml_int64_and {
+  !set	caml_PRIM__caml_int64_custom = 1
+}
+!ifdef	caml_PRIM__caml_int64_or {
+  !set	caml_PRIM__caml_int64_custom = 1
+}
+!ifdef	caml_PRIM__caml_int64_xor {
+  !set	caml_PRIM__caml_int64_custom = 1
+}
+!ifdef	caml_PRIM__caml_int64_shift_left {
+  !set	caml_PRIM__caml_int64_custom = 1
+}
+!ifdef	caml_PRIM__caml_int64_shift_right {
+  !set	caml_PRIM__caml_int64_custom = 1
+}
+!ifdef	caml_PRIM__caml_int64_shift_right_unsigned {
+  !set	caml_PRIM__caml_int64_custom = 1
+}
+!ifdef	caml_PRIM__caml_int64_mul {
+  !set	caml_PRIM__caml_int64_custom = 1
+}
+!ifdef	caml_PRIM__caml_int64_to_float {
+  !set	caml_PRIM__caml_int64_custom = 1
+  !set	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_int64_bits_of_float {
+  !set	caml_PRIM__caml_int64_custom = 1
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_PRIM__caml_int64_float_of_bits {
+  !set	caml_PRIM__caml_int64_custom = 1
+  !set	caml_AUX__caml_float_alloc_result = 1
+}
+!ifdef	caml_PRIM__caml_int64_compare {
+  !set	caml_PRIM__caml_int64_custom = 1
+}
+!ifdef	caml_PRIM__caml_int64_hash {
+  !set	caml_PRIM__caml_int64_custom = 1
+}
+
+	;; --------------
+	;; stdlib_obj.asm
+	;; --------------
+
+!ifdef	caml_PRIM__caml_obj_dup {
+  !set	caml_AUX__caml_blkcpy = 1
+}
+
+	;; ------------------
+	;; stdlib_strings.asm
+	;; ------------------
+
+!ifdef	caml_PRIM__caml_string_of_bytes {
+  !set	caml_PRIM__caml_bytes_of_string = 1
+}
+!ifdef	caml_PRIM__caml_create_bytes {
+  !set	caml_PRIM__caml_create_string = 1
+}
+!ifdef	caml_PRIM__caml_ml_bytes_length {
+  !set	caml_PRIM__caml_ml_string_length = 1
+  !set 	caml_AUX__caml_string_length_yx = 1
+}
+!ifdef	caml_PRIM__caml_bytes_get {
+  !set	caml_PRIM__caml_string_get = 1
+  !set 	caml_AUX__caml_string_index_y = 1
+  !set 	caml_AUX__caml_string_length_yx = 1
+}
+!ifdef	caml_PRIM__caml_bytes_set {
+  !set	caml_PRIM__caml_string_set = 1
+  !set 	caml_AUX__caml_string_index_y = 1
+  !set 	caml_AUX__caml_string_length_yx = 1
+}
+!ifdef	caml_PRIM__caml_fill_bytes {
+  !set	caml_PRIM__caml_fill_string = 1
+}
+!ifdef	caml_PRIM__caml_blit_bytes {
+  !set	caml_PRIM__caml_blit_string = 1
+  !set	caml_AUX__caml_memcpy = 1
+}
+!ifdef	caml_PRIM__caml_ml_string_length {
+  !set 	caml_AUX__caml_string_length_yx = 1
+}
+!ifdef	caml_PRIM__caml_string_get {
+  !set 	caml_AUX__caml_string_index_y = 1
+  !set 	caml_AUX__caml_string_length_yx = 1
+}
+!ifdef	caml_PRIM__caml_string_set {
+  !set 	caml_AUX__caml_string_index_y = 1
+  !set 	caml_AUX__caml_string_length_yx = 1
+}
+!ifdef	caml_PRIM__caml_blit_string {
+  !set	caml_AUX__caml_memcpy = 1
+}
+!ifdef	caml_PRIM__caml_nonstd_string_of_float {
+  !set	caml_AUX__caml_float_loadFAC = 1
+}
+!ifdef	caml_AUX__caml_string_index_y {
+  !set 	caml_AUX__caml_string_length_yx = 1
+}

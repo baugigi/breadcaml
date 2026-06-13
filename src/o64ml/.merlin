@@ -1,0 +1,6 @@
+PKG obytelib
+S .
+S ocamlclean
+B .
+B ocamlclean
+

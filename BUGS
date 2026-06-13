@@ -1,0 +1,16 @@
+caml_INTERP=1
+- l'interprete non funziona. Boh.
+
+test/largeArray:
+- se le funzioni non sono eta-espanse, crash: probabile bug nel meccanismo
+  di gestione degli extra args (creazione chiusura/applicazione)
+- se le funzioni sono eta-espanse, l'applicazione avviene correttamente
+  ma si ha un crash probabilmente dovuto a bug nel GC
+
+vari test:
+- al termine del programma spesso si ha ?SYNTAX ERROR per cui il ritorno
+  al BASIC non avviene correttamente (scorretto ripristino dei valori in ZP,
+  scorretta gestione dello stack h/w, o altro da indagare)
+
+
+  

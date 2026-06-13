@@ -1,0 +1,179 @@
+#!/bin/bash
+
+# ——————————————————————————————————————————————————————————————————————
+# Progetto O64ml / The O64ml Project
+# Copyright (C) 2026 Piero Furiesi
+#
+# Questo  programma è  software  libero; è  possibile ridistribuirlo  e/o
+# modificarlo secondo  i termini della  GNU General Public  License (GPL)
+# versione  2,  come  specificato  nel file  LICENZA-it  nella  directory
+# principale del progetto.
+#
+# This program is  free software; you can redistribute  it and/or modify
+# it under the terms of the  GNU General Public License (GPL) version 2,
+# as specified in the LICENSE-en file in the project root.
+# ——————————————————————————————————————————————————————————————————————
+
+if [[ "$1" = "--help" || "$1" = "-h" || -n "$2" ]]; then
+    cat <<EOF
+$0 [DIRECTORY]
+
+Aggiunge gli header appropriati a tutti i file sorgenti OCaml o ACME
+nella DIRECTORY indicata e nelle sue subdirectory.
+Se DIRECTORY non è indicata, stampa i modelli di header disponibili.
+
+EOF
+    exit 0
+fi
+
+# Definizione degli header
+
+DATE="21-Apr-2026"
+SIGNATURE="Progetto O64ml / The O64ml Project"
+COPYRIGHT="Copyright (C) $DATE Piero Furiesi"
+
+TITLE[1]="Sorgenti OCaml - no terze parti (GPL v2)"
+FIND[1]='-name "*.ml" -o -name "*.mli" -o -name "*.ml.template"'
+HEADER[1]=$(cat <<EOF
+(* ——————————————————————————————————————————————————————————————————————
+   $SIGNATURE
+   $COPYRIGHT
+
+   Questo  programma è  software libero;  è possibile  ridistribuirlo e/o
+   modificarlo secondo i  termini della GNU General  Public License (GPL)
+   versione  2,  come specificato  nel  file  LICENZA-it nella  directory
+   principale del progetto.
+
+   This program is  free software; you can redistribute  it and/or modify
+   it under the terms of the  GNU General Public License (GPL) version 2,
+   as specified in the LICENSE-en file in the project root.
+   —————————————————————————————————————————————————————————————————————— *)
+EOF
+)
+
+TITLE[2]="Sorgenti ACME - no terze parti (GPL v2)"
+FIND[2]='-name "*.asm"'
+HEADER[2]=$(cat <<EOF
+;; ——————————————————————————————————————————————————————————————————————
+;; $SIGNATURE
+;; $COPYRIGHT
+;;
+;; Questo  programma è  software libero;  è possibile  ridistribuirlo e/o
+;; modificarlo secondo i  termini della GNU General  Public License (GPL)
+;; versione  2,  come specificato  nel  file  LICENZA-it nella  directory
+;; principale del progetto.
+;;
+;; This program is  free software; you can redistribute  it and/or modify
+;; it under the terms of the  GNU General Public License (GPL) version 2,
+;; as specified in the LICENSE-en file in the project root.
+;; ——————————————————————————————————————————————————————————————————————
+EOF
+)
+
+TITLE[3]="StdLib di OCaml modificata (LGPL v2.1 + Eccezione)"
+FIND[3]='-name "*.ml" -o -name "*.mli"'
+HEADER[3]=$(cat <<EOF
+(* ——————————————————————————————————————————————————————————————————————
+   $SIGNATURE
+                                     SOFTWARE DI TERZI/3RD PARTY SOFTWARE
+   OCaml Standard Library
+     Origine/Source: https://ocaml.org
+     Copyright (C) 1996 Institut National de Recherche en Informatique et
+     en Automatique
+     Modifiche/Modifications: $COPYRIGHT
+
+   Questo file contiene  modifiche apportate da Piero  Furiesi alla OCaml
+   Standard  Library ed  è  distribuito nei  termini  della licenza  LGPL
+   ver. 2.1  con la  cosiddetta "OCaml LGPL  Linking Exception"  (si veda
+   src/stdlib/LGPL-LICENSE).  Il codice originale  rimosso o sostituito è
+   racchiuso tra  i marcatori (*-- e  --*).  Il codice prodotto  da Piero
+   Furiesi è chiaramente identificato dai marcatori (*++ e ++*).
+
+   This file is a modified version by Piero Furiesi of the OCaml Standard
+   Library and  is distributed under the  terms of the LGPL  License ver.
+   2.1   with  the   so-called  "OCaml   LGPL  Linking   Exception"  (see
+   src/stdlib/LGPL-LICENSE).   Original  code   removed  or  replaced  is
+   enclosed between  (*-- and --*)  markers.  New code authored  by Piero
+   Furiesi is explicitly identified by (*++ and ++*) markers.
+   —————————————————————————————————————————————————————————————————————— *)
+EOF
+)
+
+TITLE[4]="OCamlclean (CeCILL -> GPL v2)"
+FIND[4]='-name "*.ml" -o -name "*.mli"'
+HEADER[4]=$(cat <<EOF
+(* ——————————————————————————————————————————————————————————————————————
+   $SIGNATURE
+                                     SOFTWARE DI TERZI/3RD PARTY SOFTWARE
+   OCamlclean       
+     Origine/Source: https://github.com/bvaugon/ocamlclean
+     Copyright (C) 2015 Benoît Vaugon
+     Integrazione in O64ml/Integration into O64ml:
+     $COPYRIGHT
+
+   Questo file  è distribuito  nei termini della  licenza CeCILL  (il cui
+   testo è riportato in src/o64ml/ocamlclean/CeCILL-LICENSE-fr, in lingua
+   francese,  e  in   src/o64ml/ocamlclean/CeCILL-LICENSE-en,  in  lingua
+   inglese).  L'art.  5.3.4 di  detta licenza ne  consente l'integrazione
+   nel Progetto O64ml e la sua ridistribuzione sotto licenza GNU GPL.
+
+   This file  is distributed under the  terms of the CeCILL  License (the
+   text of which is in src/o64ml/ocamlclean/CeCILL-LICENSE-fr, in French,
+   or  in src/o64ml/ocamlclean/CeCILL-LICENSE-en,  in English).   Article
+   5.3.4 of  that license allows  its integration into The  O64ml Project
+   and its redistribution under the GNU General Public License.
+   —————————————————————————————————————————————————————————————————————— *)
+EOF
+)
+
+# Se non è stata passata una cartella come argomento, stampa i modelli
+# disponibili; altrimenti controlla che la cartella esista
+if [[ -z $1 ]]; then
+    for I in ${!TITLE[@]}; do
+	echo ""
+	echo "vvv $I) ${TITLE[$I]}"
+	echo "${HEADER[$I]}"
+	echo "^^^ $I) FINE MODELLO"
+	echo ""
+    done | less
+    exit 0
+elif [[ ! -d $1 ]]; then
+    echo "Errore: La cartella '$1' non esiste."
+    exit 1
+fi
+
+DIR="$1"
+
+# Selezione dell'header
+echo "Quale header vuoi applicare ai file in '$DIR'?"
+for I in ${!TITLE[@]}; do
+    echo " $I) ${TITLE[$I]}"
+done
+read -p "Scegli un'opzione (1 ... ${#TITLE[@]}): " CHOICE
+
+# Assegna lo header scelto
+if [[ $CHOICE =~ ^[0-9]+ && -n ${TITLE[$CHOICE]} ]]; then
+    echo "Applicazione di ${TITLE[$CHOICE]}..."
+else
+    echo "Scelta non valida. Uscita."
+    exit 1
+fi
+
+# Trova tutti i file da elaborare nella directory e nelle sue subdirectory
+# Usa eval per evitare l'espansione di * in FIND
+eval "find \"\$DIR\" -type f \( ${FIND[$CHOICE]} \)" | while read -r FILE; do
+    # Salta il file se nelle prime tre righe contiene già la firma
+    # "Progetto O64ml / The O64ml Project"
+    if grep -q -m 3 "$SIGNATURE" "$FILE"; then
+        echo "Saltato (header già presente): $FILE"
+    else
+        TEMP_FILE=$(mktemp)
+        echo "${HEADER[$CHOICE]}" > "$TEMP_FILE"
+        echo "" >> "$TEMP_FILE"		# Riga vuota di separazione
+        cat "$FILE" >> "$TEMP_FILE"
+        mv "$TEMP_FILE" "$FILE"
+        echo "Header inserito in: $FILE"
+    fi
+done
+
+echo "Operazione completata!"

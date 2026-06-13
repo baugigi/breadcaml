@@ -1,0 +1,128 @@
+                   Installing O64ml on a Linux machine
+                   ===================================
+
+PREREQUISITES
+=============
+
+* The Bash shell, and some standard commands the configuration script will
+  check for their availability.
+
+
+* The OCaml LTS (Long Term Support) release 4.14.x (NOT OCaml >= 5.x)
+      ^^^^^^^^^                             ^^^^^^
+
+  If not installed:
+
+  see <https://ocaml.org/install> for info about OCaml installation; also
+  see <https://ocaml.org/docs/install-a-specific-ocaml-compiler-version>.
+
+  This guide assumes that your OCaml installation is managed by Opam, the
+  OCaml Package Manager.
+
+
+* The OByteLib package
+      ^^^^^^^^
+
+  If not installed:
+
+  - Select the right Opam switch if necessary:
+
+	opam switch the_switch_where_you_installed_ocaml_4.14.x
+
+  - Install OByteLib:
+
+	opam update
+	opam install obytelib
+
+
+* The ACME crossassembler, release 0.97 ("Zem"), 16 Nov 2025 or newer
+      ^^^^^^^^^^^^^^^^^^^                        ^^^^^^^^^^^
+
+  You can check your installed version, if any, with
+
+	acme --version
+
+  If it's not installed on your system or it's an obsolete version, the O64ml
+  configuration script will propose to compile and install a suitable release
+  for you; or, if you prefer, you can manually download and install it from
+  <https://sourceforge.net/projects/acme-crossass>.
+
+
+O64ml INSTALLATION
+==================
+
+0. Download the O64ml tarball and extract its contents, then enter the source
+   tree top directory. If you are reading this file, there are chances you
+   already did so.
+
+
+A) QUICK AND (not too) DIRTY:
+   --------------------------
+
+   at the shell prompt, type
+
+	./configure -y && make install clean
+
+   O64ml should install with default options.
+
+
+B) THE NORMAL WAY:
+   ---------------
+
+1. Configure the system:
+
+	./configure [OPTIONS]
+
+   Options:
+   -b, --bindir <dir>  Directory where the binaries will be installed
+   -l, --libdir <dir>  Directory where the O64ml library will be installed
+   -m, --mandir <dir>  Directory where the manual pages will be installed
+   -p, --prefix <dir>  Same as "-b <dir>/bin -l <dir>/lib/o64ml -m <dir>/man"
+   -y, --yes           Assume 'yes' as answer to "install ACME?" prompt
+   -h, --help          Show help message and default installation directories
+
+   | NOTE: entering no options will cause the O64ml system to be installed in
+   | the current Opam switch (recommended).
+
+2. Build the O64ml system. From the top directory, enter:
+
+	make
+
+3. You can now install the O64ml system. This will copy the o64ml command,
+   the stdlib files and the man pages in the directories selected in step 1.
+   From the top directory, enter:
+
+	make install
+
+   If the ACME crossassembler is not installed on your system or is obsolete,
+   the configuration script will propose to install/upgrade it for you: just
+   answer "Y" (no question if you passed the "-y" option to ./configure).
+   
+   | NOTE: if you ran ./configure with customized directory options, make sure
+   | you have the right permissions on target directories. Also ensure than the
+   | O64ml final users have the right permissions on all the installed files.
+   
+   | NOTE: if you have an obsolete ACME version in a directory other than the
+   | -b <dir> (or the default binary installation one), ./configure will put
+   | the newer ACME release in the latter, leaving the older version in its
+   | place; O64ml will use the appropriate one.
+   
+4. Installation is complete, time to clean up. Enter:
+
+	make clean
+
+
+UNINSTALLATION
+==============
+
+   From the top directory, enter:
+
+	make uninstall
+
+   | NOTE: if you ran ./configure with customized directory options, make sure
+   | you have the right permissions on target directories.
+ 
+   | NOTE: if the configuration file ./etc/Makefile.conf is missing, the
+   | uninstallation will fail. In that case, re-run ./configure with the same
+   | options you entered at installation time, then try to uninstall again.
+ 
