@@ -1,16 +1,16 @@
-= *The O64ml Project / _Progetto O64ml_*
+= *The O64ml Project* / _*Progetto O64ml*_
 Piero Furiesi <p.furiesi@tiscali.it>
 
 [cols="1,1"]
 |===
-| *OCaml for the Commodore 64* | *_OCaml per il Commodore 64_*
+| *OCaml for the Commodore 64* | _*OCaml per il Commodore 64*_
 
 | An OCaml compiler which generates object code targeted for the
   Commodore 64 and its emulators.
 | _Un compilatore del linguaggio OCaml che genera codice eseguibile
   per il Commodore 64._
 
-| *Overview* | *_In breve_*
+| *Overview* | _*In breve*_
 
 | The O64ml Project allows you to develop OCaml programs and compile
   them on Linux systems to produce code executable on a Commodore 64.
@@ -24,12 +24,12 @@ Piero Furiesi <p.furiesi@tiscali.it>
   modificata e (prossimamente) delle librerie dedicate alla grafica e
   al suono._
 
-| *Installation* | *_Installazione_*
+| *Installation* | _*Installazione*_
 
 | See xref:INSTALL[].
 | _Vedere xref:INSTALL[] (in inglese)._ 
 
-| *Documentation* | *_Documentazione_*
+| *Documentation* | _*Documentazione*_
 
 | The installation procedure generates manual pages for the `o64ml`
   compiler (readable with the `man o64ml` command) and for the StdLib
@@ -40,4 +40,6 @@ Piero Furiesi <p.furiesi@tiscali.it>
   compilatore `o64ml` (leggibile con il comando `man o64ml`) e per i
   moduli della StdLib (`man 3o64 nome-modulo`). Si consiglia di leggere
   xref:CAVEATS-LIMITATIONS-NOTES[] e xref:BUGS[]._
+
+| *License*: see xref:LICENSE-en[] | _*Licenza*: vedere xref:LICENZA-it[]._
 |===
