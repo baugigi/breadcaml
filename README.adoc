@@ -5,6 +5,13 @@ Piero Furiesi <p.furiesi@tiscali.it>
 |===
 | *OCaml for the Commodore 64* | *_OCaml per il Commodore 64_*
 
+<<<<<<< HEAD
+=======
+[cols="1,1"]
+|===
+| *OCaml for the Commodore 64* | *_OCaml per il Commodore 64_*
+
+>>>>>>> a7fbf979ca0bf531e6907bbf0f4f2ae97579362a
 | An OCaml compiler which generates object code targeted for the
   Commodore 64 and its emulators.
 | _Un compilatore del linguaggio OCaml che genera codice eseguibile
@@ -12,6 +19,7 @@ Piero Furiesi <p.furiesi@tiscali.it>
 
 | *Overview* | *_In breve_*
 
+<<<<<<< HEAD
 | The O64ml Project allows you to develop OCaml programs and compile
   them on Linux systems to produce code executable on a Commodore 64.
   The Project includes, in addition to the `o64ml` compiler, a specially
@@ -21,6 +29,16 @@ Piero Furiesi <p.furiesi@tiscali.it>
 | _Il Progetto O64ml consente di sviluppare programmi in OCaml e
   compilarli su sistemi Linux producendo codice eseguibile da un
   Commodore 64. Il Progetto comprende, oltre al compilatore `o64ml`, una
+=======
+| The O64ml Project allows you to develop OCaml programs on Linux
+  systems and compile them to produce code executable on a Commodore
+  64. The Project includes, in addition to the o64ml compiler, a
+  specially modified distribution of the OCaml Standard Library and
+  (coming soon) libraries dedicated to graphics and sound.
+| _Il Progetto O64ml consente di sviluppare su sistemi Linux programmi
+  in OCaml e compilarli producendo codice eseguibile da un Commodore
+  64.  Il Progetto comprende, oltre al compilatore o64ml, una
+>>>>>>> a7fbf979ca0bf531e6907bbf0f4f2ae97579362a
   distribuzione della Standard Library di OCaml appositamente
   modificata e (prossimamente) delle librerie dedicate alla grafica e
   al suono._
@@ -31,6 +49,7 @@ Piero Furiesi <p.furiesi@tiscali.it>
 | _Vedere xref:INSTALL[] (in inglese)._ 
 
 | *Documentation* | *_Documentazione_*
+<<<<<<< HEAD
 
 | The installation procedure generates manual pages for the `o64ml`
   compiler (readable with the `man o64ml command`) and for the StdLib
@@ -45,4 +64,15 @@ Piero Furiesi <p.furiesi@tiscali.it>
   Si consiglia la lettura di xref:CAVEATS-LIMITATIONS-NOTES[] e
   xref:BUGS[]._
 
+=======
+
+| The installation procedure generates manual pages for the o64ml
+  compiler (readable with the _man o64ml command_ ) and for the StdLib
+  modules ( _man 3o64 module-name_ ).
+  Please read also xref:CAVEATS-LIMITATIONS-NOTES[] and xref:BUGS[].
+| _La procedura di installazione genera le pagine di manuale per il
+  compilatore o64ml (leggibile con il comando_ man o64ml _) e per i
+  moduli della StdLib (_ man 3o64 nome-modulo _).  Si
+  consiglia la lettura di xref:CAVEATS-LIMITATIONS-NOTES[] e BUGS[]._
+>>>>>>> a7fbf979ca0bf531e6907bbf0f4f2ae97579362a
 |===
