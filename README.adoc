@@ -16,13 +16,13 @@ Piero Furiesi <p.furiesi@tiscali.it>
 
 | The O64ml Project allows you to develop OCaml programs and compile
   them on Linux systems to produce code executable on a Commodore 64.
-  The Project includes, in addition to the `o64ml` compiler, a specially
-  modified distribution of the OCaml Standard Library and (coming
-  soon) libraries dedicated to graphics and sound.
+  The Project includes, in addition to the `o64ml` compiler, a
+  specially modified distribution of the OCaml Standard Library and
+  (coming soon) libraries dedicated to graphics and sound.
 | _Il Progetto O64ml consente di sviluppare programmi in OCaml e
   compilarli su sistemi Linux producendo codice eseguibile da un
-  Commodore 64. Il Progetto comprende, oltre al compilatore `o64ml`, una
-  distribuzione della Standard Library di OCaml appositamente
+  Commodore 64. Il Progetto comprende, oltre al compilatore `o64ml`,
+  una distribuzione della Standard Library di OCaml appositamente
   modificata e (prossimamente) delle librerie dedicate alla grafica e
   al suono._
 
@@ -37,11 +37,10 @@ Piero Furiesi <p.furiesi@tiscali.it>
   compiler (readable with the `man o64ml` command) and for the StdLib
   modules (`man 3o64 module-name`). Please read also
   link:CAVEATS-LIMITATIONS-NOTES[] and link:BUGS[].
-
 | _La procedura di installazione genera le pagine di manuale per il
   compilatore `o64ml` (leggibile con il comando `man o64ml`) e per i
-  moduli della StdLib (`man 3o64 nome-modulo`). Si consiglia di leggere
-  link:CAVEATS-LIMITATIONS-NOTES[] e link:BUGS[]._
+  moduli della StdLib (`man 3o64 nome-modulo`). Si consiglia di
+  leggere anche link:CAVEATS-LIMITATIONS-NOTES[] e link:BUGS[]._
 
 | *License:* see link:LICENSE-en[] | *_Licenza:_* _vedere link:LICENZA-it[]._
 |===
