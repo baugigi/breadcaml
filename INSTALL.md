@@ -50,8 +50,8 @@
 
 * The **OByteLib** package
 
-    Make sure that the Opam switch with the compiler's LTS release is the active
-    one, then enter:
+    Make sure that the **Opam switch** with the compiler's LTS release is the
+    active one, then enter:
   
     ```bash
     opam update
