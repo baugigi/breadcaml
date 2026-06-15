@@ -28,8 +28,8 @@ Piero Furiesi <p.furiesi@tiscali.it>
 
 | *Installation* | *_Installazione_*
 
-| See link:INSTALL[].
-| _Vedere link:INSTALL[] (in inglese)._ 
+| See link:INSTALL.md[].
+| _Vedere link:INSTALL.md[] (in inglese)._ 
 
 | *Documentation* | *_Documentazione_*
 
