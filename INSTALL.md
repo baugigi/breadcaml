@@ -5,7 +5,7 @@
 * The **OCaml** LTS (Long Term Support) release **4.14.x**
   * ***Case 1: OCaml is not installed***
 
-    See the [OCaml Installation Guide](https://ocaml.org) for information on installing OCaml. Install it using Opam, the OCaml package manager, then follow steps **a.** and **b.** below to create and activate a switch with the LTS compiler.
+    See the [OCaml Installation Guide](https://ocaml.org/docs/installing-ocaml) for information on installing OCaml. Install it using Opam, the OCaml package manager, then follow steps **a.** and **b.** below to create and activate a switch with the LTS compiler.
 
   * ***Case 2: OCaml is installed, but you are missing the compiler's LTS release***
 
@@ -41,7 +41,7 @@
   ```bash
   acme --version
   ```
-  If it's not installed on your system or its version is obsolete, the O64ml configuration script will propose to compile and install a suitable release for you; or, if you prefer, you can download it from the [ACME Crossassembler SourceForge Project](https://sourceforge.net) and install it manually.
+  If it's not installed on your system or its version is obsolete, the O64ml configuration script will propose to compile and install a suitable release for you; or, if you prefer, you can download it from the [ACME Crossassembler SourceForge Project](https://sourceforge.net/projects/acme-crossass/) and install it manually.
 > [!NOTE]
 > _Upgrading should not be an issue, as recent ACME releases have an option to preserve the compatibility of code written for older ones (see the ACME documentation); anyway, the O64ml script will preserve your old release._
 ---
