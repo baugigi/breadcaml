@@ -14,7 +14,7 @@
     Read the [OCaml Installation Guide](https://ocaml.org/docs/installing-ocaml)
     for information on installing OCaml.
   
-    Then, **Install** it using Opam, the OCaml package manager, then **follow steps
+    Then, **Install** it using Opam, the OCaml package manager, and **follow steps
     [a)](#a-create-a-new-switch-named-lts-with-the-right-ocaml-compiler-version)
     and [b)](#b-activate-the-newly-created-lts-switch)
     below** to create and activate a switch with the LTS compiler.
