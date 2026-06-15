@@ -6,7 +6,8 @@
 * The OCaml LTS (Long Term Support) release 4.14.x (**NOT OCaml >= 5.x**)
 
 ### Case 1: OCaml is not installed
-See the [OCaml Installation Guide](https://ocaml.org) for information on installing OCaml. Install it using Opam, the OCaml package manager, then follow steps **a** and **b** below to create and activate a switch with the LTS compiler.
+
+See the [OCaml Installation Guide](https://ocaml.org) for information on installing OCaml. Install it using Opam, the OCaml package manager, then follow steps **a.** and **b.** below to create and activate a switch with the LTS compiler.
 
 ### Case 2: OCaml is installed, but you are missing the compiler's LTS release
 
@@ -23,6 +24,7 @@ opam switch set LTS
 > If you want to avoid typing this last command in every bash session, you can add it to your `~/.bashrc` script.
 
 ### Case 3: OCaml is installed with the compiler's LTS release
+
 Great, just remember to activate the Opam switch with the compiler's LTS release, if it's not the default one:
 ```bash
 opam switch set <your_LTS_switch_name>
@@ -31,6 +33,7 @@ opam switch set <your_LTS_switch_name>
 ---
 
 * **The OByteLib package**
+
   Make sure that the Opam switch with the compiler's LTS release is the active one, then enter:
   ```bash
   opam update
@@ -38,6 +41,7 @@ opam switch set <your_LTS_switch_name>
   ```
 
 * **The ACME crossassembler, release 0.97 ("Zem"), 16 Nov 2025 or newer**
+
   You can check if it is installed and see its version by running:
   ```bash
   acme --version
@@ -51,7 +55,7 @@ opam switch set <your_LTS_switch_name>
 
 ## O64ml INSTALLATION
 
-* Download the O64ml tarball and extract its contents, then enter the source tree top directory. If you are reading this file, there are chances you already did so.
+* Download the O64ml tarball and extract its contents, then enter the source tree top directory.
 * Make sure that the Opam switch with the compiler's LTS release is the active one.
 
 ### A) QUICK AND (not so) DIRTY
@@ -78,7 +82,7 @@ O64ml should install with default options.
 | `-h`, `--help` | *None* | Show help and default installation paths |
 
 > [!NOTE]
-> Entering no options will cause the O64ml system to be installed in the current Opam switch (recommended).
+> Entering no options will cause the O64ml system to be installed in the current Opam switch (*recommended*).
 
 #### 2. Build the O64ml system
 From the top directory, enter:
@@ -100,6 +104,7 @@ If the ACME crossassembler is not installed on your system or is obsolete, the c
 > If you have an obsolete ACME version in a directory other than the `-b <dir>` (or the default binary installation directory), `./configure` will put the newer ACME release in the latter, leaving the older version in its place; O64ml will use the appropriate one.
 
 #### 4. Clean up
+
 Installation is complete, time to clean up. Enter:
 ```bash
 make clean
