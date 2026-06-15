@@ -117,13 +117,18 @@ O64ml should install with default options.
 | `-h`, `--help` | _(none)_ | Show help message and default installation paths |
 
 > [!IMPORTANT]
->> _Entering no options will cause the O64ml system to be installed
->> in the current Opam switch **(recommended)**, i.e. `~/.opam/<switch>/bin`,
->> `~/.opam/<switch>/lib/o64ml`, `~/.opam/<switch>/man`._
+>> _Omitting options installs O64ml into the current Opam switch **(recommended)**,
+>> specifically under `~/.opam/<switch>/{bin, lib/o64ml, man}`._
 >
->> _If you need to customize the target directories, make sure you have
->> appropriate permissions on them. Also ensure that the O64ml final users
->> have appropriate permissions on all the installed files._
+>> _If you need to customize the target directories, ensure you have the necessary
+>> write permissions. Additionally, make sure that end users have the required
+>> permissions to access and execute all installed files._
+>
+>> _If an obsolete ACME version is detected, the configuration script prompts for an
+>> upgrade. Upon confirmation (or if the `-y` option was passed), `./configure` will
+>> keep the old release intact if it resides outside the O64ml binary directory, and
+>> O64ml will use the new one._
+
 
 #### 2. Build the O64ml system
 
@@ -141,16 +146,6 @@ into the directories selected in step 1. From the top directory, enter:
 ```bash
 make install
 ```
-
-If the ACME crossassembler is not installed on your system or is obsolete, the
-configuration script will propose to install or upgrade it for you: just answer
-**"Y"** (no question will be asked if you passed the `-y` option to `./configure`).
-
-> [!IMPORTANT]
->> _If you have an obsolete ACME version in a directory other than the
->> O64ml binary installation directory, `./configure` will put the newer ACME
->> release in the latter, leaving the older version in its place; O64ml will use
->> the appropriate one._
 
 #### 4. Clean up
 
