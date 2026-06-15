@@ -12,14 +12,16 @@
    ver. 2.1  con la  cosiddetta "OCaml LGPL  Linking Exception"  (si veda
    src/stdlib/LGPL-LICENSE).  Il codice originale  rimosso o sostituito è
    racchiuso tra  i marcatori (*-- e  --*).  Il codice prodotto  da Piero
-   Furiesi è chiaramente identificato dai marcatori (*++ e ++*).
+   Furiesi è chiaramente  identificato dai marcatori (*++  e ++*), oppure
+   con "{i {b Note -- O64ml:} nuovo testo...}" nei commenti per OCamlDoc.
 
    This file is a modified version by Piero Furiesi of the OCaml Standard
    Library and  is distributed under the  terms of the LGPL  License ver.
    2.1   with  the   so-called  "OCaml   LGPL  Linking   Exception"  (see
    src/stdlib/LGPL-LICENSE).   Original  code   removed  or  replaced  is
    enclosed between  (*-- and --*)  markers.  New code authored  by Piero
-   Furiesi is explicitly identified by (*++ and ++*) markers.
+   Furiesi  is  explicitly  identified  by  (*++ and ++*) markers,  or by
+   "{i {b Note -- O64ml:} new text...}" in OCamlDoc comments.
    —————————————————————————————————————————————————————————————————————— *)
 
 (**************************************************************************)
