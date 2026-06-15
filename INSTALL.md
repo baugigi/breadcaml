@@ -114,7 +114,7 @@ O64ml should install with default options.
 | `-m`, `--mandir` | `<dir>` | Where the manual pages will be installed |
 | `-p`, `--prefix` | `<dir>` | Shortcut for `-b <dir>/bin -l <dir>/lib/o64ml -m <dir>/man` |
 | `-y`, `--yes` | _(none)_ | Assume that the answer to the question "install ACME?" is 'yes' |
-| `-h`, `--help` | _(none)_ | Show help and default installation paths |
+| `-h`, `--help` | _(none)_ | Show help message and default installation paths |
 
 > [!IMPORTANT]
 >> _Entering no options will cause the O64ml system to be installed
