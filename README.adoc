@@ -28,20 +28,20 @@ Piero Furiesi <p.furiesi@tiscali.it>
 
 | *Installation* | *_Installazione_*
 
-| See xref:INSTALL[].
-| _Vedere xref:INSTALL[] (in inglese)._ 
+| See link:INSTALL[].
+| _Vedere link:INSTALL[] (in inglese)._ 
 
 | *Documentation* | *_Documentazione_*
 
 | The installation procedure generates manual pages for the `o64ml`
   compiler (readable with the `man o64ml` command) and for the StdLib
   modules (`man 3o64 module-name`). Please read also
-  xref:CAVEATS-LIMITATIONS-NOTES[] and xref:BUGS[].
+  link:CAVEATS-LIMITATIONS-NOTES[] and link:BUGS[].
 
 | _La procedura di installazione genera le pagine di manuale per il
   compilatore `o64ml` (leggibile con il comando `man o64ml`) e per i
   moduli della StdLib (`man 3o64 nome-modulo`). Si consiglia di leggere
-  xref:CAVEATS-LIMITATIONS-NOTES[] e xref:BUGS[]._
+  link:CAVEATS-LIMITATIONS-NOTES[] e link:BUGS[]._
 
-| *License:* see xref:LICENSE-en[] | *_Licenza:_* _vedere xref:LICENZA-it[]._
+| *License:* see link:LICENSE-en[] | *_Licenza:_* _vedere link:LICENZA-it[]._
 |===
