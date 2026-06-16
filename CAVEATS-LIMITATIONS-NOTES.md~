@@ -1,4 +1,4 @@
-CAVEATS - LIMITATIONS - NOTES:
+# CAVEATS - LIMITATIONS - NOTES:
 
 * STANDARD LIBRARY:
   the O64ml one is almost  compatible with OCaml Stdlib, but some
@@ -10,10 +10,10 @@ CAVEATS - LIMITATIONS - NOTES:
   terms of required memory.
 
 * INTEGERS:
-  limited to the [-16384, 16383] interval.
+  limited to the `[-16384, 16383]` interval.
 
 * FLOATS:
-  O64ml  uses  the  C64  "MFLP"  representation,  with  a  24-bit
+  O64ml  uses  the _C64  "MFLP"  representation_,  with a  24-bit
   mantissa  and  an  8-bit  exponent, and  relies  on  BASIC  ROM
   routines for most operations. See  the Stdlib and Float modules
   documentation for more info.
