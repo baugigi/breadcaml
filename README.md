@@ -12,5 +12,5 @@
 | **Installation** | ***Installazione*** |
 | See [INSTALL.md](INSTALL.md). | *Vedere [INSTALL.md](INSTALL.md) (in inglese).* |
 | **Documentation** | ***Documentazione*** |
-| The installation procedure generates manual pages for the `o64ml` compiler (readable with the `man o64ml` command) and for the StdLib modules (`man 3o64 module-name`). Please read also [CAVEATS-LIMITATIONS-NOTES](CAVEATS-LIMITATIONS-NOTES) and [BUGS](BUGS). | *La procedura di installazione genera le pagine di manuale per il compilatore `o64ml` (leggibile con il comando `man o64ml`) e per i moduli della StdLib (`man 3o64 nome-modulo`). Si consiglia di leggere anche [CAVEATS-LIMITATIONS-NOTES](CAVEATS-LIMITATIONS-NOTES) e [BUGS](BUGS).* |
+| The installation procedure generates manual pages for the `o64ml` compiler (readable with the `man o64ml` command) and for the StdLib modules (`man 3o64 module-name`). Please read also [CAVEATS-LIMITATIONS-NOTES.md](CAVEATS-LIMITATIONS-NOTES.md) and [BUGS](BUGS). | *La procedura di installazione genera le pagine di manuale per il compilatore `o64ml` (leggibile con il comando `man o64ml`) e per i moduli della StdLib (`man 3o64 nome-modulo`). Si consiglia di leggere anche [CAVEATS-LIMITATIONS-NOTES.md](CAVEATS-LIMITATIONS-NOTES.md) e [BUGS](BUGS).* |
 | **License:** see [LICENSE-en](LICENSE-en) | ***Licenza:*** *vedere [LICENZA-it](LICENZA-it).* |
