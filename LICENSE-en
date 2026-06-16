@@ -1,109 +1,117 @@
-----------------------------------------------------------------------
-			  The O64ml Project
-			    Progetto O64ml
-----------------------------------------------------------------------
+-----------------------------------------------------------------
+                        The O64ml Project
+                          Progetto O64ml
+-----------------------------------------------------------------
 
->> La versione in italiano di questo testo è nel file "LICENZA-it". <<
+>>	  La versione in italiano di questo testo è nel        <<
+>>		       file "LICENZA-it".                      <<
 
-Hereinafter, "The O64ml Project" refers  to all files contained within
-this distribution.
+Hereinafter, "The  O64ml Project"  refers to all  files contained
+within this distribution.
 
-		LICENSES, COPYRIGHT, AND DISTRIBUTION
+	      LICENSES, COPYRIGHT, AND DISTRIBUTION
 
-  "The O64ml Project", a.k.a.  "Progetto O64ml" - Copyright 2006 Piero
-Furiesi -  is distributed under  the terms  of the GNU  GENERAL PUBLIC
-LICENSE (GPL) version 2, the full text of which is included at the end
-of this file (APP. A).
+  "The O64ml Project", a.k.a.   "Progetto O64ml" - Copyright 2006
+Piero Furiesi - is distributed under the terms of the GNU GENERAL
+PUBLIC  LICENSE  (GPL) version  2,  the  full  text of  which  is
+included at the end of this file (APP. A).
 
-  Individual components  and included libraries are  excepted, as they
-retain their respective original license regimes as specified below:
+  Individual components  and included libraries are  excepted, as
+they  retain   their  respective  original  license   regimes  as
+specified below:
 
-  1. All  files in the "src/stdlib"  directory are a modified  work by
-     Piero Furiesi of the standard library of the "OCaml Core System",
-     Copyright  1996  INRIA  -   Institut  National  de  Recherche  en
-     Informatique et en Automatique (accessible at https://ocaml.org).
-     These files  are distributed  under the terms  of the  GNU LESSER
-     GENERAL PUBLIC LICENSE (LGPL) version 2.1, the full text of which
-     is included  at the  end of  this file (APP.  B), subject  to the
-     exceptions  specified  in   the  file  "src/stdlib/LGPL-LICENSE",
-     commonly known as the "OCaml LGPL Linking Exception".
+  1. All files in the  "src/stdlib" directory are a modified work
+     by Piero Furiesi of the  standard library of the "OCaml Core
+     System",  Copyright  1996  INRIA   -  Institut  National  de
+     Recherche en  Informatique et en Automatique  (accessible at
+     https://ocaml.org).  These  files are distributed  under the
+     terms  of  the  GNU  LESSER GENERAL  PUBLIC  LICENSE  (LGPL)
+     version 2.1, the  full text of which is included  at the end
+     of this file (APP.  B),  subject to the exceptions specified
+     in the file "src/stdlib/LGPL-LICENSE", commonly known as the
+     "OCaml LGPL Linking Exception".
    
-  2. All files in the "src/o64ml/ocamlclean" directory are part of the
-     OCamlclean  project  authored  by Benoît  Vaugon  (accessible  at
-     https://github.com/bvaugon/ocamlclean) and  are distributed under
-     the terms  and conditions of  the CONTRAT DE LICENCE  DE LOGICIEL
-     LIBRE  CeCILL  /  CeCILL  FREE SOFTWARE  LICENSE  AGREEMENT.   In
-     accordance  with  Article  5.3.4   of  the  CeCILL  License,  the
-     integration  of  these modules  into  the  main application  (the
-     "o64ml" compiler)  of The  O64ml Project  is compatible  with its
-     redistribution under the GNU GPL license.  The text of the CeCILL
-     License  is available  in  the  "CeCILL-LICENSE-fr" (French)  and
-     "CeCILL-LICENSE-en"  (English)  files within  the  aforementioned
-     directory.
+  2. All  files in the "src/o64ml/ocamlclean"  directory are part
+     of  the   OCamlclean  project  authored  by   Benoît  Vaugon
+     (accessible  at  https://github.com/bvaugon/ocamlclean)  and
+     are  distributed  under  the  terms and  conditions  of  the
+     CONTRAT DE  LICENCE DE LOGICIEL  LIBRE CeCILL /  CeCILL FREE
+     SOFTWARE  LICENSE  AGREEMENT.   In accordance  with  Article
+     5.3.4  of  the  CeCILL  License, the  integration  of  these
+     modules into the main  application (the "o64ml" compiler) of
+     The  O64ml Project  is  compatible  with its  redistribution
+     under the GNU  GPL license.  The text of  the CeCILL License
+     is  available   in  the  "CeCILL-LICENSE-fr"   (French)  and
+     "CeCILL-LICENSE-en"     (English)    files     within    the
+     aforementioned directory.
    
-  3. The  file "acme-crossass-code.tar.bz2"  in the root  directory of
-     the O64ml project is a mere  aggregation of a distribution of the
-     ACME  cross-assembler  authored  by  Marco  Baye  (accessible  at
-     https://sourceforge.net/projects/acme-crossass)  and is  released
-     under the terms  of the GNU GENERAL PUBLIC LICENSE  (GPL); a copy
-     of  the  license  is  also available  within  the  aforementioned
-     bzip2-compressed tar archive, in the file "docs/COPYING".
+  3. The file "acme-crossass-code.tar.bz2"  in the root directory
+     of the O64ml project is a mere aggregation of a distribution
+     of  the ACME  cross-assembler  authored by  Marco Baye  (see
+     https://sourceforge.net/projects/acme-crossass)    and    is
+     released under the  terms of the GNU  GENERAL PUBLIC LICENSE
+     (GPL); a  copy of the  license is also available  within the
+     aforementioned  bzip2-compressed tar  archive,  in the  file
+     "docs/COPYING".
 
 
-		 DISCLAIMER OF WARRANTY AND LIABILITY
+	      DISCLAIMER OF WARRANTY AND LIABILITY
 
-  Please  note  that   The  O64ml  Project  is   intended  solely  for
-entertainment, hobby,  and self-learning about the  OCaml bytecode and
-its associated abstract virtual machine, as well as the opportunity to
-experiment with the portability of  the OCaml language on Commodore 64
-computers, and, more generally, the  enjoyment of programming in OCaml
-and in assembly language for MOS 6052/6510 processors.  Any use of The
-O64ml Project outside these purposes is considered improper.
+  Please  note that  The  O64ml Project  is  intended solely  for
+entertainment, hobby, and self-learning  about the OCaml bytecode
+and  its associated  abstract  virtual machine,  as  well as  the
+opportunity  to  experiment with  the  portability  of the  OCaml
+language  on Commodore  64  computers, and,  more generally,  the
+enjoyment of  programming in OCaml  and in assembly  language for
+MOS 6052/6510 processors.   Any use of The  O64ml Project outside
+these purposes is considered improper.
 
   Considering the above:
 
-  For the  purposes of the  Author's liability in cases  of negligence
-and/or  gross  negligence  as  provided  for  by  Italian  law,  where
-applicable,  it should  be  noted that  The OCaml  Project  is a  work
-produced in a purely amateur (non-professional) context.
+  For  the  purposes  of  the  Author's  liability  in  cases  of
+negligence  and/or gross  negligence as  provided for  by Italian
+law, where applicable, it should  be noted that The OCaml Project
+is  a  work  produced  in  a  purely  amateur  (non-professional)
+context.
 
-  Pursuant to the applied GPL and  LGPL licenses, The O64ml Project is
-provided "as  is" and  "as available", without  warranty of  any kind,
-either express or implied, including,  but not limited to, the implied
-warranties  of merchantability  or fitness  for a  particular purpose.
-The entire risk as to the quality and performance of The O64ml Project
-is with the Licensee.
+  Pursuant  to  the applied  GPL  and  LGPL licenses,  The  O64ml
+Project is provided "as is"  and "as available", without warranty
+of  any  kind, either  express  or  implied, including,  but  not
+limited to, the implied  warranties of merchantability or fitness
+for a particular purpose.  The entire  risk as to the quality and
+performance of The O64ml Project is with the Licensee.
 
-  To the maximum extent permitted by applicable law, the Licensor, the
-original author, or any entity  that modifies and/or redistributes The
-O64ml Project  in accordance  with the applied  licenses, shall  in no
-event be liable to the Licensee or  any third party for any damages of
-any nature.
+  To  the  maximum  extent   permitted  by  applicable  law,  the
+Licensor, the original author, or any entity that modifies and/or
+redistributes The  O64ml Project  in accordance with  the applied
+licenses, shall  in no  event be  liable to  the Licensee  or any
+third party for any damages of any nature.
 
-  By  way  of  example  and  without  limitation,  the  following  are
+  By way  of example  and without  limitation, the  following are
 expressly excluded from compensation:
-  - Loss  and  corruption  of  data:  destruction,  alteration,  loss,
-    failure to recover, or disclosure of files, databases, or business
-    information;
-  - Hardware  and  software  damage: malfunctions,  system  conflicts,
-    crashes,  disruptions,   corruption,  or  failure   of  computers,
-    servers,  network  architectures,  peripheral  devices,  or  other
-    third-party software programs interconnected  with or installed on
-    the system;
-  - Economic and  commercial losses: loss of  earnings (lost profits),
-    loss  of   revenues,  business  interruption,  loss   of  business
-    opportunities, or loss of goodwill;
-  - Use, possession, and  copying: any damage arising out  of the use,
-    inability   to   use,   possession,  copying,   modification,   or
-    redistribution of The O64ml Project, even if the Licensor has been
-    advised of the possibility of such damages.
+  - Loss and  corruption of data: destruction,  alteration, loss,
+    failure  to recover,  or disclosure  of files,  databases, or
+    business information;
+  - Hardware and software damage: malfunctions, system conflicts,
+    crashes,  disruptions, corruption,  or failure  of computers,
+    servers, network architectures,  peripheral devices, or other
+    third-party   software   programs  interconnected   with   or
+    installed on the system;
+  - Economic  and  commercial  losses:  loss  of  earnings  (lost
+    profits), loss  of revenues,  business interruption,  loss of
+    business opportunities, or loss of goodwill;
+  - Use, possession, and  copying: any damage arising  out of the
+    use, inability to use,  possession, copying, modification, or
+    redistribution of The O64ml Project, even if the Licensor has
+    been advised of the possibility of such damages.
 
-  In   the   event   of    statutory   discrepancies,   conflicts   of
-interpretation, or  limitations imposed by local  laws, the provisions
-regarding the disclaimer  of warranty and limitation  of liability set
-forth in  Sections 11 and 12  of the GNU General  Public License (GPL)
-and in  Sections 15 and  16 of the  GNU Lesser General  Public License
-(LGPL) - shall strictly prevail and govern.
+  In  the   event  of   statutory  discrepancies,   conflicts  of
+interpretation,  or  limitations  imposed   by  local  laws,  the
+provisions regarding the disclaimer of warranty and limitation of
+liability set  forth in  Sections 11  and 12  of the  GNU General
+Public License (GPL) and in Sections  15 and 16 of the GNU Lesser
+General  Public  License  (LGPL)  - shall  strictly  prevail  and
+govern.
 
 
 Have fun with O64ml.
