@@ -1,16 +1,37 @@
-caml_INTERP=1
-- l'interprete non funziona. Boh.
+## l'interprete non funziona.
+Boh.
 
-test/largeArray:
-- se le funzioni non sono eta-espanse, crash: probabile bug nel meccanismo
-  di gestione degli extra args (creazione chiusura/applicazione)
-- se le funzioni sono eta-espanse, l'applicazione avviene correttamente
-  ma si ha un crash probabilmente dovuto a bug nel GC
+## applicazione parziale:
 
-vari test:
-- al termine del programma spesso si ha ?SYNTAX ERROR per cui il ritorno
-  al BASIC non avviene correttamente (scorretto ripristino dei valori in ZP,
-  scorretta gestione dello stack h/w, o altro da indagare)
+* test/largeArray:
+
+  - se le funzioni non sono eta-espanse, crash: probabile bug nel
+    meccanismo di gestione degli extra args (creazione della
+    chiusura/applicazione)
+
+  - se le funzioni sono eta-espanse, l'applicazione avviene
+    correttamente ma si ha un crash (bug nel GC?)
+
+* test/parz.ml:
+
+  - la g1 è eta-espansa e produce 44 (corretto), le altre due
+    producono risultati sbagliati 5474 e 5498.
+
+  - ancora più subdolo:
+    - se inserisco, prima o dopo le tre print, un 
+        print (g1 succ 10);
+      allora le 4 print danno tutte 44 (!)
+      
+    - se inserisco, prima o dopo le tre print, un 
+        print_endline "ciao";
+      il sistema va in crash.
+
+## ritorno al BASIC:
+
+- al termine di un programma spesso si ha ?SYNTAX ERROR per cui il
+  ritorno al BASIC non avviene correttamente (scorretto ripristino dei
+  valori in ZP, scorretta gestione dello stack h/w, o altro da
+  indagare)
 
 
   

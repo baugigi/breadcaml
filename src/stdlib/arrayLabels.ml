@@ -24,3 +24,4 @@
    "{i {b Note -- O64ml:} new text...}" in OCamlDoc comments.
    —————————————————————————————————————————————————————————————————————— *)
 
+include Array

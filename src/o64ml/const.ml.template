@@ -12,6 +12,7 @@
    as specified in the LICENSE-en file in the project root.
    —————————————————————————————————————————————————————————————————————— *)
 
+(* If this file is named 'const.ml' then it has been created by the O64ml
    build system; please edit 'const.ml.template' instead. *)
 
 let header_includes	= ["c64defs.asm"]

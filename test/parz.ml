@@ -12,7 +12,7 @@
    as specified in the LICENSE-en file in the project root.
    —————————————————————————————————————————————————————————————————————— *)
 
-let print n = let s = string_of_int n ^ "\013" in print_string s
+let print n = print_endline (string_of_int n)
 
 let x2 f x = 2 * (f x)
                  
@@ -24,9 +24,10 @@ let myfun = succ
 
 ;;
 
-print (g1 myfun 1);
-print (g2 myfun 2);
-print (g3 myfun 3);
+print (g1 myfun 10);
+print (g2 myfun 10);
+print (g3 myfun 10);
+
 
 
 
