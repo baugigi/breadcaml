@@ -122,18 +122,24 @@ echo -e "${bld}... Done.${nrm}\n"
 [ "$MISSING" ] && \
     failwith "command(s) $MISSING not present, or not in search PATH"
 
+# Check for ocamlc version
+OCAMLC="$(which ocamlc.opt 2> /dev/null || which ocamlc)"
+IFS='.' read -r major minor patch <<< "$($OCAMLC -vnum)"
+if (( major == 4 && minor >= 14 )); then
+  failwith "Uncompatible OCaml version: $major.$minor.$patch! Please select the correct opam switch and run $0 again."
+fi
+
+# Locate OCaml tools
+OCAMLOPT="$(which ocamlopt.opt 2> /dev/null || which ocamlopt)"
+OCAMLDOC="$(which ocamldoc.opt 2> /dev/null || which ocamldoc)"
+OCAMLSTDLIB=$($OCAMLC -where)
+
 BINDIR="$(realpath -m "$BINDIR")"
 LIBDIR="$(realpath -m "$LIBDIR")"
 MANDIR="$(realpath -m "$MANDIR")"
 
 # Get the O64ml version
 VERSION="$(< VERSION)"
-
-# Locate OCaml compilers and tools
-OCAMLC="$(which ocamlc.opt 2> /dev/null || which ocamlc)"
-OCAMLOPT="$(which ocamlopt.opt 2> /dev/null || which ocamlopt)"
-OCAMLDOC="$(which ocamldoc.opt 2> /dev/null || which ocamldoc)"
-OCAMLSTDLIB=$($OCAMLC -where)
 
 # Check if the installed ACME release is 0.97 ("Zem"), 16 Nov 2025 or newer
 echo "${bld}Checking for ACME crossassembler...${nrm}"
@@ -146,12 +152,14 @@ if [ "$ACME" ] && {
     echo " $OK O64ml will use $ACME"
 else
     # Install ACME in $BINDIR
+[[ -z "$YN" ]] && (
     echo " $WRN ACME is not present or is out of date."
     echo " This script can install a version suitable for O64ml in"
     echo " ${bld}$BINDIR${nrm}"
-    echo -n " Do you want to proceed? (Y/n) "
+    echo -n " Do you want to proceed? (Y/N) "
     [ "$YN" = "Y" ] && echo "Yes (-y specified)" || read YN
-    [[ -z "$YN" || "$YN" == [yY] || "$YN" == [yY][eE][sS] ]] \
+)
+[[ "$YN" == [yY] || "$YN" == [yY][eE][sS] ]] \
 	|| failwith "aborted by user"
     echo " Installing..."
     ACME_TMP=$(mktemp -d)
