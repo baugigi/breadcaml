@@ -1,5 +1,5 @@
 (* ——————————————————————————————————————————————————————————————————————
-   Progetto O64ml / The O64ml Project
+   Progetto BreadCaml / The BreadCaml Project
                                      SOFTWARE DI TERZI/3RD PARTY SOFTWARE
    OCaml Standard Library
      Origine/Source: https://ocaml.org
@@ -13,7 +13,7 @@
    src/stdlib/LGPL-LICENSE).  Il codice originale  rimosso o sostituito è
    racchiuso tra  i marcatori (*-- e  --*).  Il codice prodotto  da Piero
    Furiesi è chiaramente  identificato dai marcatori (*++  e ++*), oppure
-   con "{i {b Note -- O64ml:} nuovo testo...}" nei commenti per OCamlDoc.
+   con "{i {b BreadCaml Note} nuovo testo...}" nei commenti per OCamlDoc.
 
    This file is a modified version by Piero Furiesi of the OCaml Standard
    Library and  is distributed under the  terms of the LGPL  License ver.
@@ -21,7 +21,7 @@
    src/stdlib/LGPL-LICENSE).   Original  code   removed  or  replaced  is
    enclosed between  (*-- and --*)  markers.  New code authored  by Piero
    Furiesi  is  explicitly  identified  by  (*++ and ++*) markers,  or by
-   "{i {b Note -- O64ml:} new text...}" in OCamlDoc comments.
+   "{i {b BreadCaml Note} new text...}" in OCamlDoc comments.
    —————————————————————————————————————————————————————————————————————— *)
 
 (**************************************************************************)
@@ -82,7 +82,7 @@ let os_type = match mem_peek 0x80 0xFF with
   | 0x00 -> "c64 kernal r2"
   | 0x03 -> "c64 kernal r3"
   | _ -> "unknown"
-let backend_type = Other "o64ml"
+let backend_type = Other "BreadCaml"
 let big_endian = false
 let word_size = 16
 let int_size = 15

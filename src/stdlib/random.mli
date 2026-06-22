@@ -1,5 +1,5 @@
 (* ——————————————————————————————————————————————————————————————————————
-   Progetto O64ml / The O64ml Project
+   Progetto BreadCaml / The BreadCaml Project
                                      SOFTWARE DI TERZI/3RD PARTY SOFTWARE
    OCaml Standard Library
      Origine/Source: https://ocaml.org
@@ -13,7 +13,7 @@
    src/stdlib/LGPL-LICENSE).  Il codice originale  rimosso o sostituito è
    racchiuso tra  i marcatori (*-- e  --*).  Il codice prodotto  da Piero
    Furiesi è chiaramente  identificato dai marcatori (*++  e ++*), oppure
-   con "{i {b Note -- O64ml:} nuovo testo...}" nei commenti per OCamlDoc.
+   con "{i {b BreadCaml Note} nuovo testo...}" nei commenti per OCamlDoc.
 
    This file is a modified version by Piero Furiesi of the OCaml Standard
    Library and  is distributed under the  terms of the LGPL  License ver.
@@ -21,7 +21,7 @@
    src/stdlib/LGPL-LICENSE).   Original  code   removed  or  replaced  is
    enclosed between  (*-- and --*)  markers.  New code authored  by Piero
    Furiesi  is  explicitly  identified  by  (*++ and ++*) markers,  or by
-   "{i {b Note -- O64ml:} new text...}" in OCamlDoc comments.
+   "{i {b BreadCaml Note} new text...}" in OCamlDoc comments.
    —————————————————————————————————————————————————————————————————————— *)
 
 (**************************************************************************)
@@ -62,7 +62,7 @@ val bits : unit -> int
     @before 3.12.0 used a different algorithm (affects all the following
                    functions)
 
-    {i {b Note -- O64ml:} Return 14 random bits in a nonnegative integer.}
+    {i {b BreadCaml Note} Return 14 random bits in a nonnegative integer.}
  *)
 
 val int : int -> int
@@ -70,7 +70,7 @@ val int : int -> int
      and [bound] (exclusive).  [bound] must be greater than 0 and less
      than 2{^30}.
 
-     {i {b Note -- O64ml:} [bound] may be any positive integer.}
+     {i {b BreadCaml Note} [bound] may be any positive integer.}
  *)
 
 val full_int : int -> int
@@ -82,7 +82,7 @@ val full_int : int -> int
      or non-standard environments, such as JavaScript), [Random.full_int]
      returns a value, where {!Random.int} raises {!Invalid_argument}.
 
-     {i {b Note -- O64ml:} [Random.full_int bound] is equal to
+     {i {b BreadCaml Note} [Random.full_int bound] is equal to
      {!Random.int}[ bound].}
 
     @since 4.13.0 *)

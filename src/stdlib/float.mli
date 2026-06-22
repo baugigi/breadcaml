@@ -1,5 +1,5 @@
 (* ——————————————————————————————————————————————————————————————————————
-   Progetto O64ml / The O64ml Project
+   Progetto BreadCaml / The BreadCaml Project
                                      SOFTWARE DI TERZI/3RD PARTY SOFTWARE
    OCaml Standard Library
      Origine/Source: https://ocaml.org
@@ -13,7 +13,7 @@
    src/stdlib/LGPL-LICENSE).  Il codice originale  rimosso o sostituito è
    racchiuso tra  i marcatori (*-- e  --*).  Il codice prodotto  da Piero
    Furiesi è chiaramente  identificato dai marcatori (*++  e ++*), oppure
-   con "{i {b Note -- O64ml:} nuovo testo...}" nei commenti per OCamlDoc.
+   con "{i {b BreadCaml Note} nuovo testo...}" nei commenti per OCamlDoc.
 
    This file is a modified version by Piero Furiesi of the OCaml Standard
    Library and  is distributed under the  terms of the LGPL  License ver.
@@ -21,7 +21,7 @@
    src/stdlib/LGPL-LICENSE).   Original  code   removed  or  replaced  is
    enclosed between  (*-- and --*)  markers.  New code authored  by Piero
    Furiesi  is  explicitly  identified  by  (*++ and ++*) markers,  or by
-   "{i {b Note -- O64ml:} new text...}" in OCamlDoc comments.
+   "{i {b BreadCaml Note} new text...}" in OCamlDoc comments.
    —————————————————————————————————————————————————————————————————————— *)
 
 (**************************************************************************)
@@ -106,7 +106,7 @@ val fma : float -> float -> float -> float
    Note: since software emulation of the fma is costly, make sure that you are
    using hardware fma support if performance matters.
 
-   {i {b Note -- O64ml:} literally implemented as [let fma x y z = x *. y +. z]}
+   {i {b BreadCaml Note} literally implemented as [let fma x y z = x *. y +. z]}
    
    @since 4.08.0 *)
 
@@ -168,7 +168,7 @@ val is_finite : float -> bool
 (** [is_finite x] is [true] if and only if [x] is finite i.e., not infinite and
    not {!nan}.
 
-   {i {b Note -- O64ml:} [is_finite x] is always [true].}
+   {i {b BreadCaml Note} [is_finite x] is always [true].}
    
    @since 4.08.0 *)
 
@@ -176,14 +176,14 @@ val is_infinite : float -> bool
 (** [is_infinite x] is [true] if and only if [x] is {!infinity} or
     {!neg_infinity}.
     
-    {i {b Note -- O64ml:} [is_finite x] is always [false].}
+    {i {b BreadCaml Note} [is_finite x] is always [false].}
 
     @since 4.08.0 *)
 
 val is_nan : float -> bool
 (** [is_nan x] is [true] if and only if [x] is not a number (see {!nan}).
     
-    {i {b Note -- O64ml:} [is_finite x] is always [false].}
+    {i {b BreadCaml Note} [is_finite x] is always [false].}
 
     @since 4.08.0 *)
 

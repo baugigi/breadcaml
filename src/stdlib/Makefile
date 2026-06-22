@@ -1,5 +1,5 @@
 # ——————————————————————————————————————————————————————————————————————
-# Progetto O64ml / The O64ml Project
+# Progetto BreadCaml / The BreadCaml Project
 # Copyright (C) 2026 Piero Furiesi
 #
 # Questo  programma è  software  libero; è  possibile ridistribuirlo  e/o
@@ -33,7 +33,7 @@ STDLIB_MODULE_BASENAMES = \
   complex arrayLabels listLabels bytesLabels stringLabels moreLabels \
   stdLabels bigarray in_channel out_channel std_exit
 
-# Modules removed in O64ml
+# Modules removed in BreadCaml
 REMOVED = \
   camlinternalFormatBasics camlinternalAtomic pervasives uchar marshal \
   nativeint lexing parsing stream camlinternalFormat printf arg atomic \
@@ -121,7 +121,7 @@ $(CPROTO): ../asm/stdlib_*.asm
 
 %.$(MAN3EXT):
 	$(OCAMLDOC) -hide-warnings -man -man-mini -man-suffix $(MAN3EXT) \
-	-man-section $(MAN3EXT) -t "The O64ml Project" $(call lcase,$*).mli
+	-man-section $(MAN3EXT) -t "The BreadCaml Project" $(call lcase,$*).mli
 
 .PHONY: clean
 clean:

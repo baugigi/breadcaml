@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ——————————————————————————————————————————————————————————————————————
-# Progetto O64ml / The O64ml Project
+# Progetto BreadCaml / The BreadCaml Project
 # Copyright (C) 2026 Piero Furiesi
 #
 # Questo  programma è  software  libero; è  possibile ridistribuirlo  e/o
@@ -29,7 +29,7 @@ fi
 # Definizione degli header
 
 DATE="21-Apr-2026"
-SIGNATURE="Progetto O64ml / The O64ml Project"
+SIGNATURE="Progetto BreadCaml / The BreadCaml Project"
 COPYRIGHT="Copyright (C) $DATE Piero Furiesi"
 
 TITLE[1]="Sorgenti OCaml - no terze parti (GPL v2)"
@@ -88,7 +88,7 @@ HEADER[3]=$(cat <<EOF
    src/stdlib/LGPL-LICENSE).  Il codice originale  rimosso o sostituito è
    racchiuso tra  i marcatori (*-- e  --*).  Il codice prodotto  da Piero
    Furiesi è chiaramente  identificato dai marcatori (*++  e ++*), oppure
-   con "{i {b Note -- O64ml:} nuovo testo...}" nei commenti per OCamlDoc.
+   con "{i {b BreadCaml Note} nuovo testo...}" nei commenti per OCamlDoc.
 
    This file is a modified version by Piero Furiesi of the OCaml Standard
    Library and  is distributed under the  terms of the LGPL  License ver.
@@ -96,7 +96,7 @@ HEADER[3]=$(cat <<EOF
    src/stdlib/LGPL-LICENSE).   Original  code   removed  or  replaced  is
    enclosed between  (*-- and --*)  markers.  New code authored  by Piero
    Furiesi  is  explicitly  identified  by  (*++ and ++*) markers,  or by
-   "{i {b Note -- O64ml:} new text...}" in OCamlDoc comments.
+   "{i {b BreadCaml Note} new text...}" in OCamlDoc comments.
    —————————————————————————————————————————————————————————————————————— *)
 EOF
 )
@@ -107,23 +107,25 @@ HEADER[4]=$(cat <<EOF
 (* ——————————————————————————————————————————————————————————————————————
    $SIGNATURE
                                      SOFTWARE DI TERZI/3RD PARTY SOFTWARE
-   OCamlclean       
+   OCamlclean
      Origine/Source: https://github.com/bvaugon/ocamlclean
      Copyright (C) 2015 Benoît Vaugon
-     Integrazione in O64ml/Integration into O64ml:
+     Integrazione in BreadCaml/Integration into BreadCaml:
      $COPYRIGHT
 
    Questo file  è distribuito  nei termini della  licenza CeCILL  (il cui
-   testo è riportato in src/o64ml/ocamlclean/CeCILL-LICENSE-fr, in lingua
-   francese,  e  in   src/o64ml/ocamlclean/CeCILL-LICENSE-en,  in  lingua
-   inglese).  L'art.  5.3.4 di  detta licenza ne  consente l'integrazione
-   nel Progetto O64ml e la sua ridistribuzione sotto licenza GNU GPL.
+   testo  è riportato  in src/breadcaml/ocamlclean/CeCILL-LICENSE-fr,  in
+   lingua francese,  e in  src/breadcaml/ocamlclean/CeCILL-LICENSE-en, in
+   lingua  inglese).   L'art.   5.3.4   di  detta  licenza   ne  consente
+   l'integrazione nel  Progetto BreadCaml e la  sua ridistribuzione sotto
+   licenza GNU GPL.
 
    This file  is distributed under the  terms of the CeCILL  License (the
-   text of which is in src/o64ml/ocamlclean/CeCILL-LICENSE-fr, in French,
-   or  in src/o64ml/ocamlclean/CeCILL-LICENSE-en,  in English).   Article
-   5.3.4 of  that license allows  its integration into The  O64ml Project
-   and its redistribution under the GNU General Public License.
+   text  of which  is  in src/breadcaml/ocamlclean/CeCILL-LICENSE-fr,  in
+   French language, or  in src/breadcaml/ocamlclean/CeCILL-LICENSE-en, in
+   English). Article  5.3.4 of that  license allows its  integration into
+   The BreadCaml  Project and  its redistribution  under the  GNU General
+   Public License.
    —————————————————————————————————————————————————————————————————————— *)
 EOF
 )
@@ -165,7 +167,6 @@ fi
 # Usa eval per evitare l'espansione di * in FIND
 eval "find \"\$DIR\" -type f \( ${FIND[$CHOICE]} \)" | while read -r FILE; do
     # Salta il file se nelle prime tre righe contiene già la firma
-    # "Progetto O64ml / The O64ml Project"
     if grep -q -m 3 "$SIGNATURE" "$FILE"; then
         echo "Saltato (header già presente): $FILE"
     else

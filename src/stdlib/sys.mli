@@ -1,5 +1,5 @@
 (* ——————————————————————————————————————————————————————————————————————
-   Progetto O64ml / The O64ml Project
+   Progetto BreadCaml / The BreadCaml Project
                                      SOFTWARE DI TERZI/3RD PARTY SOFTWARE
    OCaml Standard Library
      Origine/Source: https://ocaml.org
@@ -13,7 +13,7 @@
    src/stdlib/LGPL-LICENSE).  Il codice originale  rimosso o sostituito è
    racchiuso tra  i marcatori (*-- e  --*).  Il codice prodotto  da Piero
    Furiesi è chiaramente  identificato dai marcatori (*++  e ++*), oppure
-   con "{i {b Note -- O64ml:} nuovo testo...}" nei commenti per OCamlDoc.
+   con "{i {b BreadCaml Note} nuovo testo...}" nei commenti per OCamlDoc.
 
    This file is a modified version by Piero Furiesi of the OCaml Standard
    Library and  is distributed under the  terms of the LGPL  License ver.
@@ -21,7 +21,7 @@
    src/stdlib/LGPL-LICENSE).   Original  code   removed  or  replaced  is
    enclosed between  (*-- and --*)  markers.  New code authored  by Piero
    Furiesi  is  explicitly  identified  by  (*++ and ++*) markers,  or by
-   "{i {b Note -- O64ml:} new text...}" in OCamlDoc comments.
+   "{i {b BreadCaml Note} new text...}" in OCamlDoc comments.
    —————————————————————————————————————————————————————————————————————— *)
 
 (**************************************************************************)
@@ -58,7 +58,7 @@ val executable_name : string
     on the platform and whether the program was compiled to bytecode or a native
     executable.
     
-   {i {b Note -- O64ml:} Return the empty string. } *)
+   {i {b BreadCaml Note} Return the empty string. } *)
 (*--
 external file_exists : string -> bool = "caml_sys_file_exists"
 (** Test if a file with the given name exists. *)
@@ -157,7 +157,7 @@ val os_type : string
 -  ["Win32"] (for MS-Windows, OCaml compiled with MSVC++ or Mingw),
 -  ["Cygwin"] (for MS-Windows, OCaml compiled with Cygwin).
 
-{i {b Note -- O64ml:} Return ["C64KERNAL"]. } *)
+{i {b BreadCaml Note} Return ["C64KERNAL"]. } *)
 
 type backend_type =
   | Native
@@ -173,7 +173,7 @@ type backend_type =
 val backend_type : backend_type
 (** Backend type  currently executing the OCaml program.
 
-    {i {b Note -- O64ml:} Return [Other "o64ml"]. }
+    {i {b BreadCaml Note} Return [Other "BreadCaml"]. }
 
     @since 4.04.0
  *)
@@ -194,14 +194,14 @@ val word_size : int
 (** Size of one word on the machine currently executing the OCaml
     program, in bits: 32 or 64.
 
-    {i {b Note -- O64ml:} Return [16]. }*)
+    {i {b BreadCaml Note} Return [16]. }*)
 
 val int_size : int
 (** Size of [int], in bits. It is 31 (resp. 63) when using OCaml on a
     32-bit (resp. 64-bit) platform. It may differ for other implementations,
     e.g. it can be 32 bits when compiling to JavaScript.
 
-    {i {b Note -- O64ml:} Return [15]. }
+    {i {b BreadCaml Note} Return [15]. }
 
     @since 4.03.0 *)
 
@@ -232,7 +232,7 @@ val runtime_variant : unit -> string
     This is normally the argument given to [-runtime-variant] at compile
     time, but for byte-code it can be changed after compilation.
 
-    {i {b Note -- O64ml:} Return [""]. }
+    {i {b BreadCaml Note} Return [""]. }
 
     @since 4.03.0 *)
 
@@ -243,13 +243,13 @@ val runtime_parameters : unit -> string
 (** Return the value of the runtime parameters, in the same format
     as the contents of the [OCAMLRUNPARAM] environment variable.
 
-    {i {b Note -- O64ml:} Return [""]. }
+    {i {b BreadCaml Note} Return [""]. }
     
     @since 4.03.0 *)
 
 
 (** {1 Signal handling}
-    {i {b Note -- O64ml:} Unimplemented. }
+    {i {b BreadCaml Note} Unimplemented. }
 *)
 
 (*--
@@ -449,7 +449,7 @@ module Immediate64 : sig
       bit architectures. On other architectures, it might or might not
       be immediate.
 
-      {i {b Note -- O64ml:} Unimplemented. }
+      {i {b BreadCaml Note} Unimplemented. }
       
       @since 4.10.0
   *)

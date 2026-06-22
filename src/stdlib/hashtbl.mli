@@ -1,5 +1,5 @@
 (* ——————————————————————————————————————————————————————————————————————
-   Progetto O64ml / The O64ml Project
+   Progetto BreadCaml / The BreadCaml Project
                                      SOFTWARE DI TERZI/3RD PARTY SOFTWARE
    OCaml Standard Library
      Origine/Source: https://ocaml.org
@@ -13,7 +13,7 @@
    src/stdlib/LGPL-LICENSE).  Il codice originale  rimosso o sostituito è
    racchiuso tra  i marcatori (*-- e  --*).  Il codice prodotto  da Piero
    Furiesi è chiaramente  identificato dai marcatori (*++  e ++*), oppure
-   con "{i {b Note -- O64ml:} nuovo testo...}" nei commenti per OCamlDoc.
+   con "{i {b BreadCaml Note} nuovo testo...}" nei commenti per OCamlDoc.
 
    This file is a modified version by Piero Furiesi of the OCaml Standard
    Library and  is distributed under the  terms of the LGPL  License ver.
@@ -21,7 +21,7 @@
    src/stdlib/LGPL-LICENSE).   Original  code   removed  or  replaced  is
    enclosed between  (*-- and --*)  markers.  New code authored  by Piero
    Furiesi  is  explicitly  identified  by  (*++ and ++*) markers,  or by
-   "{i {b Note -- O64ml:} new text...}" in OCamlDoc comments.
+   "{i {b BreadCaml Note} new text...}" in OCamlDoc comments.
    —————————————————————————————————————————————————————————————————————— *)
 
 (**************************************************************************)
@@ -90,7 +90,7 @@ val create : ?random: (* thwart tools/sync_stdlib_docs *) bool ->
    either programmatically by calling {!randomize} or by
    setting the [R] flag in the [OCAMLRUNPARAM] environment variable.
 
-   {i {b Note -- O64ml:} Randomization is not supported; the [~][random]
+   {i {b BreadCaml Note} Randomization is not supported; the [~][random]
    parameter is ignored.}
  
    @before 4.00.0 the [~][random] parameter was not present and all
@@ -223,7 +223,7 @@ val randomize : unit -> unit
     This is intentional.  Non-randomized hash tables can still be
     created using [Hashtbl.create ~random:false].
 
-    {i {b Note -- O64ml:} Randomization is not supported; [randomize ()]
+    {i {b BreadCaml Note} Randomization is not supported; [randomize ()]
     returns [()] and has no other effect.}
 
     @since 4.00.0 *)
@@ -232,7 +232,7 @@ val is_randomized : unit -> bool
 (** Return [true] if the tables are currently created in randomized mode
     by default, [false] otherwise.
 
-    {i {b Note -- O64ml:} Randomization is not supported; [is_randomize ()]
+    {i {b BreadCaml Note} Randomization is not supported; [is_randomize ()]
     returns always [false].}
     
     @since 4.03.0 *)
@@ -252,7 +252,7 @@ val rebuild : ?random (* thwart tools/sync_stdlib_docs *) :bool ->
     to produce a hash table for the current version of the {!Hashtbl}
     module.
 
-    {i {b Note -- O64ml:} Randomization is not supported; the optional
+    {i {b BreadCaml Note} Randomization is not supported; the optional
     [~][random] parameter is ignored.}
     
     @since 4.12.0 *)
@@ -443,7 +443,7 @@ module type SeededHashedType =
           A suitable choice for [hash] is the function
           {!Stdlib.Hashtbl.seeded_hash} below.
 
-          {i {b Note -- O64ml:} Seeding hashing is not supported;
+          {i {b BreadCaml Note} Seeding hashing is not supported;
           [hash seed x] is treated as [hash 0 x].}
        *)
   end
@@ -510,7 +510,7 @@ module MakeSeeded (H : SeededHashedType) : SeededS with type key = H.t
     and returns randomized hash tables if [~random:true] is passed
     or if randomization is globally on (see {!Hashtbl.randomize}).
 
-    {i {b Note -- O64ml:} This functor is provided for compatibility only,
+    {i {b BreadCaml Note} This functor is provided for compatibility only,
     as randomization and seeding hashing are not supported. Passsing
     [~random:true] to [create] has no effect and a call to [H.hash seed x]
     is treated as [H.hash 0 x].}
@@ -530,7 +530,7 @@ val seeded_hash : int -> 'a -> int
 (** A variant of {!hash} that is further parameterized by
    an integer seed.
 
-   {i {b Note -- O64ml:} [seeded_hash seed x] is equivalent to
+   {i {b BreadCaml Note} [seeded_hash seed x] is equivalent to
    [hash x]; the [seed] parameter is ignored.}
 
     @since 4.00.0 *)
@@ -554,7 +554,7 @@ val hash_param : int -> int -> 'a -> int
    choices, {!hash} and {!seeded_hash} take
    [meaningful = 10] and [total = 100].
 
-   {i {b Note -- O64ml:} [hash_param m t x] is equivalent to
+   {i {b BreadCaml Note} [hash_param m t x] is equivalent to
    [hash x]; the [m] and [t] parameters are ignored.}
 
  *)
@@ -564,6 +564,6 @@ val seeded_hash_param : int -> int -> int -> 'a -> int
    an integer seed.  Usage:
    [Hashtbl.seeded_hash_param meaningful total seed x].
 
-   {i {b Note -- O64ml:} [seeded_hash_param m t seed x] is equivalent
+   {i {b BreadCaml Note} [seeded_hash_param m t seed x] is equivalent
    to [hash x]; the [m], [t] and [seed] parameters are ignored.}
  *)

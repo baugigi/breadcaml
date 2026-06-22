@@ -1,5 +1,5 @@
 (* ——————————————————————————————————————————————————————————————————————
-   Progetto O64ml / The O64ml Project
+   Progetto BreadCaml / The BreadCaml Project
                                      SOFTWARE DI TERZI/3RD PARTY SOFTWARE
    OCaml Standard Library
      Origine/Source: https://ocaml.org
@@ -13,7 +13,7 @@
    src/stdlib/LGPL-LICENSE).  Il codice originale  rimosso o sostituito è
    racchiuso tra  i marcatori (*-- e  --*).  Il codice prodotto  da Piero
    Furiesi è chiaramente  identificato dai marcatori (*++  e ++*), oppure
-   con "{i {b Note -- O64ml:} nuovo testo...}" nei commenti per OCamlDoc.
+   con "{i {b BreadCaml Note} nuovo testo...}" nei commenti per OCamlDoc.
 
    This file is a modified version by Piero Furiesi of the OCaml Standard
    Library and  is distributed under the  terms of the LGPL  License ver.
@@ -21,7 +21,7 @@
    src/stdlib/LGPL-LICENSE).   Original  code   removed  or  replaced  is
    enclosed between  (*-- and --*)  markers.  New code authored  by Piero
    Furiesi  is  explicitly  identified  by  (*++ and ++*) markers,  or by
-   "{i {b Note -- O64ml:} new text...}" in OCamlDoc comments.
+   "{i {b BreadCaml Note} new text...}" in OCamlDoc comments.
    —————————————————————————————————————————————————————————————————————— *)
 
 (**************************************************************************)
@@ -204,7 +204,7 @@ external compare : 'a -> 'a -> int = "%compare"
    required by the {!Set.Make} and {!Map.Make} functors, as well as
    the {!List.sort} and {!Array.sort} functions.
 
-   {i {b Note -- O64ml:} [nan] not implemented, see {!section:fp}.}
+   {i {b BreadCaml Note} [nan] not implemented, see {!section:fp}.}
  *)
 
 val min : 'a -> 'a -> 'a
@@ -212,7 +212,7 @@ val min : 'a -> 'a -> 'a
     The result is unspecified if one of the arguments contains
     the float value [nan].
 
-    {i {b Note -- O64ml:} [nan] not implemented, see {!section:fp}.}
+    {i {b BreadCaml Note} [nan] not implemented, see {!section:fp}.}
  *)
 
 val max : 'a -> 'a -> 'a
@@ -478,7 +478,7 @@ external ( asr ) : int -> int -> int = "%asrint"
     [1.0 /. infinity] is [0.0], basic arithmetic operations
     ([+.], [-.], [*.], [/.]) with [nan] as an argument return [nan], ...
 
-   {i {b Note -- O64ml:} floating-point numbers use the Commodore 64 
+   {i {b BreadCaml Note} floating-point numbers use the Commodore 64 
     representation (8 bits for the exponent and 32 bits for the signed 
     mantissa). Special IEEE 754 numbers [infinity], [neg_infinity],
     [nan], are not implemented; floating-point operations {b do} raise
@@ -545,7 +545,7 @@ external expm1 : float -> float = "caml_expm1_float" "caml_expm1"
 (** [expm1 x] computes [exp x -. 1.0], giving numerically-accurate results
     even if [x] is close to [0.0].
 
-    {i {b Note -- O64ml:} no special accuracy if [x] is close to [0.0].}
+    {i {b BreadCaml Note} no special accuracy if [x] is close to [0.0].}
 
     @since 3.12.0
 *)
@@ -555,7 +555,7 @@ external log1p : float -> float = "caml_log1p_float" "caml_log1p"
 (** [log1p x] computes [log(1.0 +. x)] (natural logarithm),
     giving numerically-accurate results even if [x] is close to [0.0].
 
-    {i {b Note -- O64ml:} no special accuracy if [x] is close to [0.0].}
+    {i {b BreadCaml Note} no special accuracy if [x] is close to [0.0].}
 
     @since 3.12.0
 *)
@@ -599,7 +599,7 @@ val atan2 : float -> float -> float
     and [y] are used to determine the quadrant of the result.
     Result is in radians and is between [-pi] and [pi].
     
-    {i {b Note -- O64ml:} [atan2 0.0 0.0] raises [Invalid_argument].}
+    {i {b BreadCaml Note} [atan2 0.0 0.0] raises [Invalid_argument].}
 *)
 
 (*-- external hypot : float -> float -> float = "caml_hypot_float" "caml_hypot"
@@ -613,7 +613,7 @@ val hypot : float -> float -> float
     to origin.  If one of [x] or [y] is infinite, returns [infinity]
     even if the other is [nan].
     
-    {i {b Note -- O64ml:} [nan], [infinity] not implemented, see {!section:fp}.}
+    {i {b BreadCaml Note} [nan], [infinity] not implemented, see {!section:fp}.}
     
     @since 4.00.0
  *)
@@ -699,7 +699,7 @@ external copysign : float -> float -> float
     If [y] is [nan], returns either [x] or [-. x], but it is not
     specified which.
     
-    {i {b Note -- O64ml:} [nan] not implemented, see {!section:fp}.}
+    {i {b BreadCaml Note} [nan] not implemented, see {!section:fp}.}
 
     @since 4.00.0
 *)
@@ -746,7 +746,7 @@ external int_of_float : float -> int = "%intoffloat"
    The result is unspecified if the argument is [nan] or falls outside the
    range of representable integers.
 
-   {i {b Note -- O64ml:} [nan] not implemented, see {!section:fp}.}
+   {i {b BreadCaml Note} [nan] not implemented, see {!section:fp}.}
 *)
 
 (*-- UNIMPLEMENTED
@@ -850,7 +850,7 @@ val bool_of_string : string -> bool
 (*++ *) external string_of_int: int -> string = "caml_nonstd_string_of_int" (* ++*)
 (** Return the string representation of an integer, in decimal.
  
-    {i {b Note -- O64ml:} Uses the C64 BASIC v2 representation of numbers.}
+    {i {b BreadCaml Note} Uses the C64 BASIC v2 representation of numbers.}
 *)
 
 val int_of_string_opt: string -> int option
@@ -879,7 +879,7 @@ val int_of_string_opt: string -> int option
 (** Same as {!Stdlib.int_of_string_opt}, but raise
     [Failure "int_of_string"] instead of returning [None].
 
-    {i {b Note -- O64ml:} [int_of_string s] is
+    {i {b BreadCaml Note} [int_of_string s] is
     [int_of_float(float_of_string s)]}
  *)
 
@@ -890,7 +890,7 @@ val int_of_string_opt: string -> int option
     This conversion can involve a loss of precision. For greater control over
     the manner in which the number is printed, see {!Printf}.
 
-    {i {b Note -- O64ml:} Uses the C64 BASIC v2 representation of numbers.}
+    {i {b BreadCaml Note} Uses the C64 BASIC v2 representation of numbers.}
  *)
 
 val float_of_string_opt: string -> float option

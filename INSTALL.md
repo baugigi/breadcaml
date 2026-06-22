@@ -1,16 +1,23 @@
-# Installing O64ml on Linux
+# Installing BreadCaml on Linux
 
 ## Prerequisites:
-1. [Bash shell](#1-bash-shell)
+1. [System Requirements](#1-system-requirements)
 2. [OCaml LTS (Long Term Support) release 4.14.x](#2-ocaml-lts-long-term-support-release-414x)
 3. [OByteLib package](#3-obytelib-package)
 4. [ACME crossassembler (release 0.97 "Zem", 16 Nov 2025 or newer)](#4-acme-crossassembler-release-097-zem-16-nov-2025-or-newer)
 
 ### Installing/Configuring prerequisites:
 
-#### **1) Bash** shell
-and  standard  system  commands  are  verified  automatically  by  the
-configuration script.
+#### **1) System Requirements**
+
+A Bash shell, GNU coreutils and  the `which` command are assumed to be
+installed on your system.
+
+The configuration script also requires and checks for:
+* `ar`
+* `bunzip2`
+* `tar`
+* `make`
 
 #### **2) OCaml LTS (Long Term Support) release 4.14.x** 
 
@@ -50,9 +57,15 @@ configuration script.
 
 > [!IMPORTANT]
 > _The_  `eval $(opam  env)`  _step  is important  -  it updates  your
-> shell's  PATH and  other  environment variables  so  that the  O64ml
+> shell's PATH and  other environment variables so  that the BreadCaml
 > installation script uses_  `ocaml` _and other tools  pointing to the
-> right switch. Without it, the O64ml installation process may fail._
+> right  switch. Without  it, the  BreadCaml installation  process may
+> fail._
+
+> [!TIP]
+> _Opam can register a shell hook that will automatically keep the
+> shell environment up-to-date at every prompt. Please refer to the
+> Opam documentation._
 
 #### **3) OByteLib package**
 
@@ -75,29 +88,29 @@ configuration script.
   acme --version
   ```
 
-* If ACME is missing or  obsolete, the O64ml configuration script will
-  offer   to   automatically   compile  and   install   a   compatible
-  release.  Alternatively, you  can download  and install  it manually
+* If ACME  is missing or obsolete, the  BreadCaml configuration script
+  will  offer  to  automatically  compile  and  install  a  compatible
+  release.  Alternatively,  you can  download and install  it manually
   from the [ACME Crossassembler SourceForge Project](https://sourceforge.net/projects/acme-crossass/).
 
 > [!TIP] 
 > _Upgrading will not cause compatibility issues. Recent ACME releases
 > include  options  to  preserve  backwards  compatibility  for  older
-> codebases  (see  the  ACME documentation).  Furthermore,  the  O64ml
+> codebases (see the ACME  documentation).  Furthermore, the BreadCaml
 > script will keep your existing release intact._
 
 ---
 
-## O64ml INSTALLATION
+## BreadCaml INSTALLATION
 
-* **Download and  extract** the O64ml tarball, then  navigate into the
-  root directory of the source tree.
+* **Download and  extract** the BreadCaml tarball,  then navigate into
+  the root directory of the source tree.
 * Ensure that the **Opam switch**  running the LTS compiler release is
   currently active.
 
 ### Option A: Quick and (not so) dirty
 
-To install O64ml immediately using the default options, run:
+To install BreadCaml immediately using the default options, run:
 
 ```bash
 ./configure -y && make install clean
@@ -113,29 +126,30 @@ To install O64ml immediately using the default options, run:
 
 | Option | Argument | Description |
 | :----- | :------: | :---------- |
-| `-b`, `--bindir` | `<dir>` | Target directory for binaries |
-| `-l`, `--libdir` | `<dir>` | Target directory for the O64ml library  |
+| `-b`, `--bindir` | `<dir>` | Target directory for Breadcaml binaries |
+| `-l`, `--libdir` | `<dir>` | Target directory for the BreadCaml Stdlib files |
 | `-m`, `--mandir` | `<dir>` | Target directory for manual pages |
-| `-p`, `--prefix` | `<dir>` | Shortcut for `-b <dir>/bin -l <dir>/lib/o64ml -m <dir>/man` |
+| `-p`, `--prefix` | `<dir>` | Shortcut for `-b <dir>/bin -l <dir>/lib/breadcaml -m <dir>/man` |
 | `-y`, `--yes`    |         | Automatically accept the ACME installation prompt |
 | `-h`, `--help`   |         | Display the help message and default installation paths |
 
 > [!IMPORTANT]
-> _Omitting target  directory options installs O64ml  into the current
-> Opam  switch  **(recommended)**.   This defaults  to  the  following
-> directories:_  `~/.opam/<switch>/bin`, `~/.opam/<switch>/lib/o64ml`,
-> _and_ `~/.opam/<switch>/man`.  
+> _Omitting  target  directory  options installs  BreadCaml  into  the
+> current  Opam  switch  **(recommended)**.    This  defaults  to  the
+> following   directories:_  `~/.opam/<switch>/{bin,   /lib/breadcaml,
+> man}`._  
 > _If you  need to customize  the target directories, ensure  you have
 > the necessary  write permissions.  Additionally, make  sure that end
 > users  have  the required  permissions  to  access and  execute  all
 > installed files._
 
 > [!NOTE]
+
 > _If an obsolete  ACME version is detected,  the configuration script
 > prompts for an upgrade.  Upon  confirmation (or if the_ `-y` _option
 > was passed),_ `./configure` _will keep  the old release intact if it
-> resides outside the  O64ml binary directory, and O64ml  will use the
-> new one._
+> resides outside  the BreadCaml binary directory,  and BreadCaml will
+> use the new one._
 
 #### 2. Build the system
 
@@ -147,8 +161,8 @@ make
 
 #### 3. Install the system
 
-This copies the  `o64ml` binary, the O64ml Library files,  and the man
-pages into your selected target directories:
+This copies  the `breadcaml` binary,  the BreadCaml Stdlib  files, and
+the man pages into your selected target directories:
 
 ```bash
 make install
@@ -166,7 +180,7 @@ make clean
 
 ## Uninstallation
 
-To remove O64ml, run the following command from the root directory:
+To remove BreadCaml, run the following command from the root directory:
 
 ```bash
 make uninstall

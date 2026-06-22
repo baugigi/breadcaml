@@ -1,4 +1,4 @@
-;; Created by O64ml - The OCaml Compiler for the Commodore 64
+;; Created by BreadCaml - The OCaml Compiler for the Commodore 64
 
 !to "parz2.prg", cbm
 caml_stack_start = $9c00

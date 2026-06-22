@@ -1,5 +1,5 @@
 ;; ——————————————————————————————————————————————————————————————————————
-;; Progetto O64ml / The O64ml Project
+;; Progetto BreadCaml / The BreadCaml Project
 ;; Copyright (C) 21-Apr-2026 Piero Furiesi
 ;;
 ;; Questo  programma è  software libero;  è possibile  ridistribuirlo e/o
@@ -12,7 +12,7 @@
 ;; as specified in the LICENSE-en file in the project root.
 ;; ——————————————————————————————————————————————————————————————————————
 
-;; Created by O64ml - The OCaml Compiler for the Commodore 64
+;; Created by BreadCaml - The OCaml Compiler for the Commodore 64
 
 !to "hanoi.prg", cbm
 caml_stack_start = $9c00
