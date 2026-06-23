@@ -1,9 +1,9 @@
 # CAVEATS - LIMITATIONS - NOTES:
 
 * **STANDARD LIBRARY:**
-  the O64ml one is almost  compatible with OCaml Stdlib, but some
-  modules  are not  implemented.   Please read  the O64ml  Stdlib
-  manpages.
+  the BreadCaml one  is almost compatible with  OCaml Stdlib, but
+  some modules  are not  implemented.  Please read  the BreadCaml
+  Stdlib manpages.
 
 * **CLASSES AND OBJECTS:**
   **not implemented**, as they  would be excessively expensive in
@@ -13,25 +13,27 @@
   limited to the **[-16384, 16383]** interval.
 
 * **FLOATS:**
-  O64ml  uses  the _C64  "MFLP"  representation_,  with a  24-bit
+  BreadCaml uses  the _C64 "MFLP" representation_,  with a 24-bit
   mantissa  and  an  8-bit  exponent, and  relies  on  BASIC  ROM
   routines for most operations.  See the **Stdlib** and **Float**
   modules documentation for more info.
 
 * **CHARS:**
-  As OCaml  uses the ASCII and  ISO 8859-1 standards but  the C64
-  target  machine the _PETSCII  charsets,_ programmers should  be
-  aware that some conversions may be needed.
 
+  Since OCaml uses the ASCII  and ISO 8859-1 standards, while the
+  Commodore 64 uses the [PETSCII](https://en.wikipedia.org/wiki/PETSCII)
+  character  sets,   programmers  should   be  aware   that  some
+  conversions may be necessary.
+  
 * **STRINGS:**
   the maximum string length is **509 characters**, as the maximum
-  O64ml block  size is 255  words (i.e., 509 characters  plus the
-  trailing null byte).
+  BreadCaml block  size is 255  words (i.e., 509  characters plus
+  the trailing null byte).
 
 * **TUPLES, RECORDS, ARRAYS:**
   limited to  a maximum of  **255 elements**, due to  the maximum
-  O64ml block size.   Unboxed float arrays may have  no more than
-  **85  elements**.  For  larger  arrays, see  also the  provided
+  BreadCaml block  size.  Unboxed float  arrays may have  no more
+  than **85 elements**.  For larger arrays, see also the provided
   **C64.BigArray** module.
 
 * **VARIANTS:**
@@ -68,8 +70,8 @@
   **256 maximum**; if  you need more, you need  to factorize them
   by adding  extra arguments.
   
-  Developers should be  aware of the O64ml  C_CALL semantics: the
-  environment is  not pushed  onto the  stack; all  arguments are
+  Developers should  be aware of the  BreadCaml C_CALL semantics:
+  the environment is not pushed onto the stack; all arguments are
   pushed but  the first; the  result is  assumed to be  stored in
   Accumulator by the primitive.
 

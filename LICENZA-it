@@ -1,18 +1,17 @@
+For the English version of this text, see the "LICENSE-en" file.
+
 -----------------------------------------------------------------
-                        The O64ml Project
-                          Progetto O64ml
+		      The BreadCaml Project
+		       Progetto BreadCaml
 -----------------------------------------------------------------
 
->>        For the English version of this text, see the        <<
->>                     "LICENSE-en" file.                      <<
-
-Di  seguito,  "Progetto  O64ml"  si  riferisce  a  tutti  i  file
+Di  seguito, "Progetto  BreadCaml" si  riferisce a  tutti i  file
 contenuti in questa distribuzione.
 
 	    LICENZE, DIRITTO D'AUTORE E DISTRIBUZIONE
 
-  Il  "Progetto O64ml",  altrimenti detto  "The O64ml  Project" -
-autore Piero Furiesi, anno 2026 - è distribuito secondo i termini
+  Il "Progetto BreadCaml" o,  in inglese, "The BreadCaml Project"
+- Copyright 2006 Piero Furiesi -  è distribuito secondo i termini
 della GNU GENERAL  PUBLIC LICENSE (GPL) versione 2,  il cui testo
 integrale è incluso in calce al presente file (ALL. A).
 
@@ -26,27 +25,28 @@ seguito specificato:
      Institut  National  de  Recherche   en  Informatique  et  en
      Automatique (si  veda https://ocaml.org) e  sono distribuiti
      secondo i  termini della  GNU LESSER GENERAL  PUBLIC LICENSE
-     (LGPL) versione 2.1, il  cui testo è integralmente riportato
-     in calce al presente file (ALL.  B), alla quale si applicano
-     le     specifiche     eccezioni    indicate     nel     file
+     (LGPL)  versione 2.1,  il cui  testo è  integralmente ripor-
+     tato  in calce  al presente  file (ALL.   B), alla  quale si
+     applicano   le  specifiche   eccezioni  indicate   nel  file
      "src/stdlib/LGPL-LICENSE", comunemente note come "OCaml LGPL
      Linking Exception".
 
-  2. Tutti  i file  nella directory  "src/o64ml/ocamlclean" fanno
-     parte  del progetto  OCamlclean  di Benoît  Vaugon (si  veda
-     https://github.com/bvaugon/ocamlclean)  e  sono  distribuiti
-     secondo i termini  e le condizioni della  licenza CONTRAT DE
-     LICENCE  DE LOGICIEL  LIBRE  CeCILL /  CeCILL FREE  SOFTWARE
-     LICENSE AGREEMENT.   In conformità all'art.  5.3.4  di detta
-     licenza,  l'integrazione  di tali  moduli  nell'applicazione
-     principale  (il compilatore  "o64ml") del  Progetto O64ml  è
-     compatibile  con la  sua ridistribuzione  sotto licenza  GNU
-     GPL.  Il testo  della licenza CeCILL è  disponibile nei file
-     "CeCILL-LICENSE-fr" (in francese)  e "CeCILL-LICENSE-en" (in
-     inglese) nella directory sopra menzionata.
+  2. Tutti  i  file  nella  directory  "src/breadcaml/ocamlclean"
+     fanno  parte del  progetto OCamlclean  di Benoît  Vaugon (si
+     veda    https://github.com/bvaugon/ocamlclean)     e    sono
+     distribuiti secondo i termini  e le condizioni della licenza
+     CONTRAT DE  LICENCE DE LOGICIEL  LIBRE CeCILL /  CeCILL FREE
+     SOFTWARE LICENSE  AGREEMENT.  In conformità  all'art.  5.3.4
+     di   detta   licenza,    l'integrazione   di   tali   moduli
+     nell'applicazione  principale  (il compilatore  "breadcaml")
+     del   Progetto   BreadCaml   è  compatibile   con   la   sua
+     ridistribuzione  sotto  licenza  GNU GPL.   Il  testo  della
+     licenza  CeCILL è  disponibile nei  file "CeCILL-LICENSE-fr"
+     (in  francese)  e  "CeCILL-LICENSE-en"  (in  inglese)  nella
+     directory sopra menzionata.
 
-  3. Il   file   "acme-crossass-code.tar.bz2"   nella   directory
-     principale del progetto O64ml è una mera aggregazione di una
+  3. Il file "acme-crossass-code.tar.bz2" nella directory princi-
+     pale del progetto  BreadCaml è una mera  aggregazione di una
      distribuzione del  cross-assembler ACME realizzato  da Marco
      Baye (vedere https://sourceforge.net/projects/acme-crossass)
      ed è rilasciato nei termini della GNU GENERAL PUBLIC LICENSE
@@ -57,15 +57,15 @@ seguito specificato:
 
 	     ESCLUSIONE DI RESPONSABILITÀ E GARANZIA
 
-  Si premette che il Progetto O64ml ha finalità esclusivamente di
-intrattenimento, hobbistiche  e di  approfondimento autodidattico
-del funzionamento del bytecode di OCaml e della relativa macchina
-virtuale   astratta,  della   possibilità   di  sperimentare   la
-portabilità del linguaggio OCaml su  computer Commodore 64 e, più
-in generale, di  divertimento nella programmazione in  OCaml e in
-linguaggio Assembly per processori  MOS 6052/6510.  Ogni utilizzo
-del Progetto  O64ml che esuli  da queste finalità è  da ritenersi
-improprio.
+  Si   premette   che   il   Progetto   BreadCaml   ha   finalità
+esclusivamente    di    intrattenimento,   hobbistiche    e    di
+approfondimento autodidattico  del funzionamento del  bytecode di
+OCaml  e   della  relativa  macchina  virtuale   astratta,  della
+possibilità di  sperimentare la portabilità del  linguaggio OCaml
+su  computer Commodore  64 e,  più in  generale, di  divertimento
+nella  programmazione  in  OCaml  e in  linguaggio  Assembly  per
+processori MOS  6052/6510.  Ogni utilizzo del  Progetto BreadCaml
+che esuli da queste finalità è da ritenersi improprio.
 
   Tutto ciò premesso:
 
@@ -74,20 +74,20 @@ e/o   colpa  grave   previsti  dalla   Legge  italiana,   qualora
 applicabile, si tenga  presente che il Progetto  OCaml è un'opera
 prodotta in ambito puramente amatoriale (non professionale).
 
-  Ai sensi delle licenze GPL  e LGPL applicate, il Progetto O64ml
-viene fornito  "così com'è" (as  is) e "come  disponibile", senza
-garanzie di alcun tipo, esplicite  o implicite, incluse, a titolo
-esemplificativo,  le  garanzie  implicite  di  commerciabilità  o
-idoneità per  uno scopo  particolare.  L'intero  rischio relativo
-alla qualità e alle prestazioni del Progetto O64ml è a carico del
-Licenziatario.
+  Ai  sensi  delle licenze  GPL  e  LGPL applicate,  il  Progetto
+BreadCaml   viene  fornito   "così   com'è"  (as   is)  e   "come
+disponibile",  senza   garanzie  di   alcun  tipo,   esplicite  o
+implicite,  incluse,   a  titolo  esemplificativo,   le  garanzie
+implicite   di  commerciabilità   o   idoneità   per  uno   scopo
+particolare.   L'intero  rischio  relativo alla  qualità  e  alle
+prestazioni del Progetto BreadCaml è a carico del Licenziatario.
 
   Nei  limiti  massimi  consentiti dalla  legge  applicabile,  il
 Licenziante,  l'autore   originario  o  qualsiasi   soggetto  che
-modifichi e/o ridistribuisca il Progetto O64ml in conformità alle
-licenze applicate,  non saranno in alcun  caso responsabili verso
-il Licenziatario o  verso terzi per qualsiasi  danno di qualsiasi
-natura.
+modifichi e/o ridistribuisca il  Progetto BreadCaml in conformità
+alle licenze  applicate, non  saranno in alcun  caso responsabili
+verso  il Licenziatario  o  verso terzi  per  qualsiasi danno  di
+qualsiasi natura.
 
   A titolo  esemplificativo e  non esaustivo,  sono espressamente
 esclusi dal risarcimento:
@@ -104,9 +104,9 @@ esclusi dal risarcimento:
     aziendale, perdita di chance commerciali o di avviamento;
   - Uso, detenzione e copia:  qualsiasi danno derivante dall'uso,
     dall'impossibilità  d'uso,  dalla  detenzione,  dalla  copia,
-    dalla modifica  o dalla  ridistribuzione del  Progetto O64ml,
-    anche  nel caso  in cui  il Licenziante  sia stato  informato
-    della possibilità di tali danni.
+    dalla   modifica  o   dalla   ridistribuzione  del   Progetto
+    BreadCaml, anche  nel caso  in cui  il Licenziante  sia stato
+    informato della possibilità di tali danni.
 
   In caso di difformità normative, conflitti di interpretazione o
 limitazioni poste dalle leggi locali, prevalgono inderogabilmente
@@ -116,7 +116,7 @@ Public License  (GPL) e negli Articoli  15 e 16 della  GNU Lesser
 General Public License (LGPL).
 
 
-Buon divertimento con O64ml.
+Buon divertimento con BreadCaml.
 
 ======================================================================
 ALL. A: TESTO INTEGRALE DELLA GNU GENERAL PUBLIC LICENSE (GPL)
