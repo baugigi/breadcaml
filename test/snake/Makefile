@@ -24,14 +24,14 @@ CMI := $(DEPENDS:=.cmi)
 C := $(EXTERNS:.asm=.c)
 
 $(PRG:=.prg): $(CMO) $(EXTERNS) $(C) $(PRG:=.ml)
-#	o64ml -interp -showmem $^ -- -r snake.txt
-	o64ml -showmem $^ -- -r snake.txt
+#	breadcaml -interp -showmem $^ -- -r snake.txt
+	breadcaml -showmem $^ -- -r snake.txt
 
 %.cmo: %.ml %.cmi
-	o64ml -c $<
+	breadcaml -c $<
 
 %.cmi: %.mli
-	o64ml -c $<
+	breadcaml -c $<
 
 %.o: %.c
 	cc -o $@ -c $<
@@ -46,7 +46,7 @@ clean:
 .PHONY: merlin
 merlin: $(CMI)
 	@echo -ne "\
-	STDLIB $(shell o64ml -where)\n\
+	STDLIB $(shell breadcaml -where)\n\
 	S .\n\
 	B .\n\
 	" > .$@

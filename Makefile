@@ -1,5 +1,5 @@
 # ——————————————————————————————————————————————————————————————————————
-# Progetto O64ml / The O64ml Project
+# Progetto BreadCaml / The BreadCaml Project
 # Copyright (C) 2026 Piero Furiesi
 #
 # Questo  programma è  software  libero; è  possibile ridistribuirlo  e/o
@@ -20,7 +20,7 @@ include $(if $(wildcard $(CONF)),$(CONF),$(error \
 
 .PHONY: all
 all:
-	$(MAKE) -C src/o64ml
+	$(MAKE) -C src/breadcaml
 	$(MAKE) -C src/stdlib
 	$(MAKE) -C src/asm
 
@@ -28,22 +28,22 @@ all:
 install: all
 	mkdir -p "$(LIBDIR)" "$(BINDIR)" "$(MAN1DIR)" "$(MAN3DIR)"
 	cp src/asm/*.asm "$(LIBDIR)"
-	cp bin/o64ml "$(BINDIR)/o64ml"
-	cp man/o64ml.1.gz "$(MAN1DIR)"/o64ml.1.gz
+	cp bin/breadcaml "$(BINDIR)/breadcaml"
+	cp man/breadcaml.1.gz "$(MAN1DIR)"/breadcaml.1.gz
 	cp src/stdlib/{stdlib.cma,libcamlrun.a,*.{ml,mli,cmo,cmi}} "$(LIBDIR)"
 	cp src/stdlib/*.$(MAN3EXT) "$(MAN3DIR)"
 
 .PHONY: uninstall
 uninstall:
 	rm -fr "$(LIBDIR)"
-	rm -f "$(BINDIR)"/o64ml
+	rm -f "$(BINDIR)"/breadcaml
 	rm -f "$(BINDIR)"/acme
-	rm -f "$(MAN1DIR)"/o64ml.1.gz
+	rm -f "$(MAN1DIR)"/breadcaml.1.gz
 	rm -f "$(MAN3DIR)"/*.$(MAN3EXT)
 
 .PHONY: clean
 clean:
-	$(MAKE) -C src/o64ml $@
+	$(MAKE) -C src/breadcaml $@
 	$(MAKE) -C src/stdlib $@
 	$(MAKE) -C src/asm $@
 	$(MAKE) -C test $@
@@ -54,7 +54,7 @@ dist: distclean
 
 .PHONY: distclean
 distclean:
-	$(MAKE) -C src/o64ml $@
+	$(MAKE) -C src/breadcaml $@
 	$(MAKE) -C src/stdlib $@
 	$(MAKE) -C src/asm $@
 	$(MAKE) -C test $@

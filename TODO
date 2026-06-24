@@ -46,9 +46,9 @@ caml_int64_of_string(value s)
 
 - nella documentazione scrivere che per indicare a merlin la stdlib da
 usare per completion e typing, nel .merlin va messo
-	STDLIB <o64ml-lib-path>
-dove <o64ml-lib-path> è l'output di
-	o64ml -where
+	STDLIB <breadcaml-lib-path>
+dove <breadcaml-lib-path> è l'output di
+	breadcaml -where
 
 - in tools c'è uno script per generare i prototipi in C delle funzioni
   utente, documentare

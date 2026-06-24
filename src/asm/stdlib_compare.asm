@@ -20,9 +20,9 @@
 
 !ifndef caml_compare_warn {
 caml_compare_warn
-  !warn "\no64ml> TODO: caml_compare_val_custom_tag"
-  !warn "\no64ml> TODO: caml_compare_val_double_array_tag"
-  !warn "\no64ml> TODO: caml_compare_val_object_tag"
+  !warn "\nbreadcaml> TODO: caml_compare_val_custom_tag"
+  !warn "\nbreadcaml> TODO: caml_compare_val_double_array_tag"
+  !warn "\nbreadcaml> TODO: caml_compare_val_object_tag"
 }
 
 .dummy = $1234					;dummy address for SMC

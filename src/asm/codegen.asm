@@ -29,9 +29,9 @@
 }
 
 ;; These shouldn't be necessary: ocamlc should have already given up
-!macro	i82	{!serious "\no64ml> ERROR: Objects and classes not implemented"}
-!macro	i8d .t	{!serious "\no64ml> ERROR: Objects and classes not implemented"}
-!macro	i8e	{!serious "\no64ml> ERROR: Objects and classes not implemented"}
+!macro	i82	{!serious "\nbreadcaml> ERROR: Objects and classes not implemented"}
+!macro	i8d .t	{!serious "\nbreadcaml> ERROR: Objects and classes not implemented"}
+!macro	i8e	{!serious "\nbreadcaml> ERROR: Objects and classes not implemented"}
 
 
 !ifndef	caml_INTERP {

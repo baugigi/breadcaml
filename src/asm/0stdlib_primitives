@@ -178,7 +178,7 @@ stdlib_aux_tools.asm
 	;; caml_memcpy
 
 ;;; ===========================================================
-;;; Unimplemented as not needed by O64ml stdlib functions
+;;; Unimplemented as not needed by BreadCaml stdlib functions
 ;;; ===========================================================
 	
 	;; caml_acos_float		Stdlib.acos

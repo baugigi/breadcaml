@@ -39,9 +39,9 @@ caml_loader
 +	!word +, 20				;20 REM ...text...
 	!byte C64_BAS_REM
 	!text 34, 141, 147, 14			;<"><sh+cr><clr><lo_case>
-	!text 141, "           The O64ml Project" 		;<sh+cr> blah
-	!text 141, "         (c) 2026 Piero Furiesi"		;<sh+cr> blah
-	!text 141, "    https://github.com/baugigi/o64ml"	;<sh+cr> blah
+	!text 141, "         The BreadCaml Project" 		;<sh+cr> blah
+	!text 141, "         (C)2026 Piero Furiesi"		;<sh+cr> blah
+	!text 141, "  https://github.com/baugigi/breadcaml"	;<sh+cr> blah
 	!text 141						;<sh+cr>
 .zeroes	!byte 0					;End_of_line
 +	!byte 0, 0				;End_of_program
@@ -71,7 +71,7 @@ caml_loader
 						;-----
 !addr	caml_zp_end	= $61			;54 by. Total ($61 = end + 1)
 
-	;; Computed by o64ml
+	;; Computed by breadcaml
 ;!addr	caml_glob_data				;global data store (out of heap)
 ;!addr	caml_glob_table				;table of global values
 ;!addr	caml_glob_end				;end of table + 1
@@ -84,8 +84,8 @@ caml_loader
 !ifndef caml_basic_rom_overlap {
 !if caml_stack_end > C64_BASROM {
   caml_basic_rom_overlap = 1
-  !set .x=   "\no64ml> WARNING: used memory overlaps BASIC ROM address space;"
-  !set .x=.x+"\no64ml>          calls to BASIC routines will be wrapped."
+  !set .x=   "\nbreadcaml> WARNING: used memory overlaps BASIC ROM address space;"
+  !set .x=.x+"\nbreadcaml>          calls to BASIC routines will be wrapped."
   !warn .x 
 }}
 
@@ -158,7 +158,7 @@ caml_loader
 ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ;; STRING blocks: length = 2 * Sz - 1 - last byte;
 ;; .Tag_Sz_*___________.___________.___________.
-;; |252¦_3_|_'O'_¦_'6'_|_'4'_¦_'m'_|_'l'_¦__0__| "O64ml" length=2*3-1-0=5
+;; |252¦_3_|_'O'_¦_'C'_|_'a'_¦_'m'_|_'l'_¦__0__| "OCaml" length=2*3-1-0=5
 ;; .Tag_Sz_*___________.___________.___________.
 ;; |252¦_3_|_'C'_¦_'='_|_'6'_¦_'4'_|__0__¦__1__| "C=64"  length=2*3-1-1=4
 

@@ -38,9 +38,9 @@ fi
 
 
 # ok/warning/error strings
-OK="${bld}${grn}ok,${nrm}"
-WRN="${und}${bld}${yel}/!\\${nrm}"
-ERR="${bld}${red}KO:${nrm}"
+OK="${bld}${grn} ok,${nrm}"
+WRN="${und}${bld}${yel} /!\\${nrm}"
+ERR="${bld}${red} KO:${nrm}"
 
 
 #### Shell functions
@@ -79,14 +79,10 @@ PREFIX=${OPAM_SWITCH_PREFIX:-~}
 BINDIR=$PREFIX/bin
 LIBDIR=$PREFIX/lib/breadcaml
 MANDIR=$PREFIX/man
-
-
-# Section for Stdlib manpages
 MAN3EXT=3bc
 
 
 # Parse command-line options and update installation paths accordingly
-DIROPT=""
 while [[ $# -ne 0 ]]; do
     case "$1" in
         -b | --bindir | -l | --libdir | -m | --mandir)
@@ -131,27 +127,33 @@ done
 
 # Ensure all needed commands are available
 echo "${bld}Checking for installed commands...${nrm}"
-MISSING=""
 for CMD in ar bunzip2 make tar ocamlc.opt ocamlopt.opt ocamldoc.opt; do
-    if CHK="$(which $CMD 2> /dev/null)"; then
-        echo " $OK $CHK"
-    elif [[ $CMD == *.opt ]] && CHK="$(which ${CMD%.opt} 2> /dev/null)"; then
-        echo " $WRN $CMD not found, but $CHK"
+    if CHK=$(which $CMD 2> /dev/null); then
+        echo "$OK $CMD is ${cyn}$CHK${nrm}"
+    elif [[ $CMD == *.opt ]] && CHK=$(which ${CMD%.opt} 2> /dev/null); then
+        echo "$WRN $CMD not found, but ${CMD%.opt} is ${cyn}$CHK${nrm}"
     else
-        echo " $ERR $CMD not found"
+        echo "$ERR $CMD not found"
         MISSING="${MISSING:+$MISSING, }$CMD"
     fi
 done
-echo "${bld}... Done.${nrm}"
+echo -e "${bld}... Done.${nrm}\n"
 [[ $MISSING ]] \
     && failwith "command(s) $MISSING not present, or not in search PATH"
 
 
 # Check the OCaml version (ok if 4.14.0 <= version < 5.0.0)
+echo "${bld}Checking OCaml bytecode compiler version...${nrm}"
 OCAMLC="$(which ocamlc.opt 2>/dev/null || which ocamlc)"
-IFS='.' read -r MAJOR MINOR PATCH <<< $($OCAMLC -vnum)
-(( MAJOR == 4 && MINOR >= 14 )) \
-    || failwith "incompatible OCaml version: $MAJOR.$MINOR.$PATCH"
+IFS='.' read -r MAJOR MINOR PATCH < <($OCAMLC -vnum)
+if (( OCAMLC_STATUS=(MAJOR == 4 && MINOR >= 14) )); then
+    echo "$OK ocamlc version is $MAJOR.$MINOR.$PATCH"
+else
+    echo "$ERR incompatible ocamlc version: $MAJOR.$MINOR.$PATCH"
+fi
+echo -e "${bld}... Done.${nrm}\n"
+(( OCAMLC_STATUS )) \
+    || failwith "ocamlc version must be >= 4.14.0 and < 5.0.0"
 
 
 # Check if ACME is obsolete or not installed
@@ -160,28 +162,27 @@ echo "${bld}Checking for ACME cross-assembler...${nrm}"
 ACME="$BINDIR/acme"
 [[ -x $ACME ]] || ACME="$(which acme 2> /dev/null)"
 if [[ $ACME ]]; then
-    IFS=',' read -r UNUSED ACME_REL ACME_DATE <<< $($ACME --version)
+    IFS=',' read -r UNUSED ACME_REL ACME_DATE < <($ACME --version)
     if (( $(date -d"$ACME_DATE" +%Y%m%d 2> /dev/null) >= 20251116 )); then
-        echo " $OK found $ACME, release $ACME_REL, $ACME_DATE"
+        echo "$OK found ${cyn}$ACME${nrm} $ACME_REL,$ACME_DATE"
 	ACME_STATUS=0
     else
-        echo " $WRN found an incompatible out-of-date version:\
-	       $ACME, release $ACME_REL, $ACME_DATE;"
+        echo "$WRN found incompatible version $ACME $ACME_REL,$ACME_DATE"
 	ACME_STATUS=1
     fi
 else
-    echo " $WRN ACME not installed, or not in search PATH or $BINDIR."
+    echo "$WRN ACME not installed, or not in search PATH or $BINDIR."
     ACME_STATUS=2
 fi
-echo "${bld}... Done.${nrm}"
+echo -e "${bld}... Done.${nrm}\n"
 
 
-# IF ACME is obsolete or missing, install it in $BINDIR
-if [[ $ACME_STATUS -gt 0 ]]; then
+# IF ACME is obsolete or missing, install it in BINDIR
+if (( ACME_STATUS > 0 )); then
     if [[ -z $ACME_INSTALL ]]; then
         echo "This script can install a BreadCaml-compatible\
               version of ACME in ${bld}$BINDIR${nrm}."
-        if [[ $ACME_STATUS -eq 1 ]]; then
+        if (( ACME_STATUS == 1 )); then
             echo -n " The existing '$ACME' command will be "
             [[ $ACME == $BINDIR/acme ]] && echo "renamed." || echo "retained."
         fi
@@ -201,7 +202,7 @@ if [[ $ACME_STATUS -gt 0 ]]; then
         rm -fr "$ACME_TMP"
     )
     if [[ $? = 0 ]]; then
-        echo "${bld}... Done.${nrm}"
+        echo -e "${bld}... Done.${nrm}\n"
         [[ $ACME_OLD ]] && echo "The old command has been renamed '$ACME_OLD'."
     else
         rm -fr "$ACME_TMP" "$ACME_OLD"
@@ -210,12 +211,12 @@ if [[ $ACME_STATUS -gt 0 ]]; then
 fi
 
 # Set BreadCaml environment
-OCAMLOPT="$(which ocamlopt.opt 2>/dev/null || which ocamlopt)"
-OCAMLDOC="$(which ocamldoc.doc 2>/dev/null || which ocamldoc)"
-OCAMLSTDLIB=$($OCAMLC -where)
 BINDIR="$(realpath -m "$BINDIR")"
 LIBDIR="$(realpath -m "$LIBDIR")"
 MANDIR="$(realpath -m "$MANDIR")"
+OCAMLDOC="$(which ocamldoc.doc 2>/dev/null || which ocamldoc)"
+OCAMLOPT="$(which ocamlopt.opt 2>/dev/null || which ocamlopt)"
+OCAMLSTDLIB=$($OCAMLC -where)
 VERSION="$(< VERSION)"
 
 # Export the configuration data needed by 'make'
@@ -234,26 +235,18 @@ OCAMLSTDLIB = $OCAMLSTDLIB
 VERSION = $VERSION
 __END__
 
-# Let the user know the result of the configuration
+# Show the result of the configuration
 cat <<__END__
-${bld}BreadCaml ver. $VERSION configured successfully as follows:${nrm}
+${bld}BreadCaml version $VERSION configured successfully as follows:${nrm}
   BINDIR = ${cyn}$BINDIR${nrm}
   LIBDIR = ${cyn}$LIBDIR${nrm}
-  MANDIR = ${cyn}$MANDIR${nrm}  (man section: ${cyn}$MAN3EXT${nrm})
-  BreadCaml will use:
-  - the OCaml compiler '$OCAMLC_UNSAFE';
-  - the ACME cross-assembler '$ACME'.
+  MANDIR = ${cyn}$MANDIR${nrm}  (Stdlib manpage section: ${cyn}$MAN3EXT${nrm})
 
-For info on how to change this configuration, type:
-  ${bld}$0 --help${nrm}
+${bld}**${nrm} For info on how to change this configuration, type: ${bld}$0 --help${nrm}
+${bld}**${nrm} To build the BreadCaml system, enter: ${bld}make${nrm}
+      then you can install it with: ${bld}make install${nrm}
+      At end, clean the source directory tree with: ${bld}make clean${nrm}
+${bld}**${nrm} To uninstall BreadCaml, enter: ${bld}make uninstall${nrm}
 
-To build the BreadCaml system, enter:
-  ${bld}make${nrm}
-then you can install it with:
-  ${bld}make install${nrm}
-After installation, clean the source directory tree with:
-  ${bld}make clean${nrm}
-
-To uninstall all BreadCaml files, enter:
-  ${bld}make uninstall${nrm}
+Happy BreadCamling on your Commodore 64!
 __END__

@@ -1,5 +1,5 @@
 # ——————————————————————————————————————————————————————————————————————
-# Progetto O64ml / The O64ml Project
+# Progetto BreadCaml / The BreadCaml Project
 # Copyright (C) 2026 Piero Furiesi
 #
 # Questo  programma è  software  libero; è  possibile ridistribuirlo  e/o

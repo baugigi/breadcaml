@@ -16,15 +16,15 @@ FILES := largeArray.asm largeArray.c largeArray.mli largeArray.ml test.ml
 
 .PHONY: all
 all:	clean
-	o64ml $(FILES)
+	breadcaml $(FILES)
 
 .PHONY: interp
 interp:	clean
-	o64ml $(FILES) -- -Dcaml_INTERP=1
+	breadcaml $(FILES) -- -Dcaml_INTERP=1
 
 .PHONY: debug
 debug:	clean
-	o64ml $(FILES) -- -Dcaml_INTERP=1 -Dcaml_DEBUG=1
+	breadcaml $(FILES) -- -Dcaml_INTERP=1 -Dcaml_DEBUG=1
 
 .PHONY: clean
 clean:

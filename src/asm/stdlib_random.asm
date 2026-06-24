@@ -46,7 +46,7 @@
 ;; 4294967296	30
 ;;
 ;; Please note that those statistics are about 8-bit random numbers (returned in
-;; .a); for O64ml purposes, I take a 15-bit OCaml integer from .a (lo bits) and
+;; .a); for BreadCaml purposes, I take a 15-bit OCaml integer from .a (lo bits) and
 ;; .b (hi bits, discarding bit #7): this may affect the whole algorithm strength.
 
 !zone caml_RANDOM {

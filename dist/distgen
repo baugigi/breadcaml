@@ -3,7 +3,7 @@ cd "$(dirname $0)/.."
 [ -f VERSION ] || { echo "I'm lost!"; exit 1; }
 [ -f CHANGES ] || touch CHANGES
 VERSION=$(< VERSION)
-DEST=o64ml-$VERSION_$(date +"%Y%m%d_%H%M").tar.bz2
+DEST=breadcaml-$VERSION_$(date +"%Y%m%d_%H%M").tar.bz2
 echo "Inserire una nota per la distribuzione $DEST:"
 echo "(ctrl-D per finire)"
 {

@@ -29,9 +29,9 @@ end
 
 module IRQ = struct
   (* il modulo va compilato con l'opzione -irqsupport che inizialmente
-     redireziona il vettore di IRQ al gestore di O64ml e aggiunge alla
+     redireziona il vettore di IRQ al gestore di BreadCaml e aggiunge alla
      STOP il ripristino degli IRQ e del vettore di default  (oopure no,
-     ad esempio per scrivere un programma O64ml per un orologio fisso
+     ad esempio per scrivere un programma BreadCaml per un orologio fisso
      su schermo... *)
   
   external set_standard_handler : unit -> unit = "caml_irq_set_standard_handler"
