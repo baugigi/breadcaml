@@ -74,7 +74,7 @@
   Accumulator by the primitive.
 
 
-## SOME NOTES ON THE BYTECODE EMITTED BY THE OCaml COMPILER:
+## Some notes on the bytecode emitted by the OCaml compiler:
 
 * **RETURN:**
   A function  might be  called with more  arguments on  the stack
