@@ -19,7 +19,6 @@
   modules documentation for more info.
 
 * **CHARS:**
-
   Since OCaml uses the ASCII  and ISO 8859-1 standards, while the
   Commodore 64 uses the [PETSCII](https://en.wikipedia.org/wiki/PETSCII)
   character  sets,   programmers  should   be  aware   that  some
