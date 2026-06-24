@@ -63,7 +63,7 @@
   OCaml internal hash function.
   
   Coming  soon: a  PPX  rewriter to  pre-process  OCaml code  and
-  rename all polymorphic variants in the lambda-code properly.
+  rename all polymorphic variants properly.
 
 * **EXTERNAL PRIMITIVES:**
   **256 maximum**; if  you need more, you need  to factorize them
