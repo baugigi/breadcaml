@@ -68,7 +68,6 @@
 * **EXTERNAL PRIMITIVES:**
   **256 maximum**; if  you need more, you need  to factorize them
   by adding  extra arguments.
-  
   Developers should  be aware of the  BreadCaml C_CALL semantics:
   the environment is not pushed onto the stack; all arguments are
   pushed but  the first; the  result is  assumed to be  stored in
