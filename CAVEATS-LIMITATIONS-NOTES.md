@@ -49,7 +49,7 @@
 
 * **POLYMORPHIC VARIANTS:**
   the set of admitted polymorphic variants is restricted to  
-  `` `( [A-Z] | [A-H]['0-9A-Z\_a-z] | I['0-9A-Z\_a-g] ) `` i.e., 
+  `` `( [A-Z] | [A-H][_'0-9A-Za-z] | I[_'0-9A-Za-g] ) `` i.e., 
   
   |             |             |                         |**`` `A  `` ... `` `Z``**|                         |
   |:-----------:|:-----------:|:-----------------------:|:-----------------------:|:-----------------------:|
