@@ -12,27 +12,9 @@
    as specified in the LICENSE-en file in the project root.
    —————————————————————————————————————————————————————————————————————— *)
 
-(*©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml
-
-                                    OC64ml
-
-                      An OCaml compiler for the Commodore 64
-
-                                Piero Furiesi
-
-  ©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml©64ml*)
-
-(*
-  This file is a work based on the source code of the Stdlib Library of OCaml
-  rel. 4.14.2, by Xavier Leroy, projet Cristal, INRIA Rocquencourt (Copyright
-  1996 Institut National de Recherche en Informatique et en Automatique); its
-  copies, modifications and distribution are subject to the terms of the GNU
-  Lesser General Public License version 2.1, with the special exception on
-  linking described in the file LICENSE.
- *)
-
 let mod_name_dot = "LargeArray."
 let invalid_arg s = invalid_arg (mod_name_dot ^ s)
+
 (***************
 external fastdiv255 : int -> int = "caml_largearray_div_255"
 external fastmul255 : int -> int = "caml_largearray_mul_255"
@@ -44,6 +26,7 @@ let div_mod n = function
   | 85 -> let d = fastdiv85 n in (d, n - fastmul85 d)
   | dim -> (n / dim, n mod dim)
  ****************)
+
 let div_mod n dim = (n / dim, n mod dim)
 
 

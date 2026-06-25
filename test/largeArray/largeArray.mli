@@ -19,7 +19,7 @@
     available for large arrays too.
  *)
 
-type 'a largearray = 'a array array (* exposed for testing *)
+type 'a largearray (* = 'a array array *)
 (** The type for large arrays. *)
 
 val empty : 'a largearray

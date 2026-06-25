@@ -14,25 +14,6 @@
 
 open LargeArray
 
-(*
-BUG nelle applicazioni parziali:
-LargeArray.iter e LargeArray.map sono definite correttamente così:
-
-let iter f = Array.(iter (iter f))
-let map f = Array.(map (map f))
-let iter2 f = Array.(iter2 (iter2 f))
-
-ma il programma fa la botta. Se invece le ridefinisco così, allora funziona:
-
-   (nb per ridefinirle qui ho esposto il tipo concreto in largeArray.mli)
-*)
-
-
-
-let iter f a = Array.(iter (fun a' -> iter f a') a)
-let map f a = Array.(map (fun a' -> map f a') a)
-let iter2 f a b = Array.(iter2 (fun a' b' -> iter2 f a' b') a b)
-
 let a = init 500 float_of_int
 
 let () =
@@ -45,6 +26,3 @@ let () =
       print_float x;
       print_float y;
       print_newline ()) a b
-
-  (* svalvola random ---> GC bug! *)
-
