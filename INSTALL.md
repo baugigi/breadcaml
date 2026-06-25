@@ -144,7 +144,6 @@ To install BreadCaml immediately using the default options, run:
 > installed files._
 
 > [!NOTE]
-
 > _If an obsolete  ACME version is detected,  the configuration script
 > prompts for an upgrade.  Upon  confirmation (or if the_ `-y` _option
 > was passed),_ `./configure` _will keep  the old release intact if it

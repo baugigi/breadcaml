@@ -242,11 +242,13 @@ ${bld}BreadCaml version $VERSION configured successfully as follows:${nrm}
   LIBDIR = ${cyn}$LIBDIR${nrm}
   MANDIR = ${cyn}$MANDIR${nrm}  (Stdlib manpage section: ${cyn}$MAN3EXT${nrm})
 
-${bld}**${nrm} For info on how to change this configuration, type: ${bld}$0 --help${nrm}
-${bld}**${nrm} To build the BreadCaml system, enter: ${bld}make${nrm}
-      then you can install it with: ${bld}make install${nrm}
-      At end, clean the source directory tree with: ${bld}make clean${nrm}
-${bld}**${nrm} To uninstall BreadCaml, enter: ${bld}make uninstall${nrm}
+${bld}*${nrm} For info on how to change this configuration, type: ${bld}$0 --help${nrm}
+
+${bld}*${nrm} To build the BreadCaml system, enter: ${bld}make${nrm}
+  then you can install it with:         ${bld}make install${nrm}
+  finally, clean the source tree with:  ${bld}make clean${nrm}
+
+${bld}*${nrm} To uninstall BreadCaml, enter: ${bld}make uninstall${nrm}
 
 Happy BreadCamling on your Commodore 64!
 __END__

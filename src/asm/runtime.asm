@@ -465,31 +465,33 @@ RESTART						;NATIVE CODE & INTERPRETER
 
 GRAB						;NATIVE CODE & INTERPRETER
 !ifdef caml_gen_GRAB {
+	@offset = caml_restart_len + caml_grab_len
   !ifdef caml_INTERP {
 		JSR caml_interp_getarg
   }					;{A = v = 2n+1, Y = 0}
-	EOR # $FF				;A := -v...
-	SEC					;(-v=~v+1)
-	ADC XARGS				;     ... + XARGS
+	EOR # $FF
+	SEC
+	ADC XARGS				;A := XARGS - v = ~A + 1 + XARGS
 	BMI @mkclos				;If XARGS >= v then
 	ORA # 1					; set XARGS's lsb
 	STA XARGS				; XARGS := XARGS - v and exit
 	+NEXT				;{Y = 0}
-@mkclos	LDA XARGS				;Compute size = 
-	LSR					; Int_Val(XARGS)+3wo
+@mkclos	LDA XARGS				;Compute size = Int_Val(XARGS)
+	LSR					; + 3wo (CODE, ENV, and Arg1)
 	ADC # 3 -1				; (-1 as carry set by LSR)
 	TAX	
 	LDA # Closure_tag			;BLK := new closure
 	JSR caml_alloc
-  !ifdef caml_INTERP {				;Compute previous RESTART addr
-		LDA PC				; =PC-(RESTART len + GRAB len).
-		SEC
-  } else {					;Compute previous RESTART addr
-	PLA					; from the ret addr pushed into
-	CLC					; hw stack by JSR; CLC=subtract
-  }						; -1 because of how JSR works).
-	SBC # caml_restart_len + caml_grab_len
-	STA (BLK),Y
+  !ifdef caml_INTERP {
+		LDA PC				;Compute previous RESTART addr
+		SEC				; =PC-(RESTART len + GRAB len).
+		SBC # @offset
+  } else {
+	PLA					;Compute previous RESTART addr
+	SEC					; from the ret addr on hw stack
+	SBC # @offset - 1			; (-1 because of how JSR works).
+  }
+	STA (BLK),Y				;Field(BLK,0) := CODE
   !ifdef caml_INTERP {
 		LDA PC + 1
   } else {
