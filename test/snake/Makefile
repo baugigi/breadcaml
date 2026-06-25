@@ -24,8 +24,7 @@ CMI := $(DEPENDS:=.cmi)
 C := $(EXTERNS:.asm=.c)
 
 $(PRG:=.prg): $(CMO) $(EXTERNS) $(C) $(PRG:=.ml)
-#	breadcaml -interp -showmem $^ -- -r snake.txt
-	breadcaml -showmem $^ -- -r snake.txt
+	breadcaml $(OPTIONS) $^ -- -r snake.txt
 
 %.cmo: %.ml %.cmi
 	breadcaml -c $<
