@@ -98,53 +98,53 @@ let usage =
 let breadcaml_opts =
   Arg.["-o", Set_string o_arg,
        "outfile.ext\
-        \t\tDefine the output files and the compilation process.\n\
-        \t\t· If ext is 'asm', generate the assembly file 'outfile.asm',\n\
-        \t\t  suitable to be assembled by the ACME cross assembler.\n\
-        \t\t· If ext is 'prg', also call ACME to assemble 'outfile.asm' into\n\
-        \t\t  the native-code executable file 'outfile.prg'.\n\
-        \t\tExtensions other than 'asm' and 'prg' are not allowed. If the\n\
-        \t\t'-o' option is not present, outfile.ext is assumed to be the\n\
-        \t\tbasename of the last FILE (without the trailing extension)\n\
-        \t\twith '.prg' appended.\n";
+        \tDefine the output files and the compilation process.\n\
+        \t· If ext is 'asm', generate the assembly file 'outfile.asm',\n\
+        \t  suitable to be assembled by the ACME cross assembler.\n\
+        \t· If ext is 'prg', also call ACME to assemble 'outfile.asm' into\n\
+        \t  the native-code executable file 'outfile.prg'.\n\
+        \tExtensions other than 'asm' and 'prg' are not allowed. If the\n\
+        \t'-o' option is not present, outfile.ext is assumed to be the\n\
+        \tbasename of the last FILE (without the trailing extension)\n\
+        \twith '.prg' appended.\n";
+       "-c", Set compile_only,
+       "\tCompile only. Just run ocamlc with '-c' and OCAMLC_OPTIONS,\n\
+        \tthen exit. The '-c' and '-o' options are incompatible.\n";
        "-interp", Set interp,
-       "\t\tBytecode interpretation.\n\
-        \t\tAdd '-Dcaml_INTERP=1' to ACME_OPTIONS so that ACME generates\n\
-        \t\ta '.prg' file containing OCaml bytecode and an interpreter,\n\
-        \t\tinstead of a native-code compiled executable. The generated\n\
-        \t\tfile is smaller than the corresponding native-code one, but\n\
-        \t\tthe execution speed will be slower.\n";
+       "\tBytecode interpretation.\n\
+        \tAdd '-Dcaml_INTERP=1' to ACME_OPTIONS so that ACME generates\n\
+        \ta '.prg' file containing OCaml bytecode and an interpreter,\n\
+        \tinstead of a native-code compiled executable. The generated\n\
+        \tfile is smaller than the corresponding native-code one, but\n\
+        \tthe execution speed will be slower.\n";
        "-mem", Set_int mem_arg,
        Printf.sprintf
          "address\
-          \t\tSet the maximum memory address available for the executable.\n\
-          \t\tValid values range from 0x1000 to 0xcfff. Default: 0x%4x.\n"
+          \tSet the maximum memory address available for the executable.\n\
+          \tValid values range from 0x1000 to 0xcfff. Default: 0x%4x.\n"
          !mem_arg;
        "-stack", Set_int stack_arg,
        Printf.sprintf
          "pages\
-          \t\tDefine the stack size, in 256-byte pages. Valid values are\n\
-          \t\tpositive integers. Default: %d pages.\n"
+          \tDefine the stack size, in 256-byte pages. Valid values are\n\
+          \tpositive integers. Default: %d pages.\n"
          !stack_arg;
        "-showmem", Set showmem,
-       "\t\tTell ACME to show information related to the allocation of\n\
-        \t\tglobal data, code, libraries, heap, and stack. This effect\n\
-        \t\tis achieved by adding '-Dcaml_SHOWMEM=1' to ACME_OPTIONS.\n";
-       "-c", Set compile_only,
-       "\t\tCompile only. Just run ocamlc with '-c' and OCAMLC_OPTIONS,\n\
-        \t\tthen exit. The '-c' and '-o' options are incompatible.\n";
+       "\tTell ACME to show information related to the allocation of\n\
+        \tglobal data, code, libraries, heap, and stack. This effect\n\
+        \tis achieved by adding '-Dcaml_SHOWMEM=1' to ACME_OPTIONS.\n";
        "-verbose", Set verbose,
-       "\t\tVerbose mode.\n\
-        \t\tAdd '-verbose' to OCAMLC_OPTIONS and '-v9' to ACME_OPTIONS.\n";
+       "\tVerbose mode.\n\
+        \tAdd '-verbose' to OCAMLC_OPTIONS and '-v9' to ACME_OPTIONS.\n";
        "-where", Unit where,
-       "\t\tShow the location of the BreadCaml standard library and exit.\n";
+       "\tShow the location of the BreadCaml standard library and exit.\n";
        "-version", Unit version,
-       "\t\tShow version and exit.\n";
+       "\tShow version and exit.\n";
        "--", Rest_all rest_all,
-       "\t\tPass the following ACME_OPTIONS to the ACME cross assembler.\n\
+       "\tPass the following ACME_OPTIONS to the ACME cross assembler.\n\
         \n\
-        \t\tOCAMLC_OPTIONS: any other options not listed above and not\n\
-        \t\tfollowing '--' are passed to ocamlc.\n"]
+        \tOCAMLC_OPTIONS: any other options not listed above and not\n\
+        \tfollowing '--' are passed to ocamlc.\n"]
 
 let rec dyn_add_ocamlc_opts acc n =
   (* dynamically add any non-breadcaml options to the ocamlc ones *)

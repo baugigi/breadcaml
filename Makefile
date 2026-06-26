@@ -49,11 +49,11 @@ clean:
 	$(MAKE) -C test $@
 
 .PHONY: dist
-dist: distclean
+dist: gitclean
 	dist/distgen
 
-.PHONY: distclean
-distclean:
+.PHONY: gitclean
+gitclean:
 	$(MAKE) -C src/breadcaml $@
 	$(MAKE) -C src/stdlib $@
 	$(MAKE) -C src/asm $@

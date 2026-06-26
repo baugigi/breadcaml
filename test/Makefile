@@ -17,6 +17,6 @@ clean:
 	rm -f *.cm? *.prg *.bc a.out *~
 	rm -f $(addprefix */,*.cm? *.prg *.bc a.out *~)
 
-.PHONY: distclean
-distclean: clean
+.PHONY: gitclean
+gitclean: clean
 

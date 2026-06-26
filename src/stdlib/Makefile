@@ -127,7 +127,7 @@ $(CPROTO): ../asm/stdlib_*.asm
 clean:
 	rm -f *.cmi *.cmo *.cma *.o *.$(MAN3EXT) $(CPROTO) libcamlrun.a
 
-.PHONY: distclean
-distclean: clean
+.PHONY: gitclean
+gitclean: clean
 	rm -f *~
 

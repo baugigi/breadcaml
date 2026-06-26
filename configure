@@ -4,74 +4,68 @@
 # Progetto BreadCaml / The BreadCaml Project
 # Copyright (C) 2026 Piero Furiesi
 #
-# Questo  programma è  software  libero; è  possibile ridistribuirlo  e/o
-# modificarlo secondo  i termini della  GNU General Public  License (GPL)
-# versione  2,  come  specificato  nel file  LICENZA-it  nella  directory
+# Questo  programma è  software	 libero; è  possibile ridistribuirlo  e/o
+# modificarlo secondo  i termini della	GNU General Public  License (GPL)
+# versione  2,	come  specificato  nel file  LICENZA-it	 nella	directory
 # principale del progetto.
 #
-# This program is  free software; you can redistribute  it and/or modify
+# This program is  free software; you can redistribute	it and/or modify
 # it under the terms of the  GNU General Public License (GPL) version 2,
 # as specified in the LICENSE-en file in the project root.
 # ——————————————————————————————————————————————————————————————————————
+
+[ "$(realpath /proc/$$/exe)" == "$(which bash)" ] \
+    || { echo "This script requires the Bash shell." 1>&2; exit 1; }
 
 shopt -s extglob
 
 
 # Check if stdout is a terminal and supports colours
-if [[ -t 1 ]] && which tput > /dev/null 2>&1; then
+if [ -t 1 ] && which tput > /dev/null 2>&1; then
     ncol=$(tput colors)
-    if [[ $? = 0 && -n $ncol && $ncol -ge 8 ]]; then
-        blk="$(tput setaf 0)"
-        red="$(tput setaf 1)"
-        grn="$(tput setaf 2)"
-        yel="$(tput setaf 3)"
-        blu="$(tput setaf 4)"
-        mag="$(tput setaf 5)"
-        cyn="$(tput setaf 6)"
-        wht="$(tput setaf 7)"
-        bld="$(tput bold)"
-        und="$(tput smul)"
-        rev="$(tput rev)"
-        nrm="$(tput sgr0)"
+    if (( $? == 0 && ${ncol:-0} >= 4 )); then
+	red="$(tput setaf 1)"
+	grn="$(tput setaf 2)"
+	yel="$(tput setaf 3)"
+	bld="$(tput bold)"
+	und="$(tput smul)"
+	nrm="$(tput sgr0)"
     fi
 fi
 
 
-# ok/warning/error strings
-OK="${bld}${grn} ok,${nrm}"
-WRN="${und}${bld}${yel} /!\\${nrm}"
-ERR="${bld}${red} KO:${nrm}"
-
-
-#### Shell functions
-
-# Show an help message about this script
-show_help () {
-    cat <<__END__
-Usage: $0 [ OPTIONS... ]
-  -b, --bindir <dir>  Target directory for Breadcaml binaries
-                      default: $PREFIX/bin
-  -l, --libdir <dir>  Target directory for the BreadCaml Stdlib files
-                      default: $PREFIX/lib/breadcaml
-  -m, --mandir <dir>  Target directory for manual pages
-                      default: $PREFIX/man
-  -p, --prefix <dir>  Shortcut for
-                      -b <dir>/bin -l <dir>/lib/breadcaml -m <dir>/man
-  -y, --yes           Automatically accept the ACME installation prompt
-
-  -h, --help          Show this text.
-__END__
-    exit 0
-}
-
-
-# Exit printing a failure message
-failwith () {
+# Function: print a failure message and exit
+failwith() {
     echo "${bld}${red}Configuration failed:${nrm} $@." 1>&2
     exit 1
 }
 
-####
+
+# Function: print a message
+message() {
+    case "$1" in
+	start | end)
+	    echo "${bld}$2${nrm}"
+	    ;;
+	ok)
+	    echo "${bld}${grn} ok,${nrm} $2"
+	    ;;
+	warn)
+	    echo "${bld}${yel} ${und}/!\\${nrm} $2"
+	    ;;
+	err)
+	    echo "${bld}${red} KO:${nrm} $2"
+	    ;;
+	cont)
+	    echo "     $2"
+	    ;;
+	ask)
+	    echo -n "${bld}     $2${nrm}"
+	    ;;
+	*)
+	    failwith "message(): unknown parameter '$1'"
+    esac
+}
 
 
 # Default installation paths
@@ -83,13 +77,13 @@ MAN3EXT=3bc
 
 
 # Parse command-line options and update installation paths accordingly
-while [[ $# -ne 0 ]]; do
+while (( $# > 0 )); do
     case "$1" in
-        -b | --bindir | -l | --libdir | -m | --mandir)
+	-b | --bindir | -l | --libdir | -m | --mandir)
 	    [[ $DIROPT == @(-p|--prefix) ]] \
 		&& failwith "'$1' and '$DIROPT' options are incompatible"
 	    DIROPT="$1"
-            shift
+	    shift
 	    case "$DIROPT" in
 		-b | --bindir)
 		    BINDIR="$1"
@@ -102,113 +96,135 @@ while [[ $# -ne 0 ]]; do
 		    ;;
 	    esac
 	    ;;
-        -p | --prefix)
+	-p | --prefix)
 	    [[ $DIROPT == @(-b|--bindir|-l|--libdir|-m|--mandir) ]] \
 		&& failwith "'$1' and '$DIROPT' options are incompatible"
 	    DIROPT="$1"
-            shift
-            PREFIX="$1"
-            BINDIR="$PREFIX/bin"
-            LIBDIR="$PREFIX/lib/breadcaml"
-            MANDIR="$PREFIX/man"
-            ;;
-        -y | --yes)
-            ACME_INSTALL='Y'
-            ;;
-        -h | --help)
-            show_help
-            ;;
-        *)
-            failwith "unknown option '$1'"
+	    shift
+	    PREFIX="$1"
+	    BINDIR="$PREFIX/bin"
+	    LIBDIR="$PREFIX/lib/breadcaml"
+	    MANDIR="$PREFIX/man"
+	    ;;
+	-y | --yes)
+	    ACME_INSTALL=y
+	    ;;
+	-h | --help)
+	    cat <<END
+Usage: $0 [ OPTIONS... ]
+  -b, --bindir <dir>  Target directory for Breadcaml binaries
+			default: $PREFIX/bin
+  -l, --libdir <dir>  Target directory for the BreadCaml Stdlib files
+			default: $PREFIX/lib/breadcaml
+  -m, --mandir <dir>  Target directory for manual pages
+			default: $PREFIX/man
+  -p, --prefix <dir>  Shortcut for
+			-b <dir>/bin -l <dir>/lib/breadcaml -m <dir>/man
+  -y, --yes	      Automatically accept the ACME installation prompt
+
+  -h, --help	      Show this text.
+END
+	    exit 0
+	    ;;
+	*)
+	    failwith "unknown option '$1'"
     esac
     shift
 done
 
 
 # Ensure all needed commands are available
-echo "${bld}Checking for installed commands...${nrm}"
+message start "Checking for installed commands..."
 for CMD in ar bunzip2 make tar ocamlc.opt ocamlopt.opt ocamldoc.opt; do
     if CHK=$(which $CMD 2> /dev/null); then
-        echo "$OK $CMD is ${cyn}$CHK${nrm}"
-    elif [[ $CMD == *.opt ]] && CHK=$(which ${CMD%.opt} 2> /dev/null); then
-        echo "$WRN $CMD not found, but ${CMD%.opt} is ${cyn}$CHK${nrm}"
+	message ok "$CMD is $CHK"
+    elif CHK=$(which ${CMD%.opt} 2> /dev/null); then
+	message warn "$CMD not found, failsafe to $CHK"
     else
-        echo "$ERR $CMD not found"
-        MISSING="${MISSING:+$MISSING, }$CMD"
+	message err "$CMD not found"
+	MISSING="${MISSING:+$MISSING, }$CMD"
     fi
 done
-echo -e "${bld}... Done.${nrm}\n"
+message end "Done."
 [[ $MISSING ]] \
     && failwith "command(s) $MISSING not present, or not in search PATH"
 
 
 # Check the OCaml version (ok if 4.14.0 <= version < 5.0.0)
-echo "${bld}Checking OCaml bytecode compiler version...${nrm}"
+message start "Checking OCaml bytecode compiler version..."
 OCAMLC="$(which ocamlc.opt 2>/dev/null || which ocamlc)"
 IFS='.' read -r MAJOR MINOR PATCH < <($OCAMLC -vnum)
-if (( OCAMLC_STATUS=(MAJOR == 4 && MINOR >= 14) )); then
-    echo "$OK ocamlc version is $MAJOR.$MINOR.$PATCH"
+if (( MAJOR == 4 && MINOR >= 14 )); then
+    message ok "ocamlc version is $MAJOR.$MINOR.$PATCH"
+    message end "Done."
 else
-    echo "$ERR incompatible ocamlc version: $MAJOR.$MINOR.$PATCH"
+    message err "incompatible ocamlc version: $MAJOR.$MINOR.$PATCH"
+    message end "Done."
+    failwith "ocamlc version must be >= 4.14.0 and < 5.0.0"
 fi
-echo -e "${bld}... Done.${nrm}\n"
-(( OCAMLC_STATUS )) \
-    || failwith "ocamlc version must be >= 4.14.0 and < 5.0.0"
 
 
 # Check if ACME is obsolete or not installed
 # We need the release 0.97 ("Zem"), 16 Nov 2025 or newer
-echo "${bld}Checking for ACME cross-assembler...${nrm}"
+message start "Checking for ACME cross-assembler..."
 ACME="$BINDIR/acme"
-[[ -x $ACME ]] || ACME="$(which acme 2> /dev/null)"
+[[ -x $ACME ]] \
+    || ACME="$(which acme 2> /dev/null)"
 if [[ $ACME ]]; then
     IFS=',' read -r UNUSED ACME_REL ACME_DATE < <($ACME --version)
     if (( $(date -d"$ACME_DATE" +%Y%m%d 2> /dev/null) >= 20251116 )); then
-        echo "$OK found ${cyn}$ACME${nrm} $ACME_REL,$ACME_DATE"
+	message ok "found $ACME $ACME_REL,$ACME_DATE"
 	ACME_STATUS=0
     else
-        echo "$WRN found incompatible version $ACME $ACME_REL,$ACME_DATE"
+	message warn "found incompatible version $ACME $ACME_REL,$ACME_DATE"
 	ACME_STATUS=1
     fi
 else
-    echo "$WRN ACME not installed, or not in search PATH or $BINDIR."
+    message warn "ACME not installed, or not in search PATH or $BINDIR."
     ACME_STATUS=2
 fi
-echo -e "${bld}... Done.${nrm}\n"
-
 
 # IF ACME is obsolete or missing, install it in BINDIR
-if (( ACME_STATUS > 0 )); then
+if (( ACME_STATUS )); then
+    # -y and --yes options set ACME_INSTALL=y
     if [[ -z $ACME_INSTALL ]]; then
-        echo "This script can install a BreadCaml-compatible\
-              version of ACME in ${bld}$BINDIR${nrm}."
-        if (( ACME_STATUS == 1 )); then
-            echo -n " The existing '$ACME' command will be "
-            [[ $ACME == $BINDIR/acme ]] && echo "renamed." || echo "retained."
-        fi
-        echo -n " Do you want to proceed? (Y/N) "
-        read ACME_INSTALL
+	# Ask the user for ACME installation
+	message warn "This script can install a BreadCaml-compatible version\
+	      	      of ACME in $BINDIR"
+	if (( ACME_STATUS == 1 )); then
+	    [[ $ACME == $BINDIR/acme ]] && X=renamed || X=retained
+	    message cont "The existing '$ACME' command will be $X."
+	fi
+	message ask "Do you want to proceed? [Y/n] "
+	read ACME_INSTALL
     fi
-    [[ $ACME_INSTALL == @([yY]|[yY][eE][sS]) ]] || failwith "aborted by user"
-    echo "${bld}Installing ACME...${nrm}"
+    
+    # Exit if answer is not blank or Y/Yes (case-insensitive)
+    [[ $ACME_INSTALL == @(|[yY]|[yY][eE][sS]) ]] || failwith "aborted by user"
+
+    message ok "Installing ACME..."
     ACME_TMP=$(mktemp -d)
     (
-        if [[ $ACME == $BINDIR/acme ]]; then
-	    ACME_OLD=$(mktemp "$BINDIR/acme.oldXXX")
-            cp "$ACME" "$ACME_OLD"
-        fi
-        tar -xjf acme*.tar.bz2 --one-top-level="$ACME_TMP" --strip-components=1
-        make -C "$ACME_TMP/src" BINDIR="$BINDIR" install
-        rm -fr "$ACME_TMP"
+	# Exec install cmds in a subshell, on error exit immediately 
+	set -e
+	if [[ $ACME == $BINDIR/acme ]]; then
+	    ACME_OLD=$(mktemp "$BINDIR"/acme.old-XXXXX)
+	    cp "$ACME" "$ACME_OLD"
+	fi
+	tar -x -j -f acme*.tar.bz2 --one-top-level="$ACME_TMP" \
+	    --strip-components=1
+	make -C "$ACME_TMP/src" BINDIR="$BINDIR" install
+	rm -fr "$ACME_TMP"
     )
-    if [[ $? = 0 ]]; then
-        echo -e "${bld}... Done.${nrm}\n"
-        [[ $ACME_OLD ]] && echo "The old command has been renamed '$ACME_OLD'."
-    else
-        rm -fr "$ACME_TMP" "$ACME_OLD"
-        failwith "ACME installation failed"
+    if (( $? )); then
+	rm -fr "$ACME_TMP" "$ACME_OLD"
+	failwith "ACME installation failed"
     fi
+    message ok "ACME installed successfully in '$BINDIR/acme'."
+    [[ $ACME_OLD ]] \
+	&& message cont "The previous '$ACME' command is now '$ACME_OLD'."
 fi
+message end "Done."
 
 # Set BreadCaml environment
 BINDIR="$(realpath -m "$BINDIR")"
@@ -220,7 +236,7 @@ OCAMLSTDLIB=$($OCAMLC -where)
 VERSION="$(< VERSION)"
 
 # Export the configuration data needed by 'make'
-cat > etc/Makefile.conf <<__END__
+cat > etc/Makefile.conf <<END
 ACME = $ACME
 BINDIR = $BINDIR
 LIBDIR = $LIBDIR
@@ -233,22 +249,23 @@ OCAMLDOC = $OCAMLDOC
 OCAMLOPT = $OCAMLOPT -safe-string -strict-formats -strict-sequence
 OCAMLSTDLIB = $OCAMLSTDLIB
 VERSION = $VERSION
-__END__
+END
 
 # Show the result of the configuration
-cat <<__END__
+cat <<END
+
 ${bld}BreadCaml version $VERSION configured successfully as follows:${nrm}
-  BINDIR = ${cyn}$BINDIR${nrm}
-  LIBDIR = ${cyn}$LIBDIR${nrm}
-  MANDIR = ${cyn}$MANDIR${nrm}  (Stdlib manpage section: ${cyn}$MAN3EXT${nrm})
+  BINDIR = $BINDIR
+  LIBDIR = $LIBDIR
+  MANDIR = $MANDIR	(Stdlib manpage section: $MAN3EXT)
 
-${bld}*${nrm} For info on how to change this configuration, type: ${bld}$0 --help${nrm}
+${bld}*${nrm} For configuration options, run: '${bld}$0 --help${nrm}'
 
-${bld}*${nrm} To build the BreadCaml system, enter: ${bld}make${nrm}
-  then you can install it with:         ${bld}make install${nrm}
-  finally, clean the source tree with:  ${bld}make clean${nrm}
+${bld}*${nrm} To build the BreadCaml system, run:  '${bld}make${nrm}'
+  Then install it with:                '${bld}make install${nrm}'
+  Finally, clean the source tree with: '${bld}make clean${nrm}'
 
-${bld}*${nrm} To uninstall BreadCaml, enter: ${bld}make uninstall${nrm}
+${bld}*${nrm} To uninstall BreadCaml, run: '${bld}make uninstall${nrm}'
 
 Happy BreadCamling on your Commodore 64!
-__END__
+END

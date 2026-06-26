@@ -29,7 +29,7 @@ stdlib.asm: depends.asm stdlib_*.asm
 clean:
 	rm -f stdlib.asm
 
-.PHONY: distclean
-distclean: clean
+.PHONY: gitclean
+gitclean: clean
 	rm -f *~
 

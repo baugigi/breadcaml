@@ -42,6 +42,6 @@ clean:
 	rm -f $(TARGET) const.ml *.o *.cm?
 	rm -f $(VPATH)/*.o $(VPATH)/*.cm?
 
-.PHONY: distclean
-distclean: clean
+.PHONY: gitclean
+gitclean: clean
 	rm -f *~ $(VPATH)/*~
