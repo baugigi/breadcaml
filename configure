@@ -135,7 +135,7 @@ done
 
 # Ensure all needed commands are available
 message start "Checking for installed commands..."
-for CMD in ar bunzip2 make tar ocamlc.opt ocamlopt.opt ocamldoc.opt; do
+for CMD in ar bunzip2 gcc make tar ocamlc.opt ocamlopt.opt ocamldoc.opt; do
     if CHK=$(which $CMD 2> /dev/null); then
 	message ok "$CMD is $CHK"
     elif CHK=$(which ${CMD%.opt} 2> /dev/null); then

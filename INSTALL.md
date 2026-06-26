@@ -10,14 +10,15 @@
 
 #### **1) System Requirements**
 
-A Bash shell, GNU coreutils and  the `which` command are assumed to be
-installed on your system.
+A Bash shell, the GNU coreutils and standard commands as `date` and
+`which` are assumed to be installed on your system.
 
 The configuration script also requires and checks for:
 * `ar`
 * `bunzip2`
-* `tar`
+* `gcc`
 * `make`
+* `tar`
 
 #### **2) OCaml LTS (Long Term Support) release 4.14.x** 
 
