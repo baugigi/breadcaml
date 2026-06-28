@@ -10,12 +10,12 @@
 
 #### **1) System Requirements**
 
-A Bash shell, the GNU coreutils and standard commands as `date` and
+A Bash  shell, the GNU coreutils  and standard commands as  `date` and
 `which` are assumed to be installed on your system.
 
 The configuration script also requires and checks for:
 * `ar`
-* `bunzip2`
+* `bzip2`
 * `gcc`
 * `make`
 * `tar`
@@ -25,9 +25,9 @@ The configuration script also requires and checks for:
 * **Case 1: _OCaml is not installed_**
 
   Please refer to the [OCaml Installation Guide](https://ocaml.org/docs/installing-ocaml) 
-  to install OCaml on your system. Once installed, use Opam (the OCaml
-  package manager) and follow **steps a)  and b)** below to set up the
-  LTS compiler switch.
+  to install OCaml  on your system. Once installed,  use **Opam** (the
+  OCaml package manager)  and follow **steps a) and b)**  below to set
+  up the LTS compiler switch.
 
 * **Case 2: _OCaml is installed, but the LTS release is missing_**
       
@@ -137,8 +137,8 @@ To install BreadCaml immediately using the default options, run:
 > [!IMPORTANT]
 > _Omitting  target  directory  options installs  BreadCaml  into  the
 > current  Opam  switch  **(recommended)**.    This  defaults  to  the
-> following   directories:_  `~/.opam/<switch>/{bin,   /lib/breadcaml,
-> man}`._  
+> following directories:_  
+> `~/.opam/<switch>/bin`, `~/.opam/<switch>/lib/breadcaml`, `~/.opam/<switch>/man`.  
 > _If you  need to customize  the target directories, ensure  you have
 > the necessary  write permissions.  Additionally, make  sure that end
 > users  have  the required  permissions  to  access and  execute  all
@@ -148,8 +148,8 @@ To install BreadCaml immediately using the default options, run:
 > _If an obsolete  ACME version is detected,  the configuration script
 > prompts for an upgrade.  Upon  confirmation (or if the_ `-y` _option
 > was passed),_ `./configure` _will keep  the old release intact if it
-> resides outside  the BreadCaml binary directory,  and BreadCaml will
-> use the new one._
+> resides outside  the BreadCaml  binary directory, otherwise  it will
+> rename it._
 
 #### 2. Build the system
 
