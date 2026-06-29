@@ -13,125 +13,23 @@
 ;; ——————————————————————————————————————————————————————————————————————
 
 ;;; ----------------------------------------------------------------------------
-;;; C64 BASIC V2.0 AND KERNAL VER.3 ROUTINES, VECTORS, POINTERS, REGISTERS ETC.
+;;;   ZP ADDRESSES, BASIC V2 & KERNAL REL.3 ROUTINES, VECTORS, POINTERS, ETC.
 ;;; ----------------------------------------------------------------------------
 
-        ;; BASIC V2.0 error codes
-C64_ERR_TOO_MANY_FILES          = $01
-C64_ERR_FILE_OPEN               = $02
-C64_ERR_FILE_NOT_OPEN           = $03
-C64_ERR_FILE_NOT_FOUND          = $04
-C64_ERR_DEVICE_NOT_PRESENT      = $05
-C64_ERR_NOT_INPUT_FILE          = $06
-C64_ERR_NOT_OUTPUT_FILE         = $07
-C64_ERR_MISSING_FILE_NAME       = $08
-C64_ERR_ILLEGAL_DEVICE_NUMBER   = $09
-C64_ERR_NEXT_WITHOUT_FOR        = $0A
-C64_ERR_SYNTAX                  = $0B
-C64_ERR_RETURN_WITHOUT_GOSUB    = $0C
-C64_ERR_OUT_OF_DATA             = $0D
-C64_ERR_ILLEGAL_QUANTITY        = $0E
-C64_ERR_OVERFLOW                = $0F
-C64_ERR_OUT_OF_MEMORY           = $10
-C64_ERR_UNDEFD_STATMENT         = $11
-C64_ERR_BAD_SUBSCRIPT           = $12
-C64_ERR_REDIMD_ARRAY            = $13
-C64_ERR_DIVISION_BY_ZERO        = $14
-C64_ERR_ILLEGAL_DIRECT          = $15
-C64_ERR_TYPE_MISMATCH           = $16
-C64_ERR_STRING_TOO_LONG         = $17
-C64_ERR_FILE_DATA               = $18
-C64_ERR_FORMULA_TOO_COMPLEX     = $19
-C64_ERR_CANT_CONTINUE           = $1A
-C64_ERR_UNDEFD_FUNCTION         = $1B
-C64_ERR_VERIFY                  = $1C
-C64_ERR_LOAD                    = $1D
-C64_ERR_BREAK                   = $1E
-
-        ;; BASIC V2.0 tokens
-C64_BAS_ABS                     = $B6   ; ABS
-C64_BAS_AND                     = $AF   ; AND
-C64_BAS_ASC                     = $C6   ; ASC
-C64_BAS_ATN                     = $C1   ; ATN
-C64_BAS_CHR_D                   = $C7   ; CHR$    -- trailing '$' included
-C64_BAS_CLOSE                   = $A0   ; CLOSE
-C64_BAS_CLR                     = $9C   ; CLR
-C64_BAS_CMD                     = $9D   ; CMD
-C64_BAS_CONT                    = $9A   ; CONT
-C64_BAS_COS                     = $BE   ; COS
-C64_BAS_DATA                    = $83   ; DATA
-C64_BAS_DEF                     = $96   ; DEF
-C64_BAS_DIM                     = $86   ; DIM
-C64_BAS_END                     = $80   ; END
-C64_BAS_EXP                     = $BD   ; EXP
-C64_BAS_FN                      = $A5   ; FN
-C64_BAS_FOR                     = $81   ; FOR
-C64_BAS_FRE                     = $B8   ; FRE
-C64_BAS_GET                     = $A1   ; GET
-C64_BAS_GO                      = $CB   ; GO
-C64_BAS_GOSUB                   = $8D   ; GOSUB
-C64_BAS_GOTO                    = $89   ; GOTO
-C64_BAS_IF                      = $8B   ; IF
-C64_BAS_INPUT                   = $85   ; INPUT
-C64_BAS_INPUT_N                 = $84   ; INPUT#  -- trailing '#' included
-C64_BAS_INT                     = $B5   ; INT
-C64_BAS_LEFT_D                  = $C8   ; LEFT$   -- trailing '$' included
-C64_BAS_LEN                     = $C3   ; LEN
-C64_BAS_LET                     = $88   ; LET
-C64_BAS_LIST                    = $9B   ; LIST
-C64_BAS_LOAD                    = $93   ; LOAD
-C64_BAS_LOG                     = $BC   ; LOG
-C64_BAS_MID_D                   = $CA   ; MID$    -- trailing '$' included
-C64_BAS_NEW                     = $A2   ; NEW
-C64_BAS_NEXT                    = $82   ; NEXT
-C64_BAS_NOT                     = $A8   ; NOT
-C64_BAS_ON                      = $91   ; ON
-C64_BAS_OPEN                    = $9F   ; OPEN
-C64_BAS_OR                      = $B0   ; OR
-C64_BAS_PEEK                    = $C2   ; PEEK
-C64_BAS_POKE                    = $97   ; POKE
-C64_BAS_POS                     = $B9   ; POS
-C64_BAS_PRINT                   = $99   ; PRINT
-C64_BAS_PRINT_N                 = $98   ; PRINT#  -- trailing '#' included
-C64_BAS_PI                      = $FF   ; Pi constant
-C64_BAS_READ                    = $87   ; READ
-C64_BAS_REM                     = $8F   ; REM
-C64_BAS_RESTORE                 = $8C   ; RESTORE
-C64_BAS_RETURN                  = $8E   ; RETURN
-C64_BAS_RIGHT                   = $C9   ; RIGHT$  -- trailing '$' included
-C64_BAS_RND                     = $BB   ; RND
-C64_BAS_RUN                     = $8A   ; RUN
-C64_BAS_SAVE                    = $94   ; SAVE
-C64_BAS_SGN                     = $B4   ; SGN
-C64_BAS_SIN                     = $BF   ; SIN
-C64_BAS_SPC_P                   = $A6   ; SPC(    -- trailing '(' included
-C64_BAS_SQR                     = $BA   ; SQR
-C64_BAS_STEP                    = $A9   ; STEP
-C64_BAS_STOP                    = $90   ; STOP
-C64_BAS_STR_D                   = $C4   ; STR$    -- trailing '$' included
-C64_BAS_SYS                     = $9E   ; SYS
-C64_BAS_TAB_P                   = $A3   ; TAB(    -- trailing '(' included
-C64_BAS_TAN                     = $C0   ; TAN
-C64_BAS_THEN                    = $A7   ; THEN
-C64_BAS_TO                      = $A4   ; TO
-C64_BAS_USR                     = $B7   ; USR
-C64_BAS_VAL                     = $C5   ; VAL
-C64_BAS_VERIFY                  = $95   ; VERIFY
-C64_BAS_WAIT                    = $92   ; WAIT
-C64_BAS_ADD                     = $AA   ; '+', addition/string concatenation
-C64_BAS_SUB                     = $AB   ; '-', subtraction
-C64_BAS_MUL                     = $AC   ; '*', multiplication
-C64_BAS_DIV                     = $AD   ; '/', division
-C64_BAS_POW                     = $AE   ; '^' (up-arrow), Power
-C64_BAS_GT                      = $B1   ; '>', greater-than operator
-C64_BAS_EQ                      = $B2   ; '=', equals operator
-C64_BAS_LT                      = $B3   ; '<', less-than operator
-
 !address {
+        ;; Default address space
+C64_VICSCN      = $0400 ;Start address of 1024 Byte Screen Memory Area
+C64_BASRAM      = $0800 ;Start address of BASIC RAM - should be $00
+C64_BASROM      = $A000 ;Start address of BASIC ROM (Vector: BASIC cold start)
+C64_HIRAM       = $C000 ;Start address of free high RAM area
+C64_IOROM       = $D000 ;Start address of I/O ROM
+C64_KERROM      = $E000 ;Start address of Kernal ROM
+                
         ;; Zeropage
+	;; Free locations: C64_UNUSZP (1 by.), C64_FREKZP (4 by.)
 C64_D6510       = $00   ;Data Direction register
 C64_R6510       = $01   ;Data buffer
-                        ;$02 Unused
+C64_UNUSZP      = $02   ;UNUSED
 C64_ADRAY1      = $03   ;-$04 Jump Vector: Convert Integer--Floating
 C64_ADRAY2      = $05   ;-$06 Jump Vector: Convert Integer--Floating
 C64_CHARAC      = $07   ;Search Character
@@ -261,7 +159,7 @@ C64_USER        = $F3   ;-$F4 Pointer: Current Screen Color RAM loc.
 C64_KEYTAB      = $F5   ;-$F6 Vector Keyboard Decode Table
 C64_RIBUF       = $F7   ;-$F8 RS-232 Input Buffer Pointer
 C64_ROBUF       = $F9   ;-$FA RS-232 Output Buffer Pointer
-C64_FREKZP      = $FB   ;-$FE Free 0-Page Space for User Programs
+C64_FREKZP      = $FB   ;-$FE Free ZP Space for User Programs
 C64_BASZPT      = $FF   ;BASIC Temp Data Area
 
         ;; Other BASIC/Kernal variables
@@ -302,7 +200,7 @@ C64_CASTON      = $02A2 ;TOD Sense During Cassette I/O
 C64_KIKA26      = $02A3 ;Temp Storage For Cassette Read
 C64_STUPID      = $02A4 ;Temp D1 IRQ Indicator For Cassette Read
 C64_LINTMP      = $02A5 ;Temp For Line Index
-C64_PALNTS      = $02A6 ;PAL/NTSC Flag, O= NTSC, 1 = PAL
+C64_PALNTS      = $02A6 ;PAL/NTSC Flag, O=NTSC, 1=PAL
 
         ;; Vectors for some BASIC and Kernal routines
 C64_IERROR      = $0300 ;Vector: BASIC Print Error Mesg Routine (default $E38B)
@@ -336,16 +234,8 @@ C64_ILOAD       = $0330 ;Vector: Kernal LOAD Routine (default $F49E)
 C64_ISAVE       = $0332 ;Vector: Kernal SAVE Routine (default $F5DD)
 C64_TBUFFR      = $033C ;Tape I/O Buffer 
 
-        ;; Default address space
-C64_VICSCN      = $0400 ;1024 Byte Screen Memory Area
-C64_BASRAM      = $0800 ;Start address of BASIC RAM - should be $00
-C64_BASROM      = $A000 ;Start address of BASIC ROM (Vector: BASIC cold start)
-C64_HIRAM       = $C000 ;Start address of free high RAM area
-C64_IOROM       = $D000 ;Start address of I/O ROM
-C64_KERROM      = $E000 ;Start address of Kernal ROM
-                
-        ;; FLOATING POINT ROUTINES
-;; BEWARE OF MULTIPLY BUG! SEE https://www.c64-wiki.com/wiki/Multiply_bug
+        ;; BASIC Floating point routines
+	;; BEWARE: MULTIPLY BUG! See https://www.c64-wiki.com/wiki/Multiply_bug
 
         ;; Movement
 C64_MOVFM       = $BBA2 ;Load FAC from MEM (A/Y). Returns Y=0,A=exp,fl=exp.
@@ -387,7 +277,7 @@ C64_FCOMP       = $BC5B ;Compare FAC and MEM (A/Y). A = 0 (=), 1 (>), -1 (<).
         ;; Type Conversion
 C64_FOUT        = $BDDD ;Convert float in FAC to a string at $100 (also in A/Y)
 C64_STRVAL      = $B7B5 ;Convert a string ($22/$23, A=length) to float in FAC.  
-C64_FIN         = $BCF3 ;Convert a NULL-term'd string $7A/$7B to float in FAC;
+C64_FIN         = $BCF3 ;Convert a 0-terminated string $7A/$7B to float in FAC
                         ;(CHRGOT needed before, or LDA# 1st chr and CLC.)
 C64_FLOATS      = $BC44 ;Conv. 16bit signed int $62 BIG-ENDIAN to float in FAC.
 C64_GIVAYF      = $B391 ;Convert 16bit signed int (Y=lo/A=hi) to float in FAC.
@@ -464,47 +354,6 @@ C64_ATNPLYA     = $E36C ;constant  .19999912
 C64_ATNPLYB     = $E371 ;constant -.333333316
 C64_ATNPLYC     = $E376 ;constant 1
 
-        ;; Actual entry points for Kernal routines
-C64_CINT        = $FF5B
-C64_IOINIT      = $FDA3
-C64_RAMTAS      = $FD50
-C64_RESTOR      = $FD15
-C64_VECTOR      = $FD1A
-C64_SETMSG      = $FE18
-C64_SECOND      = $EDB9
-C64_TKSA        = $EDC7
-C64_MEMTOP      = $FE25
-C64_MEMBOT      = $FE34
-C64_SCNKEY      = $EA87
-C64_SETTMO      = $FE21
-C64_ACPTR       = $EE13
-C64_CIOUT       = $EDDD
-C64_UNTLK       = $EDEF
-C64_UNLSN       = $EDFE
-C64_LISTEN      = $ED0C
-C64_TALK        = $ED09
-C64_READST      = $FE07
-C64_SETLFS      = $FE00
-C64_SETNAM      = $FDF9
-C64_OPEN        = $F34A
-C64_CLOSE       = $F291
-C64_CHKIN       = $F20E
-C64_CHKOUT      = $F250
-C64_CLRCHN      = $F333
-C64_CHRIN       = $F157
-C64_CHROUT      = $F1CA
-C64_LOAD        = $F49E
-C64_SAVE        = $F5DD
-C64_SETTIM      = $F6E4
-C64_RDTIM       = $F6DD
-C64_STOP        = $F6ED
-C64_GETIN       = $F13E
-C64_CLALL       = $F32F
-C64_UDTIM       = $F69B
-C64_SCREEN      = $E505
-C64_PLOT        = $E50A
-C64_IOBASE      = $E500
-
         ;; Other useful BASIC/Kernal routines
 C64_DSPP        = $EA13 ;Put char(A) and color(X) onto screen, blink delay <- 2.
 C64_ERROR       = $E38B ;Print an error string (error code in A).
@@ -525,49 +374,90 @@ C64_LINPRT      = $BDCD ;Print uint16 <X >A
 C64_QPLOP       = $A717 ;Print BASIC token from A
 
         ;; Kernal jump table
-C64_KCINT       = $FF81 ;JMP C64_CINT
-C64_KIOINIT     = $FF84 ;JMP C64_IOINIT
-C64_KRAMTAS     = $FF87 ;JMP C64_RAMTAS
-C64_KRESTOR     = $FF8A ;JMP C64_RESTOR
-C64_KVECTOR     = $FF8D ;JMP C64_VECTOR
-C64_KSETMSG     = $FF90 ;JMP C64_SETMSG
-C64_KSECOND     = $FF93 ;JMP C64_SECOND
-C64_KTKSA       = $FF96 ;JMP C64_TKSA
-C64_KMEMTOP     = $FF99 ;JMP C64_MEMTOP
-C64_KMEMBOT     = $FF9C ;JMP C64_MEMBOT
-C64_KSCNKEY     = $FF9F ;JMP C64_SCNKEY
-C64_KSETTMO     = $FFA2 ;JMP C64_SETTMO
 C64_KACPTR      = $FFA5 ;JMP C64_ACPTR
-C64_KCIOUT      = $FFA8 ;JMP C64_CIOUT
-C64_KUNTLK      = $FFAB ;JMP C64_UNTLK
-C64_KUNLSN      = $FFAE ;JMP C64_UNLSN
-C64_KLISTEN     = $FFB1 ;JMP C64_LISTEN
-C64_KTALK       = $FFB4 ;JMP C64_TALK
-C64_KREADST     = $FFB7 ;JMP C64_READST
-C64_KSETLFS     = $FFBA ;JMP C64_SETLFS
-C64_KSETNAM     = $FFBD ;JMP C64_SETNAM
-C64_KOPEN       = $FFC0 ;JMP(C64_IOPEN)
-C64_KCLOSE      = $FFC3 ;JMP(C64_ICLOSE)
 C64_KCHKIN      = $FFC6 ;JMP(C64_ICHKIN)
 C64_KCHKOUT     = $FFC9 ;JMP(C64_ICHKOUT)
-C64_KCLRCHN     = $FFCC ;JMP(C64_ICLRCHN)
 C64_KCHRIN      = $FFCF ;JMP(C64_ICHRIN)
 C64_KCHROUT     = $FFD2 ;JMP(C64_ICHROUT)
-C64_KLOAD       = $FFD5 ;JMP(C64_ILOAD)
-C64_KSAVE       = $FFD8 ;JMP(C64_ISAVE)
-C64_KSETTIM     = $FFDB ;JMP C64_SETTIM
-C64_KRDTIM      = $FFDE ;JMP C64_RDTIM
-C64_KSTOP       = $FFE1 ;JMP(C64_ISTOP)
-C64_KGETIN      = $FFE4 ;JMP(C64_IGETIN)
+C64_KCINT       = $FF81 ;JMP C64_CINT
+C64_KCIOUT      = $FFA8 ;JMP C64_CIOUT
 C64_KCLALL      = $FFE7 ;JMP(C64_ICLALL)
-C64_KUDTIM      = $FFEA ;JMP C64_UDTIM
-C64_KSCREEN     = $FFED ;JMP C64_SCREEN
-C64_KPLOT       = $FFF0 ;JMP C64_PLOT
+C64_KCLOSE      = $FFC3 ;JMP(C64_ICLOSE)
+C64_KCLRCHN     = $FFCC ;JMP(C64_ICLRCHN)
+C64_KGETIN      = $FFE4 ;JMP(C64_IGETIN)
 C64_KIOBASE     = $FFF3 ;JMP C64_IOBASE
+C64_KIOINIT     = $FF84 ;JMP C64_IOINIT
+C64_KLISTEN     = $FFB1 ;JMP C64_LISTEN
+C64_KLOAD       = $FFD5 ;JMP(C64_ILOAD)
+C64_KMEMBOT     = $FF9C ;JMP C64_MEMBOT
+C64_KMEMTOP     = $FF99 ;JMP C64_MEMTOP
+C64_KOPEN       = $FFC0 ;JMP(C64_IOPEN)
+C64_KPLOT       = $FFF0 ;JMP C64_PLOT
+C64_KRAMTAS     = $FF87 ;JMP C64_RAMTAS
+C64_KRDTIM      = $FFDE ;JMP C64_RDTIM
+C64_KREADST     = $FFB7 ;JMP C64_READST
+C64_KRESTOR     = $FF8A ;JMP C64_RESTOR
+C64_KSAVE       = $FFD8 ;JMP(C64_ISAVE)
+C64_KSCNKEY     = $FF9F ;JMP C64_SCNKEY
+C64_KSCREEN     = $FFED ;JMP C64_SCREEN
+C64_KSECOND     = $FF93 ;JMP C64_SECOND
+C64_KSETLFS     = $FFBA ;JMP C64_SETLFS
+C64_KSETMSG     = $FF90 ;JMP C64_SETMSG
+C64_KSETNAM     = $FFBD ;JMP C64_SETNAM
+C64_KSETTIM     = $FFDB ;JMP C64_SETTIM
+C64_KSETTMO     = $FFA2 ;JMP C64_SETTMO
+C64_KSTOP       = $FFE1 ;JMP(C64_ISTOP)
+C64_KTALK       = $FFB4 ;JMP C64_TALK
+C64_KTKSA       = $FF96 ;JMP C64_TKSA
+C64_KUDTIM      = $FFEA ;JMP C64_UDTIM
+C64_KUNLSN      = $FFAE ;JMP C64_UNLSN
+C64_KUNTLK      = $FFAB ;JMP C64_UNTLK
+C64_KVECTOR     = $FF8D ;JMP C64_VECTOR
+
+        ;; Actual entry points for Kernal routines
+C64_ACPTR       = $EE13
+C64_CHKIN       = $F20E
+C64_CHKOUT      = $F250
+C64_CHRIN       = $F157
+C64_CHROUT      = $F1CA
+C64_CINT        = $FF5B
+C64_CIOUT       = $EDDD
+C64_CLALL       = $F32F
+C64_CLOSE       = $F291
+C64_CLRCHN      = $F333
+C64_GETIN       = $F13E
+C64_IOBASE      = $E500
+C64_IOINIT      = $FDA3
+C64_LISTEN      = $ED0C
+C64_LOAD        = $F49E
+C64_MEMBOT      = $FE34
+C64_MEMTOP      = $FE25
+C64_OPEN        = $F34A
+C64_PLOT        = $E50A
+C64_RAMTAS      = $FD50
+C64_RDTIM       = $F6DD
+C64_READST      = $FE07
+C64_RESTOR      = $FD15
+C64_SAVE        = $F5DD
+C64_SCNKEY      = $EA87
+C64_SCREEN      = $E505
+C64_SECOND      = $EDB9
+C64_SETLFS      = $FE00
+C64_SETMSG      = $FE18
+C64_SETNAM      = $FDF9
+C64_SETTIM      = $F6E4
+C64_SETTMO      = $FE21
+C64_STOP        = $F6ED
+C64_TALK        = $ED09
+C64_TKSA        = $EDC7
+C64_UDTIM       = $F69B
+C64_UNLSN       = $EDFE
+C64_UNTLK       = $EDEF
+C64_VECTOR      = $FD1A
 
         ;; System hardware vectors
 C64_HW_NMI      = $FFFA ;normally $FF43
-C64_HW_RESET    = $FFFC ;normally $FCE2, C64_RESET
+C64_HW_RESET    = $FFFC ;normally $FCE2 = C64_RESET
 C64_HW_IRQ      = $FFFE ;normally $FF48
 
         ;; VIC-II registers (? = unused bits, read back 1)
@@ -618,5 +508,115 @@ C64_VIC_M4C     = $D02B ;(R/W)  Sprite 4 Color
 C64_VIC_M5C     = $D02C ;(R/W)  Sprite 5 Color
 C64_VIC_M6C     = $D02D ;(R/W)  Sprite 6 Color
 C64_VIC_M7C     = $D02E ;(R/W)  Sprite 7 Color
-
 }
+
+        ;; BASIC V2.0 error codes
+C64_ERR_TOO_MANY_FILES          = $01
+C64_ERR_FILE_OPEN               = $02
+C64_ERR_FILE_NOT_OPEN           = $03
+C64_ERR_FILE_NOT_FOUND          = $04
+C64_ERR_DEVICE_NOT_PRESENT      = $05
+C64_ERR_NOT_INPUT_FILE          = $06
+C64_ERR_NOT_OUTPUT_FILE         = $07
+C64_ERR_MISSING_FILE_NAME       = $08
+C64_ERR_ILLEGAL_DEVICE_NUMBER   = $09
+C64_ERR_NEXT_WITHOUT_FOR        = $0A
+C64_ERR_SYNTAX                  = $0B
+C64_ERR_RETURN_WITHOUT_GOSUB    = $0C
+C64_ERR_OUT_OF_DATA             = $0D
+C64_ERR_ILLEGAL_QUANTITY        = $0E
+C64_ERR_OVERFLOW                = $0F
+C64_ERR_OUT_OF_MEMORY           = $10
+C64_ERR_UNDEFD_STATMENT         = $11
+C64_ERR_BAD_SUBSCRIPT           = $12
+C64_ERR_REDIMD_ARRAY            = $13
+C64_ERR_DIVISION_BY_ZERO        = $14
+C64_ERR_ILLEGAL_DIRECT          = $15
+C64_ERR_TYPE_MISMATCH           = $16
+C64_ERR_STRING_TOO_LONG         = $17
+C64_ERR_FILE_DATA               = $18
+C64_ERR_FORMULA_TOO_COMPLEX     = $19
+C64_ERR_CANT_CONTINUE           = $1A
+C64_ERR_UNDEFD_FUNCTION         = $1B
+C64_ERR_VERIFY                  = $1C
+C64_ERR_LOAD                    = $1D
+C64_ERR_BREAK                   = $1E
+
+        ;; BASIC V2.0 tokens
+C64_BAS_ABS                     = $B6   ; ABS
+C64_BAS_AND                     = $AF   ; AND
+C64_BAS_ASC                     = $C6   ; ASC
+C64_BAS_ATN                     = $C1   ; ATN
+C64_BAS_CHR_D                   = $C7   ; CHR$    -- trailing '$' included
+C64_BAS_CLOSE                   = $A0   ; CLOSE
+C64_BAS_CLR                     = $9C   ; CLR
+C64_BAS_CMD                     = $9D   ; CMD
+C64_BAS_CONT                    = $9A   ; CONT
+C64_BAS_COS                     = $BE   ; COS
+C64_BAS_DATA                    = $83   ; DATA
+C64_BAS_DEF                     = $96   ; DEF
+C64_BAS_DIM                     = $86   ; DIM
+C64_BAS_END                     = $80   ; END
+C64_BAS_EXP                     = $BD   ; EXP
+C64_BAS_FN                      = $A5   ; FN
+C64_BAS_FOR                     = $81   ; FOR
+C64_BAS_FRE                     = $B8   ; FRE
+C64_BAS_GET                     = $A1   ; GET
+C64_BAS_GO                      = $CB   ; GO
+C64_BAS_GOSUB                   = $8D   ; GOSUB
+C64_BAS_GOTO                    = $89   ; GOTO
+C64_BAS_IF                      = $8B   ; IF
+C64_BAS_INPUT                   = $85   ; INPUT
+C64_BAS_INPUT_N                 = $84   ; INPUT#  -- trailing '#' included
+C64_BAS_INT                     = $B5   ; INT
+C64_BAS_LEFT_D                  = $C8   ; LEFT$   -- trailing '$' included
+C64_BAS_LEN                     = $C3   ; LEN
+C64_BAS_LET                     = $88   ; LET
+C64_BAS_LIST                    = $9B   ; LIST
+C64_BAS_LOAD                    = $93   ; LOAD
+C64_BAS_LOG                     = $BC   ; LOG
+C64_BAS_MID_D                   = $CA   ; MID$    -- trailing '$' included
+C64_BAS_NEW                     = $A2   ; NEW
+C64_BAS_NEXT                    = $82   ; NEXT
+C64_BAS_NOT                     = $A8   ; NOT
+C64_BAS_ON                      = $91   ; ON
+C64_BAS_OPEN                    = $9F   ; OPEN
+C64_BAS_OR                      = $B0   ; OR
+C64_BAS_PEEK                    = $C2   ; PEEK
+C64_BAS_POKE                    = $97   ; POKE
+C64_BAS_POS                     = $B9   ; POS
+C64_BAS_PRINT                   = $99   ; PRINT
+C64_BAS_PRINT_N                 = $98   ; PRINT#  -- trailing '#' included
+C64_BAS_PI                      = $FF   ; Pi constant
+C64_BAS_READ                    = $87   ; READ
+C64_BAS_REM                     = $8F   ; REM
+C64_BAS_RESTORE                 = $8C   ; RESTORE
+C64_BAS_RETURN                  = $8E   ; RETURN
+C64_BAS_RIGHT                   = $C9   ; RIGHT$  -- trailing '$' included
+C64_BAS_RND                     = $BB   ; RND
+C64_BAS_RUN                     = $8A   ; RUN
+C64_BAS_SAVE                    = $94   ; SAVE
+C64_BAS_SGN                     = $B4   ; SGN
+C64_BAS_SIN                     = $BF   ; SIN
+C64_BAS_SPC_P                   = $A6   ; SPC(    -- trailing '(' included
+C64_BAS_SQR                     = $BA   ; SQR
+C64_BAS_STEP                    = $A9   ; STEP
+C64_BAS_STOP                    = $90   ; STOP
+C64_BAS_STR_D                   = $C4   ; STR$    -- trailing '$' included
+C64_BAS_SYS                     = $9E   ; SYS
+C64_BAS_TAB_P                   = $A3   ; TAB(    -- trailing '(' included
+C64_BAS_TAN                     = $C0   ; TAN
+C64_BAS_THEN                    = $A7   ; THEN
+C64_BAS_TO                      = $A4   ; TO
+C64_BAS_USR                     = $B7   ; USR
+C64_BAS_VAL                     = $C5   ; VAL
+C64_BAS_VERIFY                  = $95   ; VERIFY
+C64_BAS_WAIT                    = $92   ; WAIT
+C64_BAS_ADD                     = $AA   ; '+', addition/string concatenation
+C64_BAS_SUB                     = $AB   ; '-', subtraction
+C64_BAS_MUL                     = $AC   ; '*', multiplication
+C64_BAS_DIV                     = $AD   ; '/', division
+C64_BAS_POW                     = $AE   ; '^' (up-arrow), Power
+C64_BAS_GT                      = $B1   ; '>', greater-than operator
+C64_BAS_EQ                      = $B2   ; '=', equals operator
+C64_BAS_LT                      = $B3   ; '<', less-than operator
