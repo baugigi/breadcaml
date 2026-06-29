@@ -14,9 +14,9 @@
 
 
 ;; ACME command-line arguments:
-;;   -Dcaml_SHOWMEM=1                   Show program memory usage
-;;   -Dcaml_INTERP=1                    Bytecode interpretation, no native code
-;;   -Dcaml_INTERP=1 -Dcaml_DEBUG=1     Bytecode interpr. + show debug info
+;;   -Dcaml_SHOWMEM=1                Show program memory usage
+;;   -Dcaml_INTERP=1                 Bytecode interpretation
+;;   -Dcaml_INTERP=1 -Dcaml_DEBUG=1  Bytecode interpretation w/ debugger
 
 !cpu 6502
 !convtab pet
@@ -25,26 +25,24 @@
         .dummy = $1234                          ;dummy arg. for self-modifying
                                                 ;code (SMC in comments)
 
-;; ----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;;      LOADER (C64 BASIC V2 PROGRAM)
-;; ----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 
         * = C64_BASRAM + 1
 caml_loader
-        !word +, 10                             ;10 SYS caml_init:NEW
+	;; 10 SYS caml_init:NEW:REM...
+        !word +, 10
         !byte C64_BAS_SYS
         !for @i, 4, 0 {!text '0' + (caml_init DIV 10^@i) % 10}
-        !byte ':', C64_BAS_NEW
-        !byte 0                                 ;End_of_line
-+       !word +, 20                             ;20 REM ...text...
-        !byte C64_BAS_REM
-        !text 34, 141, 147, 14                  ;<"><sh+cr><clr><lo_case>
-        !text 141, "         The BreadCaml Project"             ;<sh+cr> blah
-        !text 141, "         (C)2026 Piero Furiesi"             ;<sh+cr> blah
-        !text 141, "  https://github.com/baugigi/breadcaml"     ;<sh+cr> blah
-        !text 141                                               ;<sh+cr>
-.zeroes !byte 0                                 ;End_of_line
-+       !byte 0, 0                              ;End_of_program
+        !byte ':', C64_BAS_NEW, ':', C64_BAS_REM
+        !text 34, 141, 147, 14                  ;<"><SH+CR><CLR><LO_CASE>
+        !text 141, "         The BreadCaml Project"             ;<SH+CR> txt...
+        !text 141, "        (C) 2026  Piero Furiesi"            ;<SH+CR> txt...
+        !text 141, "  https://github.com/baugigi/breadcaml"     ;<SH+CR> txt...
+        !text 141                                               ;<SH+CR>
+.zeroes !byte 0                                 ;End of line
++       !byte 0, 0                              ;End of program
 
 ;; ----------------------------------------------------------------------------
 ;;      MEMORY ADDRESSES
@@ -59,12 +57,9 @@ caml_loader
 !addr   ENV             = $34                   ; 2 by. Environment
 !ifdef  caml_INTERP {
         !addr   caml_interp_fetch = $36         ;15 by. Fetch-exec ($36-$44)
-        !addr   PC                = $37         ;(2 by. Program counter)
+        !addr   PC                = $37         ;       (2 by. Program counter)
 }
-;;; CAUTION:
-;;; $47         used by FOUT
-;;; $56         used in addition and subtraction, and also the exp function
-;;; $5C-$60     used by the PETSCII conversion routines
+	;; CAUTION: $47, $56-$60 are used by BASIC floating point routines
 !addr   TMP             = $45                   ;18 by. Temp. area ($45-$56)
 !addr   BLK             = $57                   ; 2 by. New alloc'ed block ptr
 !addr   GC              = $59                   ; 8 by. Reserved for GC
@@ -72,14 +67,14 @@ caml_loader
 !addr   caml_zp_end     = $61                   ;54 by. Total ($61 = end + 1)
 
         ;; Computed by breadcaml
-;!addr  caml_glob_data                          ;global data store (out of heap)
-;!addr  caml_glob_table                         ;table of global values
-;!addr  caml_glob_end                           ;end of table + 1
-;!addr  caml_program                            ;start of program object code
-;!addr  caml_externals_lo                       ;extern. jumptable, lo bytes
-;!addr  caml_externals_hi                       ;extern. jumptable, hi bytes
-;!addr  caml_stack_start                        ;stack memory, start address
-;!addr  caml_stack_end                          ;stack memory, end address + 1
+;; !addr  caml_glob_data                        ;global data store (out of heap)
+;; !addr  caml_glob_table                       ;table of global values
+;; !addr  caml_glob_end                         ;end of table + 1
+;; !addr  caml_program                          ;start of program object code
+;; !addr  caml_externals_lo                     ;extern. jumptable, lo bytes
+;; !addr  caml_externals_hi                     ;extern. jumptable, hi bytes
+;; !addr  caml_stack_start                      ;stack memory, start address
+;; !addr  caml_stack_end                        ;stack memory, end address + 1
 
 !ifndef caml_basic_rom_overlap {
 !if caml_stack_end > C64_BASROM {
@@ -89,13 +84,12 @@ caml_loader
   !warn .x 
 }}
 
-;; ----------------------------------------------------------------------------
-;;      MEMORY REPRESENTATION OF OCaml VALUES
-;; ----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
+;;      MEMORY REPRESENTATION OF OCaml VALUES: INTEGERS OR BLOCKS.
+;; -----------------------------------------------------------------------------
 
-;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-;;             .__1_word___.
-;; INTEGERS:   |_lo_1¦±_hi_|            15-bit signed integers, lsb=1
+;; INTEGERS:   .___1_word__.   15-bit signed integers, lsb=1
+;;             |_lo_1¦±_hi_|
 
 !macro  Val_Int ~.val, .int {                   ; Set .val to repr(.int)
   !set  .val = (2 * .int) + 1
@@ -106,40 +100,33 @@ caml_loader
         +Val_Int ~Val_true,     1               ;true : bool
         +Val_Int ~Val_unit,     0               ;() : unit
 
-;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-;;             .__Pointer__.
-;; BLOCKS:     |_lo_0¦__hi_|            16-bit word-aligned pointers, lsb=0
+;; BLOCKS:     .__Pointer__.   16-bit word-aligned pointers, lsb=0
+;;             |_lo_0¦__hi_|
 ;;            /
 ;; .__Header_*___Fld(0)__.___Fld(1)__._ _._Fld(Sz-1)_.
 ;; |Tag_¦_Sz_|___Value___|___Value___|···|___Value___|
 
-        ;; block test: BIT caml_is_block        sets Z=1 <=> A is a block
-!addr   caml_is_block   = .isblk + 1            ;address for the above test
+        ;; BIT caml_is_block will set Z=1 <=> A is a block
+!addr   caml_is_block   = .isblk + 1
 
-        Custom_tag      = 255                   ;custom blocks
-        Double_array_tag= 254                   ;arrays of unboxed floats
-        Double_tag      = 253                   ;floats
-        String_tag      = 252                   ;strings
-        Abstract_tag    = 251                   ;abstracts
-        No_scan_tag     = 251                   ;lowest tag for blks w/row data
-        Forward_tag     = 250                   ;lazy values, forwarding ptrs
-        Infix_tag       = 249                   ;rec. closures (must be odd!)
-        Object_tag      = 248                   ;objects
-        Closure_tag     = 247                   ;closures
-        Lazy_tag        = 246                   ;lazy values
+        Custom_tag      = 255                   ;custom block
+        Double_array_tag= 254                   ;array of unboxed floats
+        Double_tag      = 253                   ;float
+        String_tag      = 252                   ;string
+        Abstract_tag    = 251                   ;abstract
+        No_scan_tag     = 251                   ;tag>=No_scan_tag => no GC scan
+        Forward_tag     = 250                   ;lazy value, fwd ptr
+        Infix_tag       = 249                   ;rec.clos.; odd => is INT for GC
+        Object_tag      = 248                   ;object/exception
+        Closure_tag     = 247                   ;closure
+        Lazy_tag        = 246                   ;lazy value
 
-;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-;; ATOMS (zero-sized blocks):
-;; .Tag_Sz_*    Atom(0) is statically allocated out of the heap, since the
-;; |_0_¦_0_|    tag=0 in blocks allocated on the heap is used by the GC to mark
-;;              them as copied and to signal that the first field contains the
-;; forward pointer (and atoms have no fields...). Atoms with tag<>0 are not
-;; allowed, since no valid OCaml value is represented this way.
+;; ATOM(0):    .Tag_Sz_*                        ;Atom(t),t>0 not allowed as no
+;;             |_0_¦_0_|                        ;value is represented as such
 
-        ;; Statically allocate Atom(0)
-!addr   caml_atom0 = .zeroes + 2 + .zeroes % 2  ;ensure word-alignment
+        ;; Statically allocated, word-aligned
+!addr   caml_atom0 = .zeroes + 2 + .zeroes % 2
 
-;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ;; FLOAT blocks: C64 MFLP representation, not IEEE!
 ;; .Tag_Sz_*_________._________._________.
 ;; |253¦_3_|Expo¦±M_a|_n_t¦_i_s|_s_a¦_??_|      ?? = unused byte
@@ -155,7 +142,6 @@ caml_loader
         INY
 }
 
-;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ;; STRING blocks: length = 2 * Sz - 1 - last byte;
 ;; .Tag_Sz_*___________.___________.___________.
 ;; |252¦_3_|_'O'_¦_'C'_|_'a'_¦_'m'_|_'l'_¦__0__| "OCaml" length=2*3-1-0=5
@@ -167,13 +153,12 @@ caml_loader
         !if len(.str) % 2 = 0 { !byte 1 }
 }
 
-;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-;; STANDARD EXCEPTIONS:
-;; .Tag_Sz_*____________._____.
+;; EXCEPTIONS:
+;; .Tag_Sz_*____________._____.                 standard exceptions:
 ;; |248¦_2_|_string_blk_|_oid_|                 oid = -1 ... -12  = -exn_no-1
 ;;          /
-;; .Tag_Sz_*_._________···__________.
-;; |252¦Sz_|_"Exception_identifier"_|
+;; .Tag_Sz_*_.______···_______.
+;; |252¦Sz_|_"Exception_name"_|
 
         Out_of_memory   =  0 :  End_of_file     =  4 :  Stack_overflow  =  8
         Sys_error       =  1 :  Division_by_zero=  5 :  Sys_blocked_io  =  9
@@ -217,27 +202,20 @@ caml_loader
 !align  $01, $00
 !for .i, 0, caml_exn_no - 1 { +caml_alloc_exn .x[.i], .i }
 
-;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-;; CLOSURE blocks: Sz = 1 + #vars
-;; .Tag_Sz_*________.______.______._
-;; |247¦Sz_|code_ptr|_Var0_|_Var1_|_···
-;;
-;; RECURSIVE CLOSURE blocks: Sz = 2 * #funcs - 1 + #vars
+;; CLOSURES/RECURSIVE CLOSURES: Sz = 2 * nfun - 1 + nvar
 ;; .Tag_Sz_*0______.Tag_Sz_*1______.Tag_Sz_*2______._ _.______.______._
 ;; |247¦Sz_|_code0_|249¦_2_|_code1_|249¦_4_|_code2_|···|_Var0_|_Var1_|_···
 ;;                  /    \___________/___\___ # of words from *0 to *i = 2i
-;; Infix_tags______/________________/ (prevent GC scan)
+;; Infix_tag_______/________________/
 
-;; ----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;;      INITIALIZATION
-;; ----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 
 caml_init
 
 !ifdef  caml_basic_rom_overlap {
-        LDA C64_D6510                           ;deactivate BASIC ROM
-        AND # %11111110
-        STA C64_D6510
+        JSR caml_BASROM_off                     ;deactivate BASIC ROM
 }
         TSX                                     ;Save the CPU stack pointer,
         STX caml_hw_stack_ptr                   ; addr. defined in runtime.asm
@@ -270,10 +248,10 @@ caml_init
         STA TRAPSP                              ;Init TRAPSP
         STY TRAPSP + 1
         STA XARGS                               ;Init XARGS
-        LDA # <caml_atom0
+        LDA # <caml_atom0                       ;Init ENV
         STA ENV
         LDA # >caml_atom0
-        STA ENV + 1                             ;Init ENV
+        STA ENV + 1
 !ifdef  caml_INTERP {
                 LDX # <caml_program             ;X,A will be used to init PC
                 LDA # >caml_program
@@ -282,9 +260,9 @@ caml_init
         JMP caml_program                        ;Start compiled program
 }
 
-;; ----------------------------------------------------------------------------
-;;      PROGRAM TERMINATION
-;; ----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
+;;      TERMINATION
+;; -----------------------------------------------------------------------------
 
 caml_end
         LDX # caml_zp_end - caml_zp_start
@@ -297,52 +275,68 @@ caml_end
         LDA # >C64_ERROR
         STA C64_IERROR + 1
 !ifdef  caml_basic_rom_overlap {                ;re-activate BASIC ROM
-        LDA C64_D6510
-        ORA # %00000011
-        STA C64_D6510
+        JSR caml_BASROM_on
 }
         RTS                                     ;return to BASIC prompt.
 
-;; ----------------------------------------------------------------------------
-;;      RAM/ROM OVERLAP MANAGEMENT
-;; ----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
+;;      ROM/RAM OVERLAP - BASIC ROUTINES CALLS
+;; -----------------------------------------------------------------------------
 
-!ifndef caml_basic_rom_overlap {
-  !macro caml_JSR_BASROM .routine {             ;call a BASIC ROM routine
+        ;; Macro: call a BASIC ROM routine
+!macro caml_JSR_BASROM .routine {
+  !ifndef caml_basic_rom_overlap {              ;Best case: code never overlaps
+        JSR .routine                            ;BASIC ROM
+  } else {
+    !if @x < C64_BASROM {                       ;BASROM is disabled but this
+        JSR caml_BASROM_on                      ;part of code doesn't overlap it
         JSR .routine
+        JSR caml_BASROM_off
+@x  } else {                                    ;Worst case: this part of code
+        PHP                                     ;overlaps BASIC ROM. Pass the
+        PHA                                     ;routine address to a wrapper
+        LDA # <.routine                         ;in a safe zone and call it
+        STA caml_BASROM_addr
+        LDA # >.routine
+        STA caml_BASROM_addr + 1
+        JSR caml_BASROM_wrapper
+    }
   }
-} else {
-  !macro caml_JSR_BASROM .routine {             ;call a BASIC ROM routine
-        PHP                                     ;save PS and A as they may be
-        PHA                                     ; arguments for the routine
-        LDA # <.routine                         ;store the routine address at
-        STA caml_basic_rom_call_addr            ; wrapper's JSR argument place
-        LDA # >.routine                         ; (see below)
-        STA caml_basic_rom_call_addr + 1
-        JSR caml_basic_rom_call
-  }
-        ;; assemble a wrapper here (safe place, not overlapped to ROM)
-caml_basic_rom_call
-        LDA C64_D6510                           ;activate BASIC ROM
-        ORA # %00000011
-        STA C64_D6510
-        PLA                                     ;restore PS and A
-        PLP
-caml_basic_rom_call_addr = * + 1
-        JSR .dummy                              ;SMC: JSR routine
-        PHP                                     ;save PS and A again, as they
-        PHA                                     ; may be the routine results
-        LDA C64_D6510                           ;deactivate BASIC ROM
-        AND # %11111110
-        STA C64_D6510
-        PLA                                     ;restore PS and A
-        PLP
-        RTS                                     ;return to caller, in RAM
 }
 
-;; ----------------------------------------------------------------------------
+!ifdef caml_basic_rom_overlap {
+caml_BASROM_wrapper                             ;Wrapper for 'Worst case' above
+        LDA C64_D6510
+        ORA # %00000011
+        STA C64_D6510
+        PLA
+        PLP
+caml_BASROM_addr = * + 1
+        JSR .dummy                              ;SMC: JSR .routine
+        ;; fallthrough caml_BASROM_off
+caml_BASROM_off                                 ;Deactivate BASIC ROM
+        PHP
+        PHA
+        LDA C64_D6510
+        AND # %11111110
+        STA C64_D6510
+        PLA
+        PLP
+        RTS
+caml_BASROM_on                                  ;Activate BASIC ROM
+        PHP
+        PHA
+        LDA C64_D6510
+        ORA # %00000011
+        STA C64_D6510
+        PLA
+        PLP
+        RTS
+}
+
+;; -----------------------------------------------------------------------------
 ;;      BASIC/KERNAL ERROR HANDLER
-;; ----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 
 caml_syserr
 !ifdef  caml_basic_rom_overlap {
@@ -375,11 +369,11 @@ caml_syserr
 @blk    !word caml_std_exn[Sys_error]           ; Field0 = Sys_error exn
 @arg    !word .dummy                            ; Field1 = Val_Int(error no.)
 
-;; ----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;;      ZEROPAGE BUFFER - ZP values are saved here at initializazion and
 ;;      restored at end. If caml_INTERP=1, the buffer also contains the
 ;;      fetch-exec routine to be copied into ZP by caml_init.
-;; ----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 
 caml_zp_buf
         !fill 11                                ;11 by. for ZAM2 registers
@@ -402,6 +396,11 @@ caml_zp_buf
   }                                             ;--
 } else {!fill 15}                               ;15 by. total
         !fill 28                                ;28 by. for BLK, GC, TMP
+
+;; -----------------------------------------------------------------------------
+;;      INTERPRETER TRACING DEBUGGER
+;;      | PC | Opcode | ACCU | SP[0] ... SP[5] | ENV | XARGS |
+;; -----------------------------------------------------------------------------
 
 !ifdef  caml_INTERP {
 !ifdef caml_DEBUG {
@@ -491,9 +490,7 @@ caml_debug
         ASL
         LDY # 0
         RTS
-        
 @count  !byte 0
-        
 @pr_hex PHA                                     ;       [A
         LSR
         LSR
@@ -512,14 +509,11 @@ caml_debug
         DEX
         BNE -
         RTS
-        
 @hdr    !text @RevOn, "addr", @RevOff, "oc",   @Cyan,  "accu", @RevOn, "stk0"
         !text @LBlue, "   1", @Cyan,   "   2", @LBlue, "   3", @Cyan,  "   4"
         !text @LBlue, "   5", @RevOff, " env", @RevOn, "xa",   @RevOff
 @end
-
 }} ;ifdef caml_INTERP & caml_DEBUG
-
 
 caml_loader_end
 } ;zone caml_LOADER
