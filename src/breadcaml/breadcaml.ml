@@ -16,8 +16,6 @@ open Filename
 
 exception Exec_error of string * int
 
-let me =  Sys.argv.(0)
-
 let input_files = ref []	(* *.{ml, mli, cmo, asm} input files *)
 let o_arg = ref ""		(* -o option argument *)
 let compile_only = ref false	(* -c option *)
@@ -60,20 +58,20 @@ let ocamlc ?out_file () =
     let no_asm_files =
       List.filter (fun f -> not (check_suffix f ".asm")) !input_files in
     String.concat " "
-      (("CAMLLIB=" ^ Const.libdir)
-       :: Const.ocamlc
+      (("CAMLLIB=" ^ quote Const.libdir)
+       :: quote Const.ocamlc
        :: "-custom"
        :: (if !verbose then "-verbose" else "")
        :: (if !compile_only then "-c" else "")
        :: !ocamlc_opts
        @ (match out_file with Some by -> ["-o"; quote by] | _ -> [])
-       @ List.map Filename.quote no_asm_files) in
+       @ List.map quote no_asm_files) in
   exec_cmd cmd
 
 let acme in_file =
   let cmd =
     String.concat " "
-      (Const.acme
+      (quote Const.acme
        :: (if !interp then "-Dcaml_INTERP=1" else "")
        :: (if !showmem then "-Dcaml_SHOWMEM=1" else "")
        :: (if !verbose then "-v9" else "")
@@ -82,6 +80,7 @@ let acme in_file =
   exec_cmd cmd
 
 let usage =
+  let me = Sys.argv.(0) in
   Printf.sprintf
     ("Usage:\
       \t%s\t[-o outfile.ext] [OPTIONS] [OCAMLC_OPTIONS] FILE ...\n\

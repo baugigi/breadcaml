@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# depends.asm generation
+
+# Here "primitive" stands generically for an assembly routine.
+# All primitives:
+#  1) start with  "!ifdef caml_PRIM__prim_name { ;optional comment"
+#  2) end with    "} ;optional comment"
+#  3) last '}' MUST be at 1ST COLUMN; any '}' in between MUST NOT.
+
+# Input and output files
+INFILE=stdlib_*.asm
+OUTFILE=depends.asm
+
+# sed prg to extract deps
+HEADRGX='^[ \t]*!ifdef[ \t]+caml_PRIM__'
+PRIMRGX='caml_[a-zA-Z0-9_]+'
+SEDPRG="
+/$HEADRGX/, /^}/ {
+  # First line: get prim_name, add '|', hold
+  /$HEADRGX/ { s/$HEADRGX($PRIMRGX).*$/\1|/; h; d; }
+  # Last line: emit prim_name|list_of_direct_deps
+  /^}/ { g; s/\n/ /g; p; d; }
+  # Lines in between:
+  s/;.*$//g                          # remove ACME comments
+  s/.*[ \t(><]($PRIMRGX)/§\1/g       # prepend § to each dep
+  /§/! d                             # delete line if no §
+  /§/ s/[^§]*§($PRIMRGX)[^§]*/\1 /g  # remove § and text between deps
+  /^[ \t]*$/ d                       # delete empty lines
+  s/[ \t]+/ /g                       # compact all spaces and tabs
+  H                                  # add tokens to hold space
+}"
+
+# Init DEPS array: expunge self-deps and sort PRIMDEPS removing duplicates
+declare -A DEPS
+while IFS='|' read -r PRIM PRIMDEPS; do
+    DEPS["$PRIM"]="$(printf "%s\n" $PRIMDEPS|grep -v "^$PRIM$"|sort -u|xargs)"
+done < <(sed -s -n -E "$SEDPRG" $INFILE)
+
+# List of all primitives
+ALLPRIMS="${!DEPS[@]}"
+
+# Remove fake deps (caml_xyz when caml_xyz is not a primitive)
+for PRIM in $ALLPRIMS; do
+    PRIMDEPS=''
+    for DEP in ${DEPS["$PRIM"]}; do
+	# add DEP to PRIMDEPS only if DEPS[DEP] is set
+	[[ ${DEPS[$DEP]+x} ]] && PRIMDEPS+="$DEP "
+    done
+    DEPS["$PRIM"]="${PRIMDEPS% }"
+done
+
+# Calculate the transitive closure of all dependencies (BFS would be better)
+MODIFIED=1
+while (( MODIFIED )); do
+    MODIFIED=0
+    for PRIM in $ALLPRIMS; do
+        PRIMDEPS="${DEPS[$PRIM]}"
+        for DEP in $PRIMDEPS; do
+            DEPS["$PRIM"]+=" ${DEPS[$DEP]}"
+        done
+        DEPS["$PRIM"]=$(printf "%s\n" ${DEPS["$PRIM"]} | sort -u | xargs)
+        [[ $PRIMDEPS == ${DEPS[$PRIM]} ]] || MODIFIED=1
+    done
+done
+
+# Generate the output file
+echo ';; AUTO-GENERATED FILE - DO NOT EDIT' > "$OUTFILE"
+for PRIM in $(printf "%s\n" $ALLPRIMS | sort | xargs); do
+    PRIMDEPS="${DEPS[$PRIM]}"
+    [[ $PRIMDEPS ]] && {
+        echo "!ifdef caml_PRIM__$PRIM {" >> "$OUTFILE"
+        for DEP in $PRIMDEPS; do
+            echo "  !set caml_PRIM__$DEP=1" >> "$OUTFILE"
+        done
+        echo "}" >> "$OUTFILE"
+        echo "" >> "$OUTFILE"
+    }
+done

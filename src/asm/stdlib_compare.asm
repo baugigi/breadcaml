@@ -153,14 +153,14 @@ caml_string_notequal
 }
 
 ;;; --------------------------------------      ;Auxiliary routines for saving
-!ifdef  caml_AUX__caml_return_true {            ;the comparison result in ACCU.
+!ifdef  caml_PRIM__caml_return_true {            ;the comparison result in ACCU.
 caml_return_true                                ;Placed here due to the branch
         STY ACCU + 1                            ;instruction offset limitations.
         LDA # <Val_true
         STA ACCU
         RTS
 }
-!ifdef  caml_AUX__caml_return_false_zero {
+!ifdef  caml_PRIM__caml_return_false_zero {
 caml_return_false
 caml_return_zero
         STY ACCU + 1
@@ -274,7 +274,7 @@ caml_compare
         ;; FALLTHROUGH caml_compare_set_result
 }
 
-!ifdef caml_AUX__caml_compare_set_result {
+!ifdef caml_PRIM__caml_compare_set_result {
 caml_compare_set_result
         BPL +
         LDA # -1
@@ -288,7 +288,7 @@ caml_compare_set_result
         RTS
 }
 
-!ifdef caml_AUX__caml_compare_identity_setV2 {
+!ifdef caml_PRIM__caml_compare_identity_setV2 {
 caml_compare_identity_setV2
         ;; check if ACCU == SP[0] (physical identity)
         ;; yes: return Z = 1
@@ -308,7 +308,7 @@ caml_compare_identity_setV2
         RTS
 }
 
-!ifdef caml_AUX__caml_compare_val {
+!ifdef caml_PRIM__caml_compare_val {
 caml_compare_val
         ;; Compare values in ACCU and SP[0].
         ;; PREREQUISITE: Y <> 0 if called by caml_compare, Y = 0 otherwise.
@@ -579,7 +579,7 @@ caml_compare_val
         JMP .loop                               ;continue loop
 }
 
-!ifdef caml_AUX__caml_compare_val_double_tag {
+!ifdef caml_PRIM__caml_compare_val_double_tag {
 caml_compare_val_double_tag
         ;; Compare floats in ACCU and SP[0].
         ;; Result: A </=/> 0 according to the OCaml semantics of compare.
@@ -597,7 +597,7 @@ caml_compare_val_double_tag
         RTS
 }
 
-!ifdef caml_AUX__caml_compare_val_string_tag {
+!ifdef caml_PRIM__caml_compare_val_string_tag {
 caml_compare_val_string_tag
         ;; Compare strings in ACCU and SP[0].
         ;; Result: A </=/> 0 according to the OCaml semantics of compare.
@@ -653,7 +653,7 @@ caml_compare_val_string_tag
         RTS
 }
 
-!ifdef caml_AUX__caml_compare_val_custom_tag {
+!ifdef caml_PRIM__caml_compare_val_custom_tag {
 caml_compare_val_custom_tag
         ;; Compare custom values in ACCU and SP[0].
         ;; Result: A </=/> 0 according to the OCaml semantics of compare.
@@ -661,7 +661,7 @@ caml_compare_val_custom_tag
         +caml_raise Not_found
 }
 
-!ifdef caml_AUX__caml_compare_val_double_array_tag {
+!ifdef caml_PRIM__caml_compare_val_double_array_tag {
 caml_compare_val_double_array_tag
         ;; Compare floatarrays in ACCU and SP[0].
         ;; Result: A </=/> 0 according to the OCaml semantics of compare.
@@ -669,7 +669,7 @@ caml_compare_val_double_array_tag
         +caml_raise Not_found
 }
 
-!ifdef caml_AUX__caml_compare_val_object_tag {
+!ifdef caml_PRIM__caml_compare_val_object_tag {
 caml_compare_val_object_tag
         ;; Compare objects in ACCU and SP[0].
         ;; Result: A </=/> 0 according to the OCaml semantics of compare.
@@ -677,7 +677,7 @@ caml_compare_val_object_tag
         +caml_raise Not_found
 }
 
-!ifdef caml_AUX__caml_string_eq_neq {           ;caml_compare_val_string_tag is
+!ifdef caml_PRIM__caml_string_eq_neq {           ;caml_compare_val_string_tag is
 caml_string_eq_neq                              ; slower for equality tests
         LDY # -1
         DEC .V1 + 1

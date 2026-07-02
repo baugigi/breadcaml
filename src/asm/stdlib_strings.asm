@@ -18,14 +18,18 @@
 
 !zone caml_STRINGS {
 
+!ifdef caml_PRIM__caml_string_of_bytes {
+	!set caml_string_of_bytes = caml_bytes_of_string
+}
 !ifdef caml_PRIM__caml_bytes_of_string {
 caml_bytes_of_string
-caml_string_of_bytes
         RTS
 }
 
+!ifdef caml_PRIM__caml_create_bytes {
+	!set caml_create_bytes = caml_create_string
+}
 !ifdef caml_PRIM__caml_create_string {
-caml_create_bytes
 caml_create_string
         ;; ACCU = length
         ;; alloc a new block for a string of given length (max 509)
@@ -65,8 +69,10 @@ caml_create_string
 +++     +caml_raise Invalid_argument, "String.create"
 }
 
+!ifdef caml_PRIM__caml_ml_bytes_length {
+	!set caml_ml_bytes_length = caml_ml_string_length
+}
 !ifdef caml_PRIM__caml_ml_string_length {
-caml_ml_bytes_length
 caml_ml_string_length
         ;; ACCU = string
         ;; return the string length (0 to 509) 
@@ -83,8 +89,10 @@ caml_ml_string_length
         RTS
 }
 
+!ifdef caml_PRIM__caml_bytes_get {
+	!set caml_bytes_get = caml_string_get
+}
 !ifdef caml_PRIM__caml_string_get {
-caml_bytes_get
 caml_string_get
         ;; ACCU=string, SP[0]=index
         ;; return string[index]
@@ -101,8 +109,10 @@ caml_string_get
         RTS
 }
 
+!ifdef caml_PRIM__caml_bytes_set {
+	!set caml_bytes_set = caml_string_set
+}
 !ifdef caml_PRIM__caml_string_set {
-caml_bytes_set
 caml_string_set
         ;; ACCU=string, SP[0]=index, SP[1]=newval
         ;; string.[index]<-newval; return: ()
@@ -126,8 +136,10 @@ caml_string_set
         RTS
 }
 
+!ifdef caml_PRIM__caml_fill_bytes {
+	!set caml_fill_bytes = caml_fill_string
+}
 !ifdef caml_PRIM__caml_fill_string {
-caml_fill_bytes
 caml_fill_string
         ;; ACCU = string, SP[0]=ofs, SP[1]=num, SP[2]=char
         ;; for num times, string.[i]<-char starting from i=ofs; return: ()
@@ -187,8 +199,10 @@ caml_fill_string
         RTS
 }
 
+!ifdef caml_PRIM__caml_blit_bytes {
+	!set caml_blit_bytes = caml_blit_string
+}
 !ifdef caml_PRIM__caml_blit_string {
-caml_blit_bytes
 caml_blit_string
         ;; ACCU=src, SP[0]=sofs SP[1]=dst, SP[2]=dofs, SP[3]=len
         ;; copies len consecutive bytes, starting from src.[sofs], to dst.[dofs]
@@ -369,7 +383,7 @@ caml_nonstd_string_of_int
         ;; AUX
         ;;
 
-!ifdef caml_AUX__caml_string_index_y {
+!ifdef caml_PRIM__caml_string_index_y {
 caml_string_index_y
         ;; given a string in ACCU, read index from SP[0], then
         ;; set Y and ACCU+1 so that ACCU+Y = &string[index];
@@ -397,7 +411,7 @@ caml_string_index_y
 ++      +caml_raise Invalid_argument, "index out of bounds"
 }
 
-!ifdef caml_AUX__caml_string_length_yx {
+!ifdef caml_PRIM__caml_string_length_yx {
 caml_string_length_yx
         ;; ACCU = string
         ;; return the string length in .Y,.X (int16, lo-hi)

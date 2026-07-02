@@ -14,22 +14,26 @@
 # as specified in the LICENSE-en file in the project root.
 # ——————————————————————————————————————————————————————————————————————
 
-[ "$(realpath /proc/$$/exe)" = "$(which bash)" ] \
-    || { echo "This script requires the Bash shell." 1>&2; exit 1; }
+[ "$(realpath /proc/$$/exe)" = "$(which bash)" ] || {
+    echo "This script requires the Bash shell." 1>&2
+    exit 1
+}
 
-[[ $(cd -- "$(dirname -- "$0")" &>/dev/null && pwd -P) == $(pwd -P) ]] \
-    || { echo "Please run this script from its own directory." 1>&2; exit 1; }
+[[ $(cd -- "$(dirname -- "$0")" &>/dev/null && pwd -P) == $(pwd -P) ]] || {
+    echo "Please run this script from its own directory." 1>&2
+    exit 1
+}
 
 #####
 
 # BreadCaml version
-VERSION=$(<VERSION)
+VERSION="$(<VERSION)"
 
 # Default installation paths
-PREFIX=${OPAM_SWITCH_PREFIX:-~}
-BINDIR=$PREFIX/bin
-LIBDIR=$PREFIX/lib/breadcaml
-MANDIR=$PREFIX/man
+PREFIX="${OPAM_SWITCH_PREFIX:-~}"
+BINDIR="$PREFIX/bin"
+LIBDIR="$PREFIX/lib/breadcaml"
+MANDIR="$PREFIX/man"
 
 # Man section for Stdlib
 MAN3EXT=3bc
@@ -69,6 +73,7 @@ Usage: $0 [ OPTIONS... ]
   -p, --prefix <dir>  Shortcut for
                       -b <dir>/bin -l <dir>/lib/breadcaml -m <dir>/man
   -y, --yes           Automatically accept the ACME installation prompt
+  -s, --silent        Silent run (implies -y)
   -h, --help          Show this text.
 EOF
     exit 0
@@ -83,12 +88,12 @@ failwith() {
 # Function: print an execution progress message
 message() {
     case "$1" in
-        start | end) echo "${bld}$2${nrm}" ;;
-        ok)          echo "${bld}${grn} ok,${nrm} $2" ;;
-        warn)        echo "${bld}${yel} WRN${nrm} $2" ;;
-        err)         echo "${bld}${red} ERR${nrm} $2" ;;
-        cont)        echo "     $2" ;;
-        ask)         echo -n "${bld}     $2${nrm}" ;;
+        start | end) "$ECHO" "${bld}$2${nrm}" ;;
+        ok)          "$ECHO" "${bld}${grn} ok,${nrm} $2" ;;
+        warn)        "$ECHO" "${bld}${yel} WRN${nrm} $2" ;;
+        err)         "$ECHO" "${bld}${red} ERR${nrm} $2" ;;
+        cont)        "$ECHO" "     $2" ;;
+        ask)         "$ECHO" -n "${bld}     $2${nrm}" ;;
         *) failwith "message(): unknown parameter '$1'" ;;
     esac
 }
@@ -127,23 +132,30 @@ install_acme() {
     COMMANDS[acme]="$BINDIR/acme"
 }
 
+ECHO=echo
 # Parse command-line options and update installation paths accordingly
 while (( $# )); do
     case "$1" in
         -b | --bindir | -l | --libdir | -m | --mandir)
-            [[ $DIROPT == @(-p|--prefix) ]] \
-                && failwith "'$1' and '$DIROPT' are incompatible"
+            [[ $DIROPT == @(-p|--prefix) ]] && \
+		failwith "'$1' and '$DIROPT' are incompatible"
             DIROPT="$1"
             shift
             case "$DIROPT" in
-                -b | --bindir) BINDIR="$(realpath -m "${1:-$BINDIR}")" ;;
-                -l | --libdir) LIBDIR="$(realpath -m "${1:-$LIBDIR}")" ;;
-                -m | --mandir) MANDIR="$(realpath -m "${1:-$MANDIR}")" ;;
+                -b | --bindir)
+		    BINDIR="$(realpath -m "${1:-$BINDIR}")"
+		    ;;
+                -l | --libdir)
+		    LIBDIR="$(realpath -m "${1:-$LIBDIR}")"
+		    ;;
+                -m | --mandir)
+		    MANDIR="$(realpath -m "${1:-$MANDIR}")"
+		    ;;
             esac
         ;;
         -p | --prefix)
-            [[ $DIROPT == @(-b|--bindir|-l|--libdir|-m|--mandir) ]] \
-                && failwith "'$1' and '$DIROPT' are incompatible"
+            [[ $DIROPT == @(-b|--bindir|-l|--libdir|-m|--mandir) ]] && \
+		failwith "'$1' and '$DIROPT' are incompatible"
             DIROPT="$1"
             shift
             PREFIX="$(realpath -m "${1:-$PREFIX}")"
@@ -151,12 +163,24 @@ while (( $# )); do
             LIBDIR="$PREFIX/lib/breadcaml"
             MANDIR="$PREFIX/man"
             ;;
-        -y | --yes)  ACME_INSTALL=Y ;;
-        -h | --help) usage ;;
-        *) failwith "unknown option '$1'" ;;
+        -y | --yes)
+	    ACME_INSTALL=Y
+	    ;;
+        -s | --silent)
+	    ECHO=':'
+	    ACME_INSTALL=Y
+	    ;;
+        -h | --help)
+	    usage
+	    ;;
+        *)
+	    failwith "unknown option '$1'"
+	    ;;
     esac
     shift
 done
+
+
 
 # Ensure all needed commands are available
 message start "Checking system commands and active Opam switch..."
@@ -165,19 +189,20 @@ ERRORS=''
 declare -A COMMANDS
 for CMD in ar bzip2 gcc make tar opam ocamlc.opt ocamlopt.opt ocamldoc.opt; do
     KEY=${CMD%.opt}
-    if COMMANDS[$KEY]="$(which $CMD 2>/dev/null)"; then
+    if COMMANDS[$KEY]="$(which "$CMD" 2>/dev/null)"; then
         message ok "$CMD is ${COMMANDS[$KEY]}"
-    elif [[ $CMD == *.opt ]] && COMMANDS[$KEY]="$(which $KEY 2>/dev/null)"; then
+    elif [[ $CMD == *.opt ]] && \
+	    COMMANDS[$KEY]="$(which "$KEY" 2>/dev/null)"; then
         message warn "$CMD not found, failsafe to ${COMMANDS[$KEY]}"
     else
         message err "$CMD not found"
         MISSING+="${MISSING:+, }$CMD"
     fi
 done
-[[ $MISSING ]] \
-    && failwith "command(s) $MISSING not installed or not in search PATH"
-OPAM_SW="$(opam switch show 2>/dev/null)" \
-    || failwith "cannot get the name of the active Opam switch"
+[[ $MISSING ]] && \
+    failwith "command(s) $MISSING not installed or not in search PATH"
+OPAM_SW="$(opam switch show 2>/dev/null)" || \
+    failwith "cannot get the name of the active Opam switch"
 message ok "active Opam switch is '$OPAM_SW'"
 IFS='.' read -r MAJOR MINOR PATCH < <("${COMMANDS[ocamlc]}" -vnum)
 if (( MAJOR == 4 && MINOR >= 14 )); then
@@ -198,7 +223,8 @@ message end "Done."
 # Check if ACME is obsolete or not installed
 message start "Checking for ACME cross-assembler..."
 COMMANDS[acme]="$BINDIR/acme"
-if [[ -x $BINDIR/acme ]] || COMMANDS[acme]="$(which acme 2>/dev/null)"; then
+if [[ -x $BINDIR/acme ]] || \
+        COMMANDS[acme]="$(which acme 2>/dev/null)"; then
     IFS=',' read -r X REL DATE < <("${COMMANDS[acme]}" --version 2>/dev/null)
     YMD="$(date -d"$DATE" +%Y%m%d 2>/dev/null)"
     if (( YMD >= ACME_MIN )); then
@@ -217,26 +243,30 @@ else
 fi
 message end "Done."
 
-# Export the configuration data needed by 'make'
+# Export the configuration data
 SAFE_OPTS="-safe-string -strict-formats -strict-sequence"
 cat > etc/Makefile.conf <<EOF
-ACME = ${COMMANDS[acme]}
-BINDIR = $BINDIR
-LIBDIR = $LIBDIR
-MAN1DIR = $MANDIR/man1
-MAN3DIR = $MANDIR/man3
-MAN3EXT = $MAN3EXT
-OCAMLC_UNSAFE = ${COMMANDS[ocamlc]}
-OCAMLC = ${COMMANDS[ocamlc]} $SAFE_OPTS
-OCAMLSTDLIB = $("${COMMANDS[ocamlc]}" -where)
-OCAMLDOC = ${COMMANDS[ocamldoc]}
-OCAMLOPT = ${COMMANDS[ocamlopt]} $SAFE_OPTS
-VERSION = $VERSION
+BINDIR = $(printf "%q" "$BINDIR")
+LIBDIR = $(printf "%q" "$LIBDIR")
+MAN1DIR = $(printf "%q" "$MANDIR/man1")
+MAN3DIR = $(printf "%q" "$MANDIR/man3")
+MAN3EXT = $(printf "%q" "$MAN3EXT")
+OCAMLC_UNSAFE = $(printf "%q" "${COMMANDS[ocamlc]}")
+OCAMLC = $(printf "%q" "${COMMANDS[ocamlc]}") $SAFE_OPTS
+OCAMLSTDLIB = $(printf "%q" "$("${COMMANDS[ocamlc]}" -where)")
+OCAMLDOC = $(printf "%q" "${COMMANDS[ocamldoc]}")
+OCAMLOPT = $(printf "%q" "${COMMANDS[ocamlopt]}") $SAFE_OPTS
+EOF
+cp src/breadcaml/const.ml.template src/breadcaml/const.ml
+cat >> src/breadcaml/const.ml <<EOF
+let ocamlc  = "${COMMANDS[ocamlc]}"
+let libdir  = "$LIBDIR"
+let acme    = "${COMMANDS[acme]}"
+let version = "$VERSION"
 EOF
 
 # Show the result of the configuration
-cat <<EOF
-
+$ECHO "
 ${bld}BreadCaml version $VERSION configured successfully as follows:${nrm}
   BINDIR = $BINDIR
   LIBDIR = $LIBDIR
@@ -250,4 +280,4 @@ ${bld}*${nrm} To build the BreadCaml system, run:  '${bld}make${nrm}'
   Then install it with:                '${bld}make install${nrm}'
   Finally, clean the source tree with: '${bld}make clean${nrm}'
 ${bld}*${nrm} To uninstall BreadCaml, run: '${bld}make uninstall${nrm}'
-EOF
+"

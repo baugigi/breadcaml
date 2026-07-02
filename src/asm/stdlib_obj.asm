@@ -18,6 +18,9 @@
 
 !zone caml_OBJ_OO {
 
+caml_OOID
+        !word Val_zero
+
 !ifdef caml_PRIM__caml_obj_is_block {
         ;; return true if value is a block
         ;; ACCU = value
@@ -162,8 +165,6 @@ caml_obj_dup
 }
 
 !ifdef caml_PRIM__caml_set_oo_id {
-        !set caml_use_ooid=1
-        ;; ACCU = obj
 caml_set_oo_id
         LDY # 3
         LDA caml_OOID + 1
@@ -181,8 +182,6 @@ caml_set_oo_id
 }
 
 !ifdef caml_PRIM__caml_fresh_oo_id {
-        !set caml_use_ooid=1
-        ;; ACCU = value
 caml_fresh_oo_id
         LDA caml_OOID + 1
         STA ACCU + 1
@@ -194,11 +193,6 @@ caml_fresh_oo_id
         BCC +
         INC caml_OOID + 1
 +       RTS
-}
-
-!ifdef  caml_use_ooid {
-caml_OOID
-        !word Val_zero
 }
 
 !ifdef caml_PRIM__caml_int_as_pointer {

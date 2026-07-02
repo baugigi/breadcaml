@@ -519,7 +519,7 @@ caml_power_float
         JMP caml_float_alloc_result
 }
 
-!ifdef caml_AUX__caml_float_alloc_result {
+!ifdef caml_PRIM__caml_float_alloc_result {
 caml_float_alloc_result
         ;; store result in a new allocated float
         LDA # Double_tag
@@ -537,7 +537,7 @@ caml_float_alloc_result
         RTS
 }
 
-!ifdef caml_AUX__caml_float_loadFAC {
+!ifdef caml_PRIM__caml_float_loadFAC {
         ;; how to use:
         ;; 1) set  caml_float_loadFAC_addr
         ;; 2) call caml_float_loadFAC
@@ -557,7 +557,7 @@ caml_float_loadFAC_addr = * + 1
         RTS
 }
 
-!ifdef caml_AUX__caml_float_loadARG {
+!ifdef caml_PRIM__caml_float_loadARG {
         ;; how to use:
         ;; 1) set  caml_float_loadARG_addr
         ;; 2) call caml_float_loadARG

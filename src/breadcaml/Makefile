@@ -13,14 +13,14 @@
 # ——————————————————————————————————————————————————————————————————————
 
 SHELL = /bin/bash
-CONF = ../../etc/Makefile.conf
+CONF  = ../../etc/Makefile.conf
+VPATH = ./ocamlclean
 
 include $(if $(wildcard $(CONF)),$(CONF),$(error \
 	Please run «./configure [options...]» from the main source directory))
 
 TARGET = ../../bin/breadcaml
 BREADCAML = const.cmx globals.cmx opcodes.cmx export.cmx breadcaml.cmx
-VPATH = ocamlclean
 OCAMLCLEAN = step1.cmx prim.cmx step2.cmx step3.cmx data.cmx cleanbra.cmx \
 	rmnop.cmx globalise.cmx cleanenvs.cmx
 
@@ -29,13 +29,6 @@ $(TARGET): $(OCAMLCLEAN) $(BREADCAML)
 
 %.cmx: %.ml
 	$(OCAMLOPT) -c -I +/../obytelib/ -I $(VPATH) $^
-
-const.ml: const.ml.template
-	cp $< $@
-	echo 'let ocamlc  = "$(OCAMLC_UNSAFE)"' >> $@
-	echo 'let libdir  = "$(LIBDIR)"'        >> $@
-	echo 'let acme    = "$(ACME)"'          >> $@
-	echo 'let version = "$(VERSION)"'       >> $@
 
 .PHONY: clean
 clean:

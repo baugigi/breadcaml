@@ -18,7 +18,7 @@
 
 !zone AUX_TOOLS {
         
-!ifdef caml_AUX__caml_memcpy {
+!ifdef caml_PRIM__caml_memcpy {
         ;; copy memory
         ;; TMP, TMP + 1 =  source start address
         ;; TMP + 2, TMP + 3 = destination start address
@@ -90,7 +90,7 @@ caml_memcpy
         RTS
 }
 
-!ifdef  caml_AUX__caml_blkcpy {
+!ifdef  caml_PRIM__caml_blkcpy {
         ;; caml_blkcpy
         ;; Aux. routine to copy all fields from ACCU to BLK; C:Y = 2 * size.
         ;; The block's header is not copied!

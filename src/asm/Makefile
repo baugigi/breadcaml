@@ -25,9 +25,12 @@ stdlib.asm: depends.asm stdlib_*.asm
 	 $(patsubst %,!source \"$(LIBDIR)/%\"\n,$^)\
 	caml_stdlib_end" > $@
 
+depends.asm: stdlib_*.asm
+	../../tools/mkdepends
+
 .PHONY: clean
 clean:
-	rm -f stdlib.asm
+	rm -f stdlib.asm depends.asm
 
 .PHONY: gitclean
 gitclean: clean

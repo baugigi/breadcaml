@@ -26,20 +26,20 @@ all:
 
 .PHONY: install
 install: all
-	mkdir -p "$(LIBDIR)" "$(BINDIR)" "$(MAN1DIR)" "$(MAN3DIR)"
-	cp src/asm/*.asm "$(LIBDIR)"
-	cp bin/breadcaml "$(BINDIR)/breadcaml"
-	cp man/breadcaml.1.gz "$(MAN1DIR)"/breadcaml.1.gz
-	cp src/stdlib/{stdlib.cma,libcamlrun.a,*.{ml,mli,cmo,cmi}} "$(LIBDIR)"
-	cp src/stdlib/*.$(MAN3EXT) "$(MAN3DIR)"
+	mkdir -p $(LIBDIR) $(BINDIR) $(MAN1DIR) $(MAN3DIR)
+	cp src/asm/*.asm $(LIBDIR)
+	cp bin/breadcaml $(BINDIR)/breadcaml
+	cp man/breadcaml.1.gz $(MAN1DIR)/breadcaml.1.gz
+	cp src/stdlib/{stdlib.cma,libcamlrun.a,*.{ml,mli,cmo,cmi}} $(LIBDIR)
+	cp src/stdlib/*.$(MAN3EXT) $(MAN3DIR)
 
 .PHONY: uninstall
 uninstall:
-	rm -fr "$(LIBDIR)"
-	rm -f "$(BINDIR)"/breadcaml
-	rm -f "$(BINDIR)"/acme
-	rm -f "$(MAN1DIR)"/breadcaml.1.gz
-	rm -f "$(MAN3DIR)"/*.$(MAN3EXT)
+	rm -fr $(LIBDIR)
+	rm -f $(BINDIR)/breadcaml
+	rm -f $(BINDIR)/acme
+	rm -f $(MAN1DIR)/breadcaml.1.gz
+	rm -f $(MAN3DIR)/*.$(MAN3EXT)
 
 .PHONY: clean
 clean:
