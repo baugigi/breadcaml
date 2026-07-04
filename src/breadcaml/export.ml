@@ -27,9 +27,9 @@ module Primitives = struct
 end
 
 module Includes = struct
-  let source ch ?(dir = Const.libdir ^ "/") incl_list =
+  let source ch ?(dir = Config.libdir ^ "/") incl_list =
     List.iter (fprintf ch "!source \"%s%s\"\n" dir) incl_list
-  let verbatim ch ?(dir = Const.libdir ^ "/") incl_list =
+  let verbatim ch ?(dir = Config.libdir ^ "/") incl_list =
     let rec copy in_ch = 
       try output_string ch (input_line in_ch ^ "\n");
           copy in_ch
@@ -71,15 +71,15 @@ let export ~bytefile ~asmfile ~prgfile ~externs ~top_of_mem ~stack_pages =
        caml_stack_start = $%04x\n\
        caml_stack_end = $%04x\n\n"
       prgfile stack_start stack_end;
-    Includes.source ch Const.header_includes;
+    Includes.source ch Config.header_includes;
     let bytecode = OByteLib.Bytefile.read bytefile in
     let code, prim, data = OCamlclean.clean bytecode in
     Primitives.export_used_prims ch prim;
-    Includes.source ch Const.pre_code_includes;
+    Includes.source ch Config.pre_code_includes;
     Opcodes.export ch (OByteLib.Normalised_code.to_code code);
     fprintf ch "\n";
     Includes.source ch ~dir:"" externs;
-    Includes.source ch Const.post_code_includes;
+    Includes.source ch Config.post_code_includes;
     fprintf ch "!align $01, $00\n";
     Primitives.export_jumptable ch prim;
     Globals.export ch (Array.map OByteLib.Value.of_obj data);    
@@ -87,7 +87,7 @@ let export ~bytefile ~asmfile ~prgfile ~externs ~top_of_mem ~stack_pages =
       "!if caml_stack_start < caml_glob_end {\n\
        \t!serious \"ERROR: Not enough memory for stack.\"\n\
        }\n";
-    Includes.source ch Const.trailer_includes;
+    Includes.source ch Config.trailer_includes;
     close_out ch
   with Failure msg ->
     (try Sys.remove asmfile with _ -> ());

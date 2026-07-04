@@ -13,26 +13,28 @@
 # ——————————————————————————————————————————————————————————————————————
 
 SHELL = /bin/bash
-CONF  = ../../etc/Makefile.conf
-VPATH = ./ocamlclean
-
+CONF = ../../etc/Makefile.conf
 include $(if $(wildcard $(CONF)),$(CONF),$(error \
 	Please run «./configure [options...]» from the main source directory))
 
 TARGET = ../../bin/breadcaml
-BREADCAML = const.cmx globals.cmx opcodes.cmx export.cmx breadcaml.cmx
-OCAMLCLEAN = step1.cmx prim.cmx step2.cmx step3.cmx data.cmx cleanbra.cmx \
-	rmnop.cmx globalise.cmx cleanenvs.cmx
+BREADCAML = config globals opcodes export breadcaml
+OCAMLCLEAN = step1 prim step2 step3 data cleanbra rmnop globalise cleanenvs
+VPATH = ./ocamlclean
 
-$(TARGET): $(OCAMLCLEAN) $(BREADCAML)
+$(TARGET): $(OCAMLCLEAN:=.cmx) $(BREADCAML:=.cmx)
 	$(OCAMLOPT) -I +/../obytelib/ -I $(VPATH) -o $@ obytelib.cmxa $^
+
+config.cmx: ../../etc/config.ml
+	$(OCAMLOPT) -c $^
+	mv ../../etc/config.{cm?,o} .
 
 %.cmx: %.ml
 	$(OCAMLOPT) -c -I +/../obytelib/ -I $(VPATH) $^
 
 .PHONY: clean
 clean:
-	rm -f $(TARGET) const.ml *.o *.cm?
+	rm -f $(TARGET) *.o *.cm?
 	rm -f $(VPATH)/*.o $(VPATH)/*.cm?
 
 .PHONY: gitclean

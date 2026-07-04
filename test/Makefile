@@ -14,9 +14,9 @@
 
 .PHONY: clean
 clean:
-	rm -f *.cm? *.prg *.bc a.out *~
-	rm -f $(addprefix */,*.cm? *.prg *.bc a.out *~)
+	rm -f *.{cm?,prg,byte}
+	rm -f */*.{cm?,prg,byte}
 
 .PHONY: gitclean
 gitclean: clean
-
+	rm -f *~ */*~

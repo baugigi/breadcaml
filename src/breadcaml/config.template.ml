@@ -12,8 +12,8 @@
    as specified in the LICENSE-en file in the project root.
    —————————————————————————————————————————————————————————————————————— *)
 
-(* If this file is named 'const.ml' then it has been created by the BreadCaml
-   build system; please edit 'const.ml.template' instead. *)
+(* If this file is named 'config.ml' then it has been created by the
+   'configure' script: edit 'src/breadcaml/config.ml.template' instead. *)
 
 let header_includes	= ["c64defs.asm"]
 let pre_code_includes	= ["loader.asm"; "codegen.asm"]

@@ -114,7 +114,7 @@ The configuration script also requires and checks for:
 To install BreadCaml immediately using the default options, run:
 
 ```bash
-./configure -y && make install clean
+./configure --yes && make fullinstall
 ```
 
 ### Option B: Custom Installation
@@ -132,6 +132,7 @@ To install BreadCaml immediately using the default options, run:
 | `-m`, `--mandir` | `<dir>` | Target directory for manual pages |
 | `-p`, `--prefix` | `<dir>` | Shortcut for `-b <dir>/bin -l <dir>/lib/breadcaml -m <dir>/man` |
 | `-y`, `--yes`    |         | Automatically accept the ACME installation prompt |
+| `-s`, `--silent` |         | Like '-y', also do not display messages (except errors) |
 | `-h`, `--help`   |         | Display the help message and default installation paths |
 
 > [!IMPORTANT]

@@ -14,7 +14,6 @@
 
 SHELL = /bin/bash
 CONF = ../../etc/Makefile.conf
-
 include $(if $(wildcard $(CONF)),$(CONF),$(error \
 	Please run «./configure [options...]» from the main source directory))
 
@@ -49,7 +48,7 @@ LIB = $(foreach F,$(BASENAMES),$(if $(filter $(NOPFX),$(F)),,$(PFX))$(F))
 CMI := $(LIB:=.cmi)
 CMO := $(LIB:=.cmo)
 
-# .c file with dummy C prototypes for non-standard primitives
+# Prototypes of non-standard primitives (auto-generated)
 CPROTO := stdlib__nonstd.c
 
 # Add here other stuff to be archived into libcamlrun.a
@@ -63,6 +62,9 @@ lib: $(CMI) $(CMO) stdlib.cma libcamlrun.a
 
 .PHONY: man
 man: $(foreach l,$(BASENAMES),$(call ucase,$(l)).$(MAN3EXT)) Stdlib.$(MAN3EXT)
+
+$(CPROTO): ../asm/stdlib_*.asm
+	sed -nEe "s/^[ \t]*(caml_nonstd_[a-zA-Z0-9_]+)/void \1(){}/p" $^ > $@
 
 libcamlrun.a: $(CMI) $(CMO) $(LIBRUN) stdlib.cma
 	cp $(OCAMLSTDLIB)/$@ .
@@ -114,10 +116,6 @@ $(PFX)%.cmo: %.ml $(PFX)%.cmi
 
 $(PFX)%.cmi: %.mli
 	$(OCAMLC_UNSAFE) -absname -nostdlib -c $< -o $@
-
-# Generate dummy C prototypes for non-standard external primitives
-$(CPROTO): ../asm/stdlib_*.asm
-	sed -nEe "s/^[ \t]*(caml_nonstd_[a-zA-Z0-9_]+)/void \1(){}/p" $^ > $@
 
 %.$(MAN3EXT):
 	$(OCAMLDOC) -hide-warnings -man -man-mini -man-suffix $(MAN3EXT) \

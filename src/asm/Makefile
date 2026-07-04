@@ -14,7 +14,6 @@
 
 SHELL = /bin/bash
 CONF = ../../etc/Makefile.conf
-
 include $(if $(wildcard $(CONF)),$(CONF),$(error \
 	Please run «./configure [options...]» from the main source directory))
 

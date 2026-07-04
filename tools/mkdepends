@@ -1,79 +1,93 @@
 #!/bin/bash
 
-# depends.asm generation
+# depends.asm generator for src/asm/stdlib_*.asm routines
 
-# Here "primitive" stands generically for an assembly routine.
-# All primitives:
-#  1) start with  "!ifdef caml_PRIM__prim_name { ;optional comment"
-#  2) end with    "} ;optional comment"
-#  3) last '}' MUST be at 1ST COLUMN; any '}' in between MUST NOT.
+# All routines (OCaml primitives AND auxiliary routines) MUST:
+#  - start with   !ifdef caml_PRIM__routine_name { ;optional comment
+#  - end with     } ;optional comment
+# The final '}' MUST be at 1ST COLUMN; any '}' in routine code MUST NOT.
+
+PWD="$(pwd)"
+[[ ${PWD%/src/asm} == $PWD ]] && { echo "Not in 'src/asm'!"; exit 1; }
 
 # Input and output files
 INFILE=stdlib_*.asm
 OUTFILE=depends.asm
 
-# sed prg to extract deps
-HEADRGX='^[ \t]*!ifdef[ \t]+caml_PRIM__'
-PRIMRGX='caml_[a-zA-Z0-9_]+'
-SEDPRG="
-/$HEADRGX/, /^}/ {
-  # First line: get prim_name, add '|', hold
-  /$HEADRGX/ { s/$HEADRGX($PRIMRGX).*$/\1|/; h; d; }
-  # Last line: emit prim_name|list_of_direct_deps
-  /^}/ { g; s/\n/ /g; p; d; }
-  # Lines in between:
-  s/;.*$//g                          # remove ACME comments
-  s/.*[ \t(><]($PRIMRGX)/§\1/g       # prepend § to each dep
-  /§/! d                             # delete line if no §
-  /§/ s/[^§]*§($PRIMRGX)[^§]*/\1 /g  # remove § and text between deps
-  /^[ \t]*$/ d                       # delete empty lines
-  s/[ \t]+/ /g                       # compact all spaces and tabs
-  H                                  # add tokens to hold space
+# sed program to extract deps
+IFDEF='^[ \t]*!ifdef[ \t]+caml_PRIM__' # Regexp: routine's 1st line
+ROUTINE='caml_[a-zA-Z0-9_]+'           # Regexp: routine name
+SEDPROGRAM="
+  /$IFDEF/, /^}/ {
+  /$IFDEF/ {                           # First line:
+    s/$IFDEF($ROUTINE).*$/\1 \"/       #  isolate routine name and add '"'
+    h				       #  copy to hold space
+    d				       #  delete, start next cycle
+  }
+  /^}/ {			       # Last line:
+    g  				       #  get held text; then add '"'
+    a \"
+    p	  			       #  print: routine '"' dep dep... '"'
+    d				       #  delete, start next cycle
+  }
+				       # Lines in between:
+  s/;.*$//g                            #  remove ACME comments
+  s/.*[ \t(><]($ROUTINE)/§\1/g         #  prepend § to each dep
+  /§/! d                               #  no deps: delete, start next cycle
+  /§/ s/[^§]*§($ROUTINE)[^§]*/\1 /g    #  deps: remove § and text between deps
+  H                                    #  append deps to hold space
 }"
 
-# Init DEPS array: expunge self-deps and sort PRIMDEPS removing duplicates
-declare -A DEPS
-while IFS='|' read -r PRIM PRIMDEPS; do
-    DEPS["$PRIM"]="$(printf "%s\n" $PRIMDEPS|grep -v "^$PRIM$"|sort -u|xargs)"
-done < <(sed -s -n -E "$SEDPRG" $INFILE)
+# Init DEPS array
+declare -A DEPS="($(sed -s -n -E "$SEDPROGRAM" $INFILE))"
 
-# List of all primitives
-ALLPRIMS="${!DEPS[@]}"
-
-# Remove fake deps (caml_xyz when caml_xyz is not a primitive)
-for PRIM in $ALLPRIMS; do
-    PRIMDEPS=''
-    for DEP in ${DEPS["$PRIM"]}; do
-	# add DEP to PRIMDEPS only if DEPS[DEP] is set
-	[[ ${DEPS[$DEP]+x} ]] && PRIMDEPS+="$DEP "
+# Remove fake deps, i.e., any caml_xyz which is not a routine (an array key)
+for ROUTINE in ${!DEPS[@]}; do
+    DEPLIST=''
+    for DEP in ${DEPS["$ROUTINE"]}; do
+	# if DEPS[DEP] is set; then add DEP to DEPLIST; fi
+	[[ ${DEPS[$DEP]+dummy} ]] && DEPLIST+="$DEP "
     done
-    DEPS["$PRIM"]="${PRIMDEPS% }"
+    DEPS["$ROUTINE"]="$DEPLIST"
 done
 
-# Calculate the transitive closure of all dependencies (BFS would be better)
-MODIFIED=1
-while (( MODIFIED )); do
-    MODIFIED=0
-    for PRIM in $ALLPRIMS; do
-        PRIMDEPS="${DEPS[$PRIM]}"
-        for DEP in $PRIMDEPS; do
-            DEPS["$PRIM"]+=" ${DEPS[$DEP]}"
-        done
-        DEPS["$PRIM"]=$(printf "%s\n" ${DEPS["$PRIM"]} | sort -u | xargs)
-        [[ $PRIMDEPS == ${DEPS[$PRIM]} ]] || MODIFIED=1
+# Calculate the transitive closure of all deps (breadth-first visit)
+declare -A TRCLOS
+declare -Ai VISITED
+declare -a QUEUE
+for ROUTINE in ${!DEPS[@]}; do
+    VISITED=()
+    QUEUE=()
+    QHEAD=0
+    for DEP in ${DEPS["$ROUTINE"]}; do
+	VISITED["$DEP"]=1
+	QUEUE+=("$DEP")
     done
+    while (( QHEAD < ${#QUEUE[@]} )); do
+	NODE="${QUEUE[$QHEAD]}"
+	(( QHEAD++ ))
+	for DEP in ${DEPS["$NODE"]}; do
+	    if ! (( ${VISITED[$DEP]} )); then
+		VISITED["$DEP"]=1
+		QUEUE+=("$DEP")
+	    fi
+	done
+    done
+    TRCLOS["$ROUTINE"]=$(printf "%s\n" ${!VISITED[@]})
 done
 
 # Generate the output file
-echo ';; AUTO-GENERATED FILE - DO NOT EDIT' > "$OUTFILE"
-for PRIM in $(printf "%s\n" $ALLPRIMS | sort | xargs); do
-    PRIMDEPS="${DEPS[$PRIM]}"
-    [[ $PRIMDEPS ]] && {
-        echo "!ifdef caml_PRIM__$PRIM {" >> "$OUTFILE"
-        for DEP in $PRIMDEPS; do
-            echo "  !set caml_PRIM__$DEP=1" >> "$OUTFILE"
-        done
-        echo "}" >> "$OUTFILE"
-        echo "" >> "$OUTFILE"
-    }
-done
+{   echo ";; Generated by $0 $(date -u -Iseconds)"
+    echo ";; AUTO-GENERATED FILE - DO NOT EDIT"
+    echo ""
+    for ROUTINE in $(printf "%s\n" ${!DEPS[@]}|sort); do
+	[[ ${TRCLOS[$ROUTINE]} ]] && {
+            echo "!ifdef caml_PRIM__$ROUTINE {"
+            for DEP in $(printf "%s\n" ${TRCLOS[$ROUTINE]}|sort); do
+		echo "  !set caml_PRIM__$DEP=1"
+            done
+            echo "}"
+            echo ""
+	}
+    done
+} > "$OUTFILE"

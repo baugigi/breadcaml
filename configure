@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# ——————————————————————————————————————————————————————————————————————
+# ———————————————————————————————————————————————————————————————————————
 # Progetto BreadCaml / The BreadCaml Project
 # Copyright (C) 2026 Piero Furiesi
 #
@@ -12,19 +12,19 @@
 # This program is  free software; you can redistribute  it and/or modify
 # it under the terms of the  GNU General Public License (GPL) version 2,
 # as specified in the LICENSE-en file in the project root.
-# ——————————————————————————————————————————————————————————————————————
+# ———————————————————————————————————————————————————————————————————————
 
 [ "$(realpath /proc/$$/exe)" = "$(which bash)" ] || {
-    echo "This script requires the Bash shell." 1>&2
-    exit 1
-}
-
-[[ $(cd -- "$(dirname -- "$0")" &>/dev/null && pwd -P) == $(pwd -P) ]] || {
-    echo "Please run this script from its own directory." 1>&2
-    exit 1
-}
+    echo "This script requires the Bash shell." 1>&2; exit 1; }
+[ "$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd -P)" = "$(pwd -P)" ] || {
+    echo "Please run this script from its own directory." 1>&2; exit 1; }
 
 #####
+
+# Config files
+MAKE_CONF_FILE="etc/Makefile.conf"
+BREADCAML_CONF_FILE="etc/config.ml"
+BREADCAML_CONF_TEMPLATE="src/breadcaml/config.template.ml"
 
 # BreadCaml version
 VERSION="$(<VERSION)"
@@ -35,32 +35,94 @@ BINDIR="$PREFIX/bin"
 LIBDIR="$PREFIX/lib/breadcaml"
 MANDIR="$PREFIX/man"
 
-# Man section for Stdlib
+# Section for Breadcaml Stdlib man pages
 MAN3EXT=3bc
 
-# ACME cross-assembler data
-ACME_TBZ2=acme-crossass-code-0-r454-trunk.tar.bz2  # ACME source tarball
-ACME_REL="0.97 ("Zem"), 1 May 2026"                # ACME source release
-ACME_MIN=20251116                                  # oldest compatible date
-
+# ACME cross-assembler installation data
+ACME_TBZ2=acme-crossass-code-0-r454-trunk.tar.bz2 # source tarball
+ACME_REL="0.97 ("Zem"), 1 May 2026"               # release
+ACME_MIN=20251116                                 # oldest compatible date
+ACME_INSTALL=''                                   # install flag
 #####
 
-# Enable @(list) pattern matching
-shopt -s extglob  
+# echo command (will be ':' if -s|--silent option is specified)
+ECHO=echo
 
-# Check if stdout is a terminal and supports colours
-if [ -t 1 ] && which tput &>/dev/null; then
-    ncol=$(tput colors)
-    if (( $? == 0 && ${ncol:-0} >= 4 )); then
+# Enable @(pattern_list) matching
+shopt -s extglob
+
+# If stdout is a terminal and supports colours, use them
+unset -v red grn yel bld nrm
+[[ -t 1 ]] && which tput &>/dev/null && {
+    ncol="$(tput colors)"
+    (( $? == 0 && ${ncol:-0} >= 4 )) && {
         red="$(tput setaf 1)"
         grn="$(tput setaf 2)"
         yel="$(tput setaf 3)"
         bld="$(tput bold)"
         nrm="$(tput sgr0)"
-    fi
-fi
+    }
+}
 
-# Function: show help and exit
+#####
+
+# Function: failwith [text]
+# Print a failure message and exit
+failwith() {
+    echo "${bld}${red}Configuration failed:${nrm} $@." 1>&2
+    exit 1
+}
+
+# Function: message type [text]
+# Print an execution progress message of given type
+message() {
+    case "$1" in
+        start | end) "$ECHO" "${bld}$2${nrm}"            ;;
+        ok)          "$ECHO" "${bld}${grn} ok,${nrm} $2" ;;
+        warn)        "$ECHO" "${bld}${yel} WRN${nrm} $2" ;;
+        err)         "$ECHO" "${bld}${red} ERR${nrm} $2" ;;
+        cont)        "$ECHO" "     $2"                   ;;
+        ask)         "$ECHO" -n "${bld}     $2${nrm}"    ;;
+        *) failwith "message(): unknown parameter '$1'"
+    esac
+}
+
+# Function: install_acme [rename|retain]
+# Install ACME (and rename/retain the old release) in BINDIR, if ACME_INSTALL
+# is 'y' or 'yes', case-insensitive; if unset/null, read it from stdin.
+# Return COMMAND[acme] properly set.
+install_acme() {
+    [[ -z $ACME_INSTALL ]] && {
+        message cont "This script can install the BreadCaml-compatible release"
+	message cont "$ACME_REL in '$BINDIR'."
+	[[ $1 ]] && message cont "The existing release will be ${1%e}ed."
+        message ask "Do you want to proceed? [Y/n] "
+        read ACME_INSTALL
+    }
+    [[ $ACME_INSTALL == @([Yy]|[Yy][Ee][Ss]|) ]] || failwith "aborted by user"
+    message cont "Installing ACME..."
+    [[ $1 == rename ]] && {
+        ACME_OLD="$(mktemp "${COMMANDS[acme]}-old-XXXXX")"
+        cp "${COMMANDS[acme]}" "$ACME_OLD"
+    }
+    ACME_TMP="$(mktemp -d)"
+    (set -e  # On error exit subshell immediately
+     tar -xjf "$ACME_TBZ2" --one-top-level="$ACME_TMP" --strip-components=1
+     make -C "$ACME_TMP/src" BINDIR="$BINDIR" install
+     rm -fr "$ACME_TMP"
+    ) &>/dev/null || {
+	rm -fr "$ACME_TMP" "$ACME_OLD"
+	failwith "ACME installation failed"
+    }
+    message ok "ACME rel. $ACME_REL installed successfully."
+    case "$1" in
+        rename) message cont "The previous release is now '$ACME_OLD'.";;
+	retain) message cont "The previous release has been retained." ;;
+    esac
+    COMMANDS[acme]="$BINDIR/acme"
+}
+
+# Function: show help and exit.
 usage() {
     cat <<EOF
 Usage: $0 [ OPTIONS... ]
@@ -73,66 +135,14 @@ Usage: $0 [ OPTIONS... ]
   -p, --prefix <dir>  Shortcut for
                       -b <dir>/bin -l <dir>/lib/breadcaml -m <dir>/man
   -y, --yes           Automatically accept the ACME installation prompt
-  -s, --silent        Silent run (implies -y)
+  -s, --silent        Like '-y', also do not display messages (except errors)
   -h, --help          Show this text.
 EOF
     exit 0
 }
 
-# Function: print a failure message and exit
-failwith() {
-    echo "${bld}${red}Configuration failed:${nrm} $@." 1>&2
-    exit 1
-}
+#####
 
-# Function: print an execution progress message
-message() {
-    case "$1" in
-        start | end) "$ECHO" "${bld}$2${nrm}" ;;
-        ok)          "$ECHO" "${bld}${grn} ok,${nrm} $2" ;;
-        warn)        "$ECHO" "${bld}${yel} WRN${nrm} $2" ;;
-        err)         "$ECHO" "${bld}${red} ERR${nrm} $2" ;;
-        cont)        "$ECHO" "     $2" ;;
-        ask)         "$ECHO" -n "${bld}     $2${nrm}" ;;
-        *) failwith "message(): unknown parameter '$1'" ;;
-    esac
-}
-
-# Function: install the ACME cross-assembler
-install_acme() {
-    [[ -z $ACME_INSTALL ]] && {
-        message cont "This script can install the BreadCaml-compatible release"
-	message cont "$ACME_REL in '$BINDIR'."
-        case "$1" in
-            rename) message cont "The existing acme release will be renamed." ;;
-	    retain) message cont "The existing acme release will be retained.";;
-	esac
-        message ask "Do you want to proceed? [Y/n] "
-        read ACME_INSTALL
-    }
-    [[ $ACME_INSTALL == @([Yy]|[Yy][Ee][Ss]|) ]] || failwith "aborted by user"
-    message cont "Installing ACME..."
-    [[ $1 == rename ]] && {
-        ACME_OLD="$(mktemp "${COMMANDS[acme]}-old-XXXXX")"
-        cp "${COMMANDS[acme]}" "$ACME_OLD"
-    }
-    ACME_TMP="$(mktemp -d)"
-    (set -e  # On error exit immediately
-     tar -xjf "$ACME_TBZ2" --one-top-level="$ACME_TMP" --strip-components=1
-     make -C "$ACME_TMP/src" BINDIR="$BINDIR" install
-     rm -fr "$ACME_TMP") &>/dev/null || {
-	rm -fr "$ACME_TMP" "$ACME_OLD"
-	failwith "ACME installation failed"
-    }
-    message ok "ACME rel. $ACME_REL installed successfully."
-    case "$1" in
-        rename) message cont "The previous release is now '$ACME_OLD'.";;
-	retain) message cont "The previous release has been retained." ;;
-    esac
-    COMMANDS[acme]="$BINDIR/acme"
-}
-
-ECHO=echo
 # Parse command-line options and update installation paths accordingly
 while (( $# )); do
     case "$1" in
@@ -142,17 +152,11 @@ while (( $# )); do
             DIROPT="$1"
             shift
             case "$DIROPT" in
-                -b | --bindir)
-		    BINDIR="$(realpath -m "${1:-$BINDIR}")"
-		    ;;
-                -l | --libdir)
-		    LIBDIR="$(realpath -m "${1:-$LIBDIR}")"
-		    ;;
-                -m | --mandir)
-		    MANDIR="$(realpath -m "${1:-$MANDIR}")"
-		    ;;
+                -b | --bindir) BINDIR="$(realpath -m "${1:-$BINDIR}")" ;;
+                -l | --libdir) LIBDIR="$(realpath -m "${1:-$LIBDIR}")" ;;
+                -m | --mandir) MANDIR="$(realpath -m "${1:-$MANDIR}")" ;;
             esac
-        ;;
+            ;;
         -p | --prefix)
             [[ $DIROPT == @(-b|--bindir|-l|--libdir|-m|--mandir) ]] && \
 		failwith "'$1' and '$DIROPT' are incompatible"
@@ -164,29 +168,24 @@ while (( $# )); do
             MANDIR="$PREFIX/man"
             ;;
         -y | --yes)
-	    ACME_INSTALL=Y
+	    ACME_INSTALL='Y'
 	    ;;
-        -s | --silent)
+	-s | --silent)
+	    ACME_INSTALL='Y'
 	    ECHO=':'
-	    ACME_INSTALL=Y
 	    ;;
         -h | --help)
 	    usage
 	    ;;
-        *)
-	    failwith "unknown option '$1'"
-	    ;;
+        *)  failwith "unknown option '$1'"
     esac
     shift
 done
 
-
-
 # Ensure all needed commands are available
 message start "Checking system commands and active Opam switch..."
-MISSING=''
-ERRORS=''
 declare -A COMMANDS
+unset -v MISSING ERRORS
 for CMD in ar bzip2 gcc make tar opam ocamlc.opt ocamlopt.opt ocamldoc.opt; do
     KEY=${CMD%.opt}
     if COMMANDS[$KEY]="$(which "$CMD" 2>/dev/null)"; then
@@ -214,7 +213,7 @@ fi
 if [[ $(opam list -s -i obytelib 2>/dev/null) ]]; then
     message ok "OByteLib is installed"
 else
-    message err "OByteLib not found"
+q    message err "OByteLib not found"
     ERRORS+="${ERRORS:+; }OBytelib not installed in '$OPAM_SW' switch"
 fi
 message end "Done."
@@ -223,8 +222,7 @@ message end "Done."
 # Check if ACME is obsolete or not installed
 message start "Checking for ACME cross-assembler..."
 COMMANDS[acme]="$BINDIR/acme"
-if [[ -x $BINDIR/acme ]] || \
-        COMMANDS[acme]="$(which acme 2>/dev/null)"; then
+if [[ -x $BINDIR/acme ]] || COMMANDS[acme]="$(which acme 2>/dev/null)"; then
     IFS=',' read -r X REL DATE < <("${COMMANDS[acme]}" --version 2>/dev/null)
     YMD="$(date -d"$DATE" +%Y%m%d 2>/dev/null)"
     if (( YMD >= ACME_MIN )); then
@@ -243,9 +241,11 @@ else
 fi
 message end "Done."
 
-# Export the configuration data
+# Export configuration data to $MAKE_CONF_FILE file
 SAFE_OPTS="-safe-string -strict-formats -strict-sequence"
-cat > etc/Makefile.conf <<EOF
+cat > "$MAKE_CONF_FILE" <<EOF
+$(sed -nE '/^# —+$/,/^# —+$/p' "$0")
+BREADCAML_CONF = $(printf "%q" "$BREADCAML_CONF_FILE")
 BINDIR = $(printf "%q" "$BINDIR")
 LIBDIR = $(printf "%q" "$LIBDIR")
 MAN1DIR = $(printf "%q" "$MANDIR/man1")
@@ -257,8 +257,10 @@ OCAMLSTDLIB = $(printf "%q" "$("${COMMANDS[ocamlc]}" -where)")
 OCAMLDOC = $(printf "%q" "${COMMANDS[ocamldoc]}")
 OCAMLOPT = $(printf "%q" "${COMMANDS[ocamlopt]}") $SAFE_OPTS
 EOF
-cp src/breadcaml/const.ml.template src/breadcaml/const.ml
-cat >> src/breadcaml/const.ml <<EOF
+
+# Export configuration data to $BREADCAML_CONF_FILE
+cat > "$BREADCAML_CONF_FILE" <<EOF
+$(<"$BREADCAML_CONF_TEMPLATE")
 let ocamlc  = "${COMMANDS[ocamlc]}"
 let libdir  = "$LIBDIR"
 let acme    = "${COMMANDS[acme]}"

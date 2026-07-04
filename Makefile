@@ -13,8 +13,7 @@
 # ——————————————————————————————————————————————————————————————————————
 
 SHELL = /bin/bash
-CONF = etc/Makefile.conf
-
+CONF  = etc/Makefile.conf
 include $(if $(wildcard $(CONF)),$(CONF),$(error \
 	Please run «./configure [options...]» from the main source directory))
 
@@ -48,9 +47,8 @@ clean:
 	$(MAKE) -C src/asm $@
 	$(MAKE) -C test $@
 
-.PHONY: dist
-dist: gitclean
-	dist/distgen
+.PHONY: fullinstall
+fullinstall: install clean
 
 .PHONY: gitclean
 gitclean:
@@ -58,5 +56,6 @@ gitclean:
 	$(MAKE) -C src/stdlib $@
 	$(MAKE) -C src/asm $@
 	$(MAKE) -C test $@
-	rm -f *~
 	rm -f etc/Makefile.conf
+	rm -f etc/config.ml
+	rm -f *~

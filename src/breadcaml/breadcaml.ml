@@ -27,6 +27,7 @@ let verbose = ref false  	(* -verbose option *)
 let ocamlc_opts = ref []	(* ocamlc options *)
 let acme_opts = ref []		(* acme options *)
 let ml, mli, cmo, asm = ref false, ref false, ref false, ref false
+let myself = Sys.argv.(0)
 
 let anon_fun arg = match extension arg with
   | ".ml"  -> ml  := true; input_files := arg :: !input_files
@@ -40,11 +41,11 @@ let rest_all args = acme_opts := args
 let version () =
   Printf.printf
     "The OCaml compiler for the Commodore C64, version %s\n%!"
-    Const.version;
+    Config.version;
   exit 0
 
 let where () = 
-  print_endline Const.libdir;
+  print_endline Config.libdir;
   exit 0
 
 let exec_cmd cmd =
@@ -58,8 +59,8 @@ let ocamlc ?out_file () =
     let no_asm_files =
       List.filter (fun f -> not (check_suffix f ".asm")) !input_files in
     String.concat " "
-      (("CAMLLIB=" ^ quote Const.libdir)
-       :: quote Const.ocamlc
+      (("CAMLLIB=" ^ quote Config.libdir)
+       :: quote Config.ocamlc
        :: "-custom"
        :: (if !verbose then "-verbose" else "")
        :: (if !compile_only then "-c" else "")
@@ -71,7 +72,7 @@ let ocamlc ?out_file () =
 let acme in_file =
   let cmd =
     String.concat " "
-      (quote Const.acme
+      (quote Config.acme
        :: (if !interp then "-Dcaml_INTERP=1" else "")
        :: (if !showmem then "-Dcaml_SHOWMEM=1" else "")
        :: (if !verbose then "-v9" else "")
@@ -80,7 +81,6 @@ let acme in_file =
   exec_cmd cmd
 
 let usage =
-  let me = Sys.argv.(0) in
   Printf.sprintf
     ("Usage:\
       \t%s\t[-o outfile.ext] [OPTIONS] [OCAMLC_OPTIONS] FILE ...\n\
@@ -92,7 +92,7 @@ let usage =
       computers. Full documentation available online \
       <https://github/baugigi/breadcaml>\n\
       or locally via 'man %s'.\n\n\
-      Options:") me me me me
+      Options:") myself myself myself myself
 
 let breadcaml_opts =
   Arg.["-o", Set_string o_arg,
@@ -205,7 +205,7 @@ let () =
      exit n
   | Failure err ->
      Printf.eprintf
-       "%s\nTry '%s -help' or 'man %s' for more information.\n%!" err me me;
+       "%s\nTry '%s -help' or 'man %s' for more info.\n%!" err myself myself;
      exit 1
   | Sys_error err ->
      Printf.eprintf "%s\n%!" err;
