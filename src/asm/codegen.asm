@@ -22,16 +22,16 @@
         ;;      caml_INTERP = 1:        generate bytecode for interpretation
 
 ;; Check for out-of-range argument
-!macro range .min, .arg, .max, .txt {
+!macro caml_range .min, .arg, .max, .txt {
   !if (.arg < .min) | (.arg > .max) {
         !error .txt + " = ", .arg, " out of range [", .min, ", ", .max, "]"
   }
 }
 
 ;; These shouldn't be necessary: ocamlc should have already given up
-!macro  i82     {!serious "\nbreadcaml> ERROR: Objects and classes not implemented"}
-!macro  i8d .t  {!serious "\nbreadcaml> ERROR: Objects and classes not implemented"}
-!macro  i8e     {!serious "\nbreadcaml> ERROR: Objects and classes not implemented"}
+!macro  i82     {!serious "ERROR: Objects and classes not implemented"}
+!macro  i8d .t  {!serious "ERROR: Objects and classes not implemented"}
+!macro  i8e     {!serious "ERROR: Objects and classes not implemented"}
 
 
 !ifndef caml_INTERP {
@@ -43,7 +43,7 @@
 
 ;; i00-i12 depend on i08
 !macro  i08 .n {                                ;ACCESS n
-        +range 0, .n, $7FFF, "ACC n: n" 
+        +caml_range 0, .n, $7FFF, "ACC n: n" 
         .n2h = >(2 * .n)
         .n2l = <(2 * .n)
   !if .n2l > 0 {
@@ -87,7 +87,7 @@
 !macro  i11     {+i09 : +i08 7}
 !macro  i12 .n  {+i09 : +i08 .n}                ;PUSHACC n -> PUSH; ACC n
 !macro  i13 .n {                                ;POP n
-        +range 0, .n, $7FFF, "POP n: n"
+        +caml_range 0, .n, $7FFF, "POP n: n"
         .n2h = >(2 * .n)
         .n2l = <(2 * .n)
   !if .n = 0 {
@@ -105,7 +105,7 @@
   }
 }
 !macro  i14 .n {                                ;ASSIGN n
-        +range 0, .n, $7FFF, "ASSIGN n: n"
+        +caml_range 0, .n, $7FFF, "ASSIGN n: n"
         .n2h = >(2 * .n)
         .n2l = <(2 * .n)
         !set    caml_gen_ASSIGNL = 1
@@ -128,7 +128,7 @@
 
 ;; i15-i1e depend on i19
 !macro  i19 .n {                                ;ENVACC n
-        +range 0, .n, $FE, "ENVACC n: n"
+        +caml_range 0, .n, $FE, "ENVACC n: n"
         .n2h = >(2 * .n)
         .n2l = <(2 * .n)
         !set    caml_gen_ENVACC = 1
@@ -161,7 +161,7 @@
 
 ;; i21-i23 depend on i20
 !macro  i20 .n {                                ;APPLY n
-        +range 1, .n, $7F, "APPLY n: n"
+        +caml_range 1, .n, $7F, "APPLY n: n"
         !set    caml_gen_APPLY = 1
         LDY # 2 * .n - 1
   !if .n <= 3 {
@@ -177,8 +177,8 @@
 
 ;; i25-i27 depend on i24
 !macro  i24 .n, .s {                            ;APPTERM n s
-        +range 1, .n, $7F, "APPTERM n s: n"
-        +range .n, .s, $7F, "APPTERM n s: s"
+        +caml_range 1, .n, $7F, "APPTERM n s: n"
+        +caml_range .n, .s, $7F, "APPTERM n s: s"
         !set    caml_gen_APPTRM1 = 1
         LDX # 2 * (.s - .n)
   !if .n = 1 {
@@ -194,7 +194,7 @@
 !macro  i26 .s  {+i24 2,.s}
 !macro  i27 .s  {+i24 3,.s}
 !macro  i28 .n {                                ;RETURN n
-        +range 0, .n, $7F, "RETURN n: n"
+        +caml_range 0, .n, $7F, "RETURN n: n"
         !set    caml_gen_RETURN = 1
         !set    caml_gen_GORETURN = 1
   !if .n = 0 {
@@ -211,7 +211,7 @@
 @end
 }
 !macro  i2a .n {                                ;GRAB n
-        +range 0, .n, $7C, "GRAB n: n"
+        +caml_range 0, .n, $7C, "GRAB n: n"
         +Val_Int ~.v, .n
         !set    caml_gen_GRAB = 1
         !set    caml_gen_GORETURN = 1
@@ -221,7 +221,7 @@
 @end
 }
 !macro  i2b .n, .ptr {                          ;CLOSURE n ptr
-        +range 0, .n, $7F, "CLOSURE n p: n"
+        +caml_range 0, .n, $7F, "CLOSURE n p: n"
         LDX # .n
         LDA # <.ptr
         LDY # >.ptr
@@ -229,9 +229,9 @@
         JSR CLOSURE
 }
 !macro  i2c .f, .v, .o, .t {                    ;CLOSUREREC f v o t
-        +range 1, .f, $80, "CLOSUREREC f v o t: f"
-        +range 0, .v, $FE, "CLOSUREREC f v o t: v"
-        +range 1, 2 * .f - 1 + .v, $FF, "CLOSUREREC f v o t: 2f-1+v"
+        +caml_range 1, .f, $80, "CLOSUREREC f v o t: f"
+        +caml_range 0, .v, $FE, "CLOSUREREC f v o t: v"
+        +caml_range 1, 2 * .f - 1 + .v, $FF, "CLOSUREREC f v o t: 2f-1+v"
         !set    caml_gen_CLOSREC = 1
         LDA # <.data
         LDY # >.data
@@ -244,8 +244,8 @@
 
 ;; i2d-i2f, i31-i34 depend on i30
 !macro  i30 .n {                                ;OFFSETCLOSURE n
-        +range -$FE, .n, $FE, "OFFSETCLOSURE n: n"
-        +range 0, .n mod 2, 0, "OFFSETCLOSURE n: n mod 2"
+        +caml_range -$FE, .n, $FE, "OFFSETCLOSURE n: n"
+        +caml_range 0, .n mod 2, 0, "OFFSETCLOSURE n: n mod 2"
         .n2h = >(2 * .n)
         .n2l = <(2 * .n)
   !if .n2h > 0 {
@@ -270,7 +270,7 @@
 
 ;; i36-i38 depend on i35
 !macro  i35 .n {                                ;GETGLOBAL n
-        +range 0, .n, $7FFF, "GETGLOBAL n: n"
+        +caml_range 0, .n, $7FFF, "GETGLOBAL n: n"
   !if .n < caml_exn_no {
         LDA # < caml_std_exn[.n]
         STA ACCU
@@ -288,7 +288,7 @@
 
 ;; i37-138, i43-i46 depend on i47
 !macro  i47 .n {                                ;GETFIELD n
-        +range 0, .n, $FE, "GETFIELD n: n"
+        +caml_range 0, .n, $FE, "GETFIELD n: n"
         !set    caml_gen_GETFLD0 = 1
   !if .n = 0 {
         JSR GETFLD0
@@ -301,7 +301,7 @@
 !macro  i37 .n,.m {+i35 .n : +i47 .m}           ;GETGLOBALFIELD n m -> GETGL...
 !macro  i38 .n,.m {+i09 : +i35 .n : +i47 .m}    ;PUSHGETGLOBALFIELD n m->PUSH...
 !macro  i39 .n {                                ;SETGLOBAL n
-        +range caml_exn_no, .n, $7FFF, "SETGLOBAL n: n"
+        +caml_range caml_exn_no, .n, $7FFF, "SETGLOBAL n: n"
         .ofs = 2 * (.n - caml_exn_no)
         !set    caml_gen_SETGLB = 1
         LDA # <(caml_glob_table + .ofs)
@@ -311,7 +311,7 @@
 
 ;; i3a, i3c-i3d depend on i3b
 !macro  i3b .n {                                ;ATOM n
-        +range 0, .n, 0, "ATOM n: n"            ;only ATOM(0) allowed
+        +caml_range 0, .n, 0, "ATOM n: n"       ;only ATOM(0) allowed
         LDA # <caml_atom0
         STA ACCU
         LDA # >caml_atom0
@@ -323,8 +323,8 @@
 
 ;; i3f-i41 depend on i3e
 !macro  i3e .size, .tag {                       ;MAKEBLOCK s t
-        +range 1, .size, $FF, "MKBLK s t: s"
-        +range 0, .tag, $FF, "MKBLK s t: t"
+        +caml_range 1, .size, $FF, "MKBLK s t: s"
+        +caml_range 0, .tag, $FF, "MKBLK s t: t"
         !set    caml_gen_MKBLK = 1
         LDX # .size
         LDA # .tag
@@ -334,7 +334,7 @@
 !macro  i40 .t  {+i3e 2,.t}                     ;MAKEBLOCK2 t -> MAKEBLOCK 2 t
 !macro  i41 .t  {+i3e 3,.t}                     ;MAKEBLOCK3 t -> MAKEBLOCK 3 t
 !macro  i42 .s {                                ;MAKEFLOATBLOCK s
-        +range 1, .s, $FF div Double_wosize, "MAKEFLOATBLOCK s: s"
+        +caml_range 1, .s, $FF div Double_wosize, "MAKEFLOATBLOCK s: s"
         !set    caml_gen_MKFBLK = 1
         LDX # .s * Double_wosize
         JSR MKFBLK
@@ -344,7 +344,7 @@
 !macro  i45     {+i47 2}
 !macro  i46     {+i47 3}
 !macro  i48 .n {                                ;GETFLOATFIELD n
-        +range 0, .n, $FF div Double_wosize, "GETFLOATFIELD n: n"
+        +caml_range 0, .n, $FF div Double_wosize, "GETFLOATFIELD n: n"
         .n2l = <(2 * .n * Double_wosize)
         .n2h = >(2 * .n * Double_wosize)
         !set    caml_gen_GETFFLD0 = 1
@@ -362,7 +362,7 @@
 
 ;; i49-i4c depend on i4d
 !macro  i4d .n {                                ;SETFIELD n
-        +range 0, .n, $FE, "SETFLD n: n"
+        +caml_range 0, .n, $FE, "SETFLD n: n"
         !set    caml_gen_SETFLD0 = 1
   !if .n = 0 {
         JSR SETFLD0
@@ -377,7 +377,7 @@
 !macro  i4b     {+i4d 2}
 !macro  i4c     {+i4d 3}
 !macro  i4e .n {                                ;SETFLOATFIELD n
-        +range 0, .n, $FF div Double_wosize, "SETFLOATFIELD n: n"
+        +caml_range 0, .n, $FF div Double_wosize, "SETFLOATFIELD n: n"
         .n2l = <(2 * .n * Double_wosize)
         .n2h = >(2 * .n * Double_wosize)
         !set    caml_gen_SETFFLD0 = 1
@@ -434,7 +434,7 @@
 +
 }
 !macro  i57 .n, .tab {                          ;SWITCH n tab
-        +range 0, .n, $FF, "SWITCH n t: n"
+        +caml_range 0, .n, $FF, "SWITCH n t: n"
   !if (0 < .n) & (.n < len(.tab)) {             ;both iptrs & pptrs present,
         LDA ACCU                                ;select the appropriate
         AND # 1                                 ;jumptable section
@@ -479,8 +479,8 @@
 
 ;; i5d-i61 depend on i62
 !macro  i62 .p, .n {                            ;CCALL p n
-        +range 0, .p, $FF, "CCALL p n: p"
-        +range 1, .n, $FF, "CCALL p n: n"
+        +caml_range 0, .p, $FF, "CCALL p n: p"
+        +caml_range 1, .n, $FF, "CCALL p n: n"
         !set    caml_gen_CCALL = 1
         LDX # .p                                ;load routine's index
         LDA # .n - 1                            ;load # of args on stack
@@ -494,7 +494,7 @@
 
 ;; i63-i66, i68-i6c depend on i67
 !macro  i67 .n {                                ;CONSTINT n
-        +range -$4000, .n, $7FFF, "CONSTINT n: n"
+        +caml_range -$4000, .n, $7FFF, "CONSTINT n: n"
         +Val_Int ~.v, .n
         LDA # <.v
         STA ACCU
@@ -596,7 +596,7 @@
         JSR GEINT
 }
 !macro  i7f .n {                                ;OFFSETINT n
-        +range -$4000, .n, $3FFF, "OFFSETINT n: n"
+        +caml_range -$4000, .n, $3FFF, "OFFSETINT n: n"
         .n2h = >(2 * .n)
         .n2l = <(2 * .n)
         !set    caml_gen_OFSINT = 1
@@ -607,7 +607,7 @@
         JSR OFSINT
 }
 !macro  i80 .n {                                ;OFFSETREF n
-        +range -$4000, .n, $3FFF, "OFFSETREF n: n"
+        +caml_range -$4000, .n, $3FFF, "OFFSETREF n: n"
         .n2h = >(2 * .n)
         .n2l = <(2 * .n)
         !set    caml_gen_OFSREF = 1
@@ -622,7 +622,7 @@
         JSR ISINT
 }
 !macro  i83 .n, .p {                            ;BEQ n p
-        +range -$4000, .n, $3FFF, "BEQ n p: n"
+        +caml_range -$4000, .n, $3FFF, "BEQ n p: n"
         +Val_Int ~.v, .n
         LDA ACCU
         CMP # <.v
@@ -636,7 +636,7 @@
 +
 }
 !macro  i84 .n, .p {                            ;BNEQ n p
-        +range -$4000, .n, $3FFF, "BNEQ n p: n"
+        +caml_range -$4000, .n, $3FFF, "BNEQ n p: n"
         +Val_Int ~.v, .n
         LDA ACCU
         CMP # <.v
@@ -649,7 +649,7 @@
         BNE -
 }
 !macro  i85 .n, .p {                            ;BLTINT n p
-        +range -$4000, .n, $3FFF, "BLTINT n p: n"
+        +caml_range -$4000, .n, $3FFF, "BLTINT n p: n"
         +Val_Int ~.v, .n
         !set    caml_gen_SGNCMP = 1
         LDA # <.v
@@ -662,7 +662,7 @@
 +
 }
 !macro  i86 .n, .p {                            ;BLEINT n p
-        +range -$4000, .n, $3FFF, "BLEINT n p: n"
+        +caml_range -$4000, .n, $3FFF, "BLEINT n p: n"
         +Val_Int ~.v, .n
         !set    caml_gen_SGNCMP = 1
         LDA # $FE & <.v
@@ -675,7 +675,7 @@
 +
 }
 !macro  i87 .n, .p {                            ;BGTINT n p
-        +range -$4000, .n, $3FFF, "BGTINT n p: n"
+        +caml_range -$4000, .n, $3FFF, "BGTINT n p: n"
         +Val_Int ~.v, .n
         !set    caml_gen_SGNCMP = 1
         LDA # $FE & <.v
@@ -688,7 +688,7 @@
 +
 }
 !macro  i88 .n, .p {                            ;BGEINT n p
-        +range -$4000, .n, $3FFF, "BGEINT n p: n"
+        +caml_range -$4000, .n, $3FFF, "BGEINT n p: n"
         +Val_Int ~.v, .n
         !set    caml_gen_SGNCMP = 1
         LDA # <.v
@@ -709,7 +709,7 @@
         JSR UGEINT
 }
 !macro  i8b .n, .p {                            ;BULTINT n p
-        +range -$4000, .n, $7FFF, "BULTINT n p: n"
+        +caml_range -$4000, .n, $7FFF, "BULTINT n p: n"
         +Val_Int ~.v, .n
         LDA # <.v
         CMP ACCU
@@ -724,7 +724,7 @@
 +
 }
 !macro  i8c .n, .p {                            ;BUGEINT n p
-        +range -$4000, .n, $7FFF, "BUGEINT n p: n"
+        +caml_range -$4000, .n, $7FFF, "BUGEINT n p: n"
         +Val_Int ~.v, .n
         LDA # <.v
         CMP ACCU
@@ -792,7 +792,7 @@
                 !set    caml_gen_ACC07=1
                 !set    caml_gen_ACCL=1
                 !by $07 }
-!macro i08 .n { +range 0, .n, $7FFF, "ACC n: n"
+!macro i08 .n { +caml_range 0, .n, $7FFF, "ACC n: n"
                 !set    caml_gen_ACC_BGEINT=1
                 !set    caml_gen_ACCH=1
                 !by $08 : !wo 2 * .n }
@@ -833,15 +833,15 @@
                 !set    caml_gen_PUSH=1
                 !set    caml_gen_ACCL=1
                 !by $11 }
-!macro i12 .n { +range 0, .n, $7FFF, "PUSHACC n: n"
+!macro i12 .n { +caml_range 0, .n, $7FFF, "PUSHACC n: n"
                 !set    caml_gen_PHACC=1
                 !set    caml_gen_PUSH=1
                 !set    caml_gen_ACCH=1
                 !by $12 : !wo 2 * .n }
-!macro i13 .n { +range 0, .n, $7FFF, "POP n: n"
+!macro i13 .n { +caml_range 0, .n, $7FFF, "POP n: n"
                 !set    caml_gen_POPN=1
                 !by $13 : !wo 2 * .n }
-!macro i14 .n { +range 0, .n, $7FFF, "ASSIGN n: n"
+!macro i14 .n { +caml_range 0, .n, $7FFF, "ASSIGN n: n"
                 !set    caml_gen_ASSIGNH=1
                 !set    caml_gen_ASSIGNL=1
                 !by $14 : !wo 2 * .n }  
@@ -857,7 +857,7 @@
 !macro i18 {    !set    caml_gen_ENVACC14=1
                 !set    caml_gen_ENVACC=1
                 !by $18 }
-!macro i19 .n { +range 0, .n, $FE, "ENVACC n: n"
+!macro i19 .n { +caml_range 0, .n, $FE, "ENVACC n: n"
                 !set    caml_gen_ENVACCN=1
                 !set    caml_gen_ENVACC=1
                 !by $19, .n }
@@ -877,7 +877,7 @@
                 !set    caml_gen_PUSH=1
                 !set    caml_gen_ENVACC=1
                 !by $1d }
-!macro i1e .n { +range 0, .n, $FE, "PUSHENVACC n: n"
+!macro i1e .n { +caml_range 0, .n, $FE, "PUSHENVACC n: n"
                 !set    caml_gen_PHENVACC=1
                 !set    caml_gen_PUSH=1
                 !set    caml_gen_ENVACCN=1
@@ -885,7 +885,7 @@
                 !by $1e, .n }
 !macro i1f .p { !set    caml_gen_PHRET=1
                 !by $1f : !wo .p }
-!macro i20 .n { +range 1, .n, $7F, "APPLY n: n"
+!macro i20 .n { +caml_range 1, .n, $7F, "APPLY n: n"
                 !set    caml_gen_APPLYN=1
                 !set    caml_gen_APPLY=1
                 !by $20, 2 * .n - 1 }
@@ -899,43 +899,43 @@
                 !set    caml_gen_APPLY=1
                 !by $23 }
 !macro i24 .n, .s {
-                +range 1, .n, $7F, "APPTERM n s: n"
-                +range .n, .s, $7F, "APPTERM n s: s"
+                +caml_range 1, .n, $7F, "APPTERM n s: n"
+                +caml_range .n, .s, $7F, "APPTERM n s: s"
                 !set    caml_gen_APPTRMN=1
                 !set    caml_gen_APPTRM1=1
                 !by $24, 2 * (.s - .n), 2 * (.n - 1) }
-!macro i25 .s { +range 1, .s, $7F, "APPTERM1 s: s"
+!macro i25 .s { +caml_range 1, .s, $7F, "APPTERM1 s: s"
                 !set    caml_gen_APPTRM13=1
                 !set    caml_gen_APPTRM1=1
                 !by $25, 2 * (.s - 1) }
-!macro i26 .s { +range 2, .s, $7F, "APPTERM2 s: s"
+!macro i26 .s { +caml_range 2, .s, $7F, "APPTERM2 s: s"
                 !set    caml_gen_APPTRM13=1
                 !set    caml_gen_APPTRM1=1
                 !by $26, 2 * (.s - 2) }
-!macro i27 .s { +range 3, .s, $7F, "APPTERM3 s: s"
+!macro i27 .s { +caml_range 3, .s, $7F, "APPTERM3 s: s"
                 !set    caml_gen_APPTRM13=1
                 !set    caml_gen_APPTRM1=1
                 !by $27, 2 * (.s - 3) }
-!macro i28 .n { +range 0, .n, $7F, "RETURN n: n"
+!macro i28 .n { +caml_range 0, .n, $7F, "RETURN n: n"
                 !set    caml_gen_RETURN=1
                 !set    caml_gen_GORETURN=1
                 !by $28, 2 * .n }
 !macro i29 {    !set    caml_gen_RESTART=1
                 !set    caml_restart_len = 1    ;needed by GRAB routine
                 !by $29 }
-!macro i2a .n { +range 0, .n, $7C, "GRAB n: n"
+!macro i2a .n { +caml_range 0, .n, $7C, "GRAB n: n"
                 !set    caml_gen_GRAB=1
                 !set    caml_gen_GORETURN=1
                 !set    caml_grab_len = 2       ;needed by GRAB routine
                 !by $2a, 2 * .n + 1 }
 !macro i2b .n, .p {
-                +range 0, .n, $7F, "CLOSURE n p: n"
+                +caml_range 0, .n, $7F, "CLOSURE n p: n"
                 !set    caml_gen_CLOSURE=1
                 !by $2b, .n : !wo .p }
 !macro i2c .f, .v, .o, .t {
-                +range 1, .f, $80, "CLOSUREREC f v o t: f"
-                +range 0, .v, $FE, "CLOSUREREC f v o t: v"
-                +range 1, 2 * .f - 1 + .v, $FF, "CLOSUREREC f v o t: 2f-1+v"
+                +caml_range 1, .f, $80, "CLOSUREREC f v o t: f"
+                +caml_range 0, .v, $FE, "CLOSUREREC f v o t: v"
+                +caml_range 1, 2 * .f - 1 + .v, $FF, "CLOSUREREC f v o t: 2f-1+v"
                 !set    caml_gen_CLOSREC=1
                 !by $2c, .v, .f : !wo .o, .t }
 !macro i2d {    !set    caml_gen_OFSCLM2=1
@@ -944,8 +944,8 @@
                 !by $2e }
 !macro i2f {    !set    caml_gen_OFSCL2=1
                 !by $2f }
-!macro i30 .n { +range -$FE, .n, $FE, "OFFSETCLOSURE n: n"
-                +range 0, .n mod 2, 0, "OFFSETCLOSURE n: n mod 2"
+!macro i30 .n { +caml_range -$FE, .n, $FE, "OFFSETCLOSURE n: n"
+                +caml_range 0, .n mod 2, 0, "OFFSETCLOSURE n: n mod 2"
                 !set    caml_gen_OFSCLN=1
                 !by $30 : !wo 2 * .n }
 !macro i31 {    !set    caml_gen_PHOFSCLM2=1
@@ -960,20 +960,20 @@
                 !set    caml_gen_PUSH=1
                 !set    caml_gen_OFSCL2=1
                 !by $33 }
-!macro i34 .n { +range -$FE, .n, $FE, "PUSHOFFSETCLOSURE n: n"
-                +range 0, .n mod 2, 0, "PUSHOFFSETCLOSURE n: n mod 2"
+!macro i34 .n { +caml_range -$FE, .n, $FE, "PUSHOFFSETCLOSURE n: n"
+                +caml_range 0, .n mod 2, 0, "PUSHOFFSETCLOSURE n: n mod 2"
                 !set    caml_gen_PHOFSCLN=1
                 !set    caml_gen_PUSH=1
                 !set    caml_gen_OFSCLN=1
                 !by $34 : !wo 2 * .n }
-!macro i35 .n { +range 0, .n, $7FFF, "GETGLOBAL n: n"
+!macro i35 .n { +caml_range 0, .n, $7FFF, "GETGLOBAL n: n"
                 !set    caml_gen_GETGLB=1
                 !if .n < caml_exn_no {
                   !by $35 : !wo caml_std_exn[.n]
                 } else {
                   .ofs = 2 * (.n - caml_exn_no)
                   !by $35 : !wo caml_glob_table + .ofs } }
-!macro i36 .n { +range 0, .n, $7FFF, "PUSHGETGLOBAL n: n"
+!macro i36 .n { +caml_range 0, .n, $7FFF, "PUSHGETGLOBAL n: n"
                 !set    caml_gen_PHGETGLB=1
                 !set    caml_gen_PUSH=1
                 !set    caml_gen_GETGLB=1
@@ -983,8 +983,8 @@
                   .ofs = 2 * (.n - caml_exn_no)
                   !by $36 : !wo caml_glob_table + .ofs } }
 !macro i37 .n, .m {
-                +range 0, .n, $7FFF, "GETGLOBALFIELD n m: n"
-                +range 0, .m, $FE, "GETGLOBALFIELD n m: m"
+                +caml_range 0, .n, $7FFF, "GETGLOBALFIELD n m: n"
+                +caml_range 0, .m, $FE, "GETGLOBALFIELD n m: m"
                 !set    caml_gen_GETGLBFLD=1
                 !set    caml_gen_GETGLB=1
                 !if .n < caml_exn_no {
@@ -993,8 +993,8 @@
                   .ofs = 2 * (.n - caml_exn_no)
                   !by $37 : !wo caml_glob_table + .ofs : !by .m } }
 !macro i38 .n, .m {
-                +range 0, .n, $7FFF, "PUSHGETGLOBALFIELD n m: n"
-                +range 0, .m, $FE, "PUSHGETGLOBALFIELD n m: m"
+                +caml_range 0, .n, $7FFF, "PUSHGETGLOBALFIELD n m: n"
+                +caml_range 0, .m, $FE, "PUSHGETGLOBALFIELD n m: m"
                 !set    caml_gen_PHGETGLBFLD=1
                 !set    caml_gen_PUSH=1
                 !set    caml_gen_GETGLBFLD=1
@@ -1004,39 +1004,39 @@
                 } else {
                   .ofs = 2 * (.n - caml_exn_no)
                   !by $38 : !wo caml_glob_table + .ofs : !by .m } }
-!macro i39 .n { +range caml_exn_no, .n, $7FFF, "SETGLOBAL n: n"
+!macro i39 .n { +caml_range caml_exn_no, .n, $7FFF, "SETGLOBAL n: n"
                 .ofs = 2 * (.n - caml_exn_no)
                 !set    caml_gen_SETGLB=1
                 !by $39 : !wo caml_glob_table + .ofs }
 !macro i3a {    !by $3a }
-!macro i3b .n { +range 0, .n, 0, "ATOM n: n"
+!macro i3b .n { +caml_range 0, .n, 0, "ATOM n: n"
                 !set    caml_gen_ATOM0=1
                 !by $3a }                       ;*** ATOM t -> ATOM0 ***
 !macro i3c {    !by $3c }
-!macro i3d .n { +range 0, .n, 0, "PUSHATOM n: n"
+!macro i3d .n { +caml_range 0, .n, 0, "PUSHATOM n: n"
                 !set    caml_gen_PHATOM0=1
                 !set    caml_gen_PUSH=1
                 !set    caml_gen_ATOM0=1
                 !by $3c }                       ;*** PUSHATOM t -> PUSHATOM0 ***
 !macro i3e .t, .s {
-                +range 1, .s, $FF, "MAKEBLOCK t s: s"
-                +range 0, .t, $FF, "MAKEBLOCK t s: t"
+                +caml_range 1, .s, $FF, "MAKEBLOCK t s: s"
+                +caml_range 0, .t, $FF, "MAKEBLOCK t s: t"
                 !set    caml_gen_MKBLKN=1
                 !set    caml_gen_MKBLK=1
                 !by $3e, .s, .t }
-!macro i3f .t { +range 0, .t, $FF, "MAKEBLOCK1 t: t"
+!macro i3f .t { +caml_range 0, .t, $FF, "MAKEBLOCK1 t: t"
                 !set    caml_gen_MKBLK13=1
                 !set    caml_gen_MKBLK=1
                 !by $3f, .t }
-!macro i40 .t { +range 0, .t, $FF, "MAKEBLOCK2 t: t"
+!macro i40 .t { +caml_range 0, .t, $FF, "MAKEBLOCK2 t: t"
                 !set    caml_gen_MKBLK13=1
                 !set    caml_gen_MKBLK=1
                 !by $40, .t }
-!macro i41 .t { +range 0, .t, $FF, "MAKEBLOCK3 t: t"
+!macro i41 .t { +caml_range 0, .t, $FF, "MAKEBLOCK3 t: t"
                 !set    caml_gen_MKBLK13=1
                 !set    caml_gen_MKBLK=1
                 !by $41, .t }
-!macro i42 .s { +range 1, .s, $FF div Double_wosize, "MAKEFLOATBLOCK s: s"
+!macro i42 .s { +caml_range 1, .s, $FF div Double_wosize, "MAKEFLOATBLOCK s: s"
                 !set    caml_gen_MKFBLK=1
                 !by $42, Double_wosize * .s }
 !macro i43 {    !set    caml_gen_GETFLD0=1
@@ -1050,11 +1050,11 @@
 !macro i46 {    !set    caml_gen_GETFLD13=1
                 !set    caml_gen_GETFLD0=1
                 !by $46 }
-!macro i47 .n { +range 0, .n, $FE, "GETFIELD n: n"
+!macro i47 .n { +caml_range 0, .n, $FE, "GETFIELD n: n"
                 !set    caml_gen_GETFLDN=1
                 !set    caml_gen_GETFLD0=1
                 !by $47, .n }
-!macro i48 .n { +range 0, .n, $FF div Double_wosize, "GETFLOATFIELD n: n"
+!macro i48 .n { +caml_range 0, .n, $FF div Double_wosize, "GETFLOATFIELD n: n"
                 !set    caml_gen_GETFFLDN=1
                 !set    caml_gen_GETFFLD0=1
                 !by $48, Double_wosize * .n }
@@ -1069,11 +1069,11 @@
 !macro i4c {    !set    caml_gen_SETFLD13=1
                 !set    caml_gen_SETFLD0=1
                 !by $4c }
-!macro i4d .n { +range 0, .n, $FE, "SETFIELD n: n"
+!macro i4d .n { +caml_range 0, .n, $FE, "SETFIELD n: n"
                 !set    caml_gen_SETFLDN=1
                 !set    caml_gen_SETFLD0=1
                 !by $4d, .n }
-!macro i4e .n { +range 0, .n, $FF div Double_wosize, "SETFLOATFIELD n: n"
+!macro i4e .n { +caml_range 0, .n, $FF div Double_wosize, "SETFLOATFIELD n: n"
                 !set    caml_gen_SETFFLDN=1
                 !set    caml_gen_SETFFLD0=1
                 !by $4e, Double_wosize * .n }
@@ -1093,7 +1093,7 @@
 !macro i56 .p { !set    caml_gen_BIFNOT=1
                 !by $56 : !wo .p }
 !macro i57 .n, .tab {
-                +range 0, .n, $FF, "SWITCH n t: n"
+                +caml_range 0, .n, $FF, "SWITCH n t: n"
                 !set    caml_gen_SWITCH=1
                 !set    caml_gen_SWITCHI=1
                 !set    caml_gen_SWITCHP=1
@@ -1106,24 +1106,24 @@
                 !by $5a }
 !macro i5b {    !by $5b }
 !macro i5c { }                                  ;*** CHECKSIGNALS = NOP ***
-!macro i5d .p { +range 0, .p, $FF, "CCALL1 p: p"
+!macro i5d .p { +caml_range 0, .p, $FF, "CCALL1 p: p"
                 !set    caml_gen_CCALL=1
                 !by $5d, .p }
-!macro i5e .p { +range 0, .p, $FF, "CCALL2 p: p"
+!macro i5e .p { +caml_range 0, .p, $FF, "CCALL2 p: p"
                 !set    caml_gen_CCALL=1
                 !by $5e, .p }
-!macro i5f .p { +range 0, .p, $FF, "CCALL3 p: p"
+!macro i5f .p { +caml_range 0, .p, $FF, "CCALL3 p: p"
                 !set    caml_gen_CCALL=1
                 !by $5f, .p }
-!macro i60 .p { +range 0, .p, $FF, "CCALL4 p: p"
+!macro i60 .p { +caml_range 0, .p, $FF, "CCALL4 p: p"
                 !set    caml_gen_CCALL=1
                 !by $60, .p }
-!macro i61 .p { +range 0, .p, $FF, "CCALL5 p: p"
+!macro i61 .p { +caml_range 0, .p, $FF, "CCALL5 p: p"
                 !set    caml_gen_CCALL=1
                 !by $61, .p }
 !macro i62 .p, .n {
-                +range 0, .p, $FF, "CCALL p n: p"
-                +range 1, .n, $FF, "CCALL p n: n"
+                +caml_range 0, .p, $FF, "CCALL p n: p"
+                +caml_range 1, .n, $FF, "CCALL p n: n"
                 !set    caml_gen_CCALL=1
                 !by $62, .n - 1, .p }
 !macro i63 {    !set    caml_gen_CST03=1
@@ -1134,7 +1134,7 @@
                 !by $65 }
 !macro i66 {    !set    caml_gen_CST03=1
                 !by $66 }
-!macro i67 .n { +range -$4000, .n, $7FFF, "CONSTINT n: n"
+!macro i67 .n { +caml_range -$4000, .n, $7FFF, "CONSTINT n: n"
                 !set    caml_gen_CSTN=1
                 !by $67 : !wo 2 * .n + 1 }
 !macro i68 {    !set    caml_gen_PHCST03=1
@@ -1149,7 +1149,7 @@
 !macro i6b {    !set    caml_gen_PHCST03=1
                 !set    caml_gen_PUSH=1
                 !by $6b }
-!macro i6c .n { +range -$4000, .n, $7FFF, "PUSHCONSTINT n: n"
+!macro i6c .n { +caml_range -$4000, .n, $7FFF, "PUSHCONSTINT n: n"
                 !set    caml_gen_PHCSTN=1
                 !set    caml_gen_PUSH=1
                 !set    caml_gen_CSTN=1
@@ -1199,10 +1199,10 @@
 !macro i7e {    !set    caml_gen_GEINT=1
                 !set    caml_gen_CMPRES=1
                 !by $7e }
-!macro i7f .n { +range -$4000, .n, $3FFF, "OFFSETINT n: n"
+!macro i7f .n { +caml_range -$4000, .n, $3FFF, "OFFSETINT n: n"
                 !set    caml_gen_OFSINT=1
                 !by $7f : !wo 2 * .n }
-!macro i80 .n { +range -$4000, .n, $3FFF, "OFFSETREF n: n"
+!macro i80 .n { +caml_range -$4000, .n, $3FFF, "OFFSETREF n: n"
                 !set    caml_gen_ACC0_OFSREF=1
                 !set    caml_gen_OFSREF=1
                 !by $80 : !wo 2 * .n }
@@ -1210,35 +1210,35 @@
                 !set    caml_gen_ISINT=1
                 !by $81 }
 !macro i83 .n, .p {
-                +range -$4000, .n, $3FFF, "BEQ n p: n"
+                +caml_range -$4000, .n, $3FFF, "BEQ n p: n"
                 !set    caml_gen_ACC3_BEQ=1
                 !set    caml_gen_BEQ=1
                 !by $83 : !wo 2 * .n + 1, .p }
 !macro i84 .n, .p {
-                +range -$4000, .n, $3FFF, "BNEQ n p: n"
+                +caml_range -$4000, .n, $3FFF, "BNEQ n p: n"
                 !set    caml_gen_ACC4_BNEQ=1
                 !set    caml_gen_BNEQ=1
                 !by $84 : !wo 2 * .n + 1, .p }
 !macro i85 .n, .p {
-                +range -$4000, .n, $3FFF, "BLTINT n p: n"
+                +caml_range -$4000, .n, $3FFF, "BLTINT n p: n"
                 !set    caml_gen_ACC5_BLTINT=1
                 !set    caml_gen_BLTLEINT=1
                 !set    caml_gen_SGNCMP=1
                 !by $85 : !wo 2 * .n + 1, .p }
 !macro i86 .n, .p {
-                +range -$4000, .n, $3FFF, "BLEINT n p: n"
+                +caml_range -$4000, .n, $3FFF, "BLEINT n p: n"
                 !set    caml_gen_ACC6_BLEINT=1
                 !set    caml_gen_BLTLEINT=1
                 !set    caml_gen_SGNCMP=1
                 !by $86 : !wo 2 * .n, .p }      ;Note: 2 * .n, not 2 * .n + 1!
 !macro i87 .n, .p {
-                +range -$4000, .n, $3FFF, "BGTINT n p: n"
+                +caml_range -$4000, .n, $3FFF, "BGTINT n p: n"
                 !set    caml_gen_ACC7_BGTINT=1
                 !set    caml_gen_BGTGEINT=1
                 !set    caml_gen_SGNCMP=1
                 !by $87 : !wo 2 * .n, .p }      ;Note: 2 * .n, not 2 * .n + 1!
 !macro i88 .n, .p {
-                +range -$4000, .n, $3FFF, "BGEINT n p: n"
+                +caml_range -$4000, .n, $3FFF, "BGEINT n p: n"
                 !set    caml_gen_ACC_BGEINT=1
                 !set    caml_gen_BGTGEINT=1
                 !set    caml_gen_SGNCMP=1
@@ -1249,12 +1249,12 @@
 !macro i8a {    !set    caml_gen_UGEINT=1
                 !by $8a }
 !macro i8b .n, .p {
-                +range -$4000, .n, $7FFF, "BULTINT n p: n"
+                +caml_range -$4000, .n, $7FFF, "BULTINT n p: n"
                 !set    caml_gen_PHACC1_BULTINT=1
                 !set    caml_gen_BULTINT=1
                 !by $8b : !wo 2 * .n + 1, .p }
 !macro i8c .n, .p {
-                +range -$4000, .n, $7FFF, "BUGEINT n p: n"
+                +caml_range -$4000, .n, $7FFF, "BUGEINT n p: n"
                 !set    caml_gen_PHACC2_BUGEINT=1
                 !set    caml_gen_BUGEINT=1
                 !by $8c : !wo 2 * .n + 1, .p }

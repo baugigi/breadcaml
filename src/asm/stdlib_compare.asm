@@ -20,9 +20,9 @@
 
 !ifndef caml_compare_warn {
 caml_compare_warn
-  !warn "\nbreadcaml> TODO: caml_compare_val_custom_tag"
-  !warn "\nbreadcaml> TODO: caml_compare_val_double_array_tag"
-  !warn "\nbreadcaml> TODO: caml_compare_val_object_tag"
+  !warn "TODO: caml_compare_val_custom_tag"
+  !warn "TODO: caml_compare_val_double_array_tag"
+  !warn "TODO: caml_compare_val_object_tag"
 }
 
 .dummy = $1234                                  ;dummy address for SMC
@@ -132,8 +132,10 @@ caml_float_compare
         ;; bytes/string
         ;;
 
+!ifdef caml_PRIM__caml_bytes_equal {
+caml_bytes_equal = caml_string_equal
+}
 !ifdef caml_PRIM__caml_string_equal {
-caml_bytes_equal
 caml_string_equal
         JSR caml_compare_identity_setV2
         BEQ caml_return_true
@@ -142,8 +144,10 @@ caml_string_equal
         BNE caml_return_false
 }
 
+!ifdef caml_PRIM__caml_bytes_notequal {
+caml_bytes_notequal = caml_string_notequal
+}
 !ifdef caml_PRIM__caml_string_notequal {
-caml_bytes_notequal
 caml_string_notequal
         JSR caml_compare_identity_setV2
         BEQ caml_return_false
@@ -153,25 +157,31 @@ caml_string_notequal
 }
 
 ;;; --------------------------------------      ;Auxiliary routines for saving
-!ifdef  caml_PRIM__caml_return_true {            ;the comparison result in ACCU.
+!ifdef  caml_PRIM__caml_return_true {           ;the comparison result in ACCU.
 caml_return_true                                ;Placed here due to the branch
-        STY ACCU + 1                            ;instruction offset limitations.
+        STY ACCU + 1                            ;offset limitations.
         LDA # <Val_true
         STA ACCU
         RTS
 }
-!ifdef  caml_PRIM__caml_return_false_zero {
+
+!ifdef  caml_PRIM__caml_return_false {
 caml_return_false
-caml_return_zero
         STY ACCU + 1
-        LDA # <Val_false                        ;Val_false = Val_zero
+        LDA # <Val_false
         STA ACCU
         RTS
 }
+
+!ifdef  caml_PRIM__caml_return_zero {
+caml_return_zero=caml_return_false
+}
 ;;; --------------------------------------
 
+!ifdef caml_PRIM__caml_bytes_lessthan {
+caml_bytes_lessthan = caml_string_lessthan
+}
 !ifdef caml_PRIM__caml_string_lessthan {
-caml_bytes_lessthan
 caml_string_lessthan
         JSR caml_compare_identity_setV2
         BEQ caml_return_false
@@ -180,8 +190,10 @@ caml_string_lessthan
         BPL caml_return_false
 }
 
+!ifdef caml_PRIM__caml_bytes_greaterequal {
+caml_bytes_greaterequal = caml_string_greaterequal
+}
 !ifdef caml_PRIM__caml_string_greaterequal {
-caml_bytes_greaterequal
 caml_string_greaterequal
         JSR caml_compare_identity_setV2
         BEQ caml_return_true
@@ -190,8 +202,10 @@ caml_string_greaterequal
         BPL caml_return_true
 }
 
+!ifdef caml_PRIM__caml_bytes_lessequal {
+caml_bytes_lessequal = caml_string_lessequal
+}
 !ifdef caml_PRIM__caml_string_lessequal {
-caml_bytes_lessequal
 caml_string_lessequal
         JSR caml_compare_identity_setV2
         BEQ caml_return_true
@@ -200,8 +214,10 @@ caml_string_lessequal
         BPL caml_return_false
 }
 
+!ifdef caml_PRIM__caml_bytes_greaterthan {
+caml_bytes_greaterthan = caml_string_greaterthan
+}
 !ifdef caml_PRIM__caml_string_greaterthan {
-caml_bytes_greaterthan
 caml_string_greaterthan
         JSR caml_compare_identity_setV2
         BEQ caml_return_false
@@ -210,8 +226,10 @@ caml_string_greaterthan
         BPL caml_return_true
 }
 
+!ifdef caml_PRIM__caml_bytes_compare {
+caml_bytes_compare = caml_string_compare
+}
 !ifdef caml_PRIM__caml_string_compare {
-caml_bytes_compare
 caml_string_compare
         JSR caml_compare_identity_setV2
         BEQ caml_return_zero
@@ -585,9 +603,9 @@ caml_compare_val_double_tag
         ;; Result: A </=/> 0 according to the OCaml semantics of compare.
         ;; Status byte is set according to A.
         LDA .V1
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA .V1 + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         LDY .V2 + 1
         LDA .V2

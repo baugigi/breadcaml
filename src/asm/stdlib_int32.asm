@@ -24,9 +24,9 @@
 
 !ifndef caml_int32_warn {
 caml_int32_warn
-  !warn "\nbreadcaml> TODO: caml_int32_div(value v1, value v2)"
-  !warn "\nbreadcaml> TODO: caml_int32_mod(value v1, value v2)"
-  !warn "\nbreadcaml> TODO: caml_int32_bswap(value v)"
+  !warn "TODO: caml_int32_div(value v1, value v2)"
+  !warn "TODO: caml_int32_mod(value v1, value v2)"
+  !warn "TODO: caml_int32_bswap(value v)"
 }
 
 !macro caml_int32_alloc {
@@ -38,9 +38,9 @@ caml_int32_warn
 !ifdef  caml_PRIM__caml_int32_custom {
 !align $01, $00
 caml_int32_custom
-        !word caml_int32_compare
-        !word caml_int32_hash
-caml_int32_compare
+        !word @caml_int32_compare
+        !word @caml_int32_hash
+@caml_int32_compare
         STY TMP + 2
         LDA (SP),Y
         STA TMP
@@ -77,7 +77,7 @@ caml_int32_compare
         STY ACCU + 1
         INY
         RTS
-caml_int32_hash
+@caml_int32_hash
         LDY # 5
         LDA (ACCU),Y
         DEY
@@ -515,9 +515,9 @@ caml_int32_mul
 caml_int32_of_float
         +caml_int32_alloc
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_QINT
         LDY # 2
@@ -623,9 +623,9 @@ caml_int32_to_int
 caml_int32_bits_of_float
         +caml_int32_alloc
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         LDY # 5                         ; (BLK),Y points to int32 last byte
         LDX C64_FAC                     ; load c64 exponent

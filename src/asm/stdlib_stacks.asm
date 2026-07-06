@@ -20,7 +20,7 @@
 
 !ifndef caml_stack_warn {
 caml_stack_warn
-  !warn "\nbreadcaml> TODO: caml_ensure_stack_capacity"
+  !warn "TODO: caml_ensure_stack_capacity"
 }
 
 !ifdef caml_PRIM__caml_ensure_stack_capacity {

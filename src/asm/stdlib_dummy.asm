@@ -18,11 +18,13 @@
 
 !zone caml_DUMMY {
 
+!ifdef caml_PRIM__caml_alloc_dummy_function {
+caml_alloc_dummy_function = caml_alloc_dummy
+}
 !ifdef caml_PRIM__caml_alloc_dummy {
         ;; allocate a dummy block for a recursive value (or function)
         ;; ACCU = size, (SP[0] = function arity, ignored)
 caml_alloc_dummy
-caml_alloc_dummy_function
         LSR ACCU + 1
         LDA ACCU
         ROR

@@ -64,7 +64,7 @@ lib: $(CMI) $(CMO) stdlib.cma libcamlrun.a
 man: $(foreach l,$(BASENAMES),$(call ucase,$(l)).$(MAN3EXT)) Stdlib.$(MAN3EXT)
 
 $(CPROTO): ../asm/stdlib_*.asm
-	sed -nEe "s/^[ \t]*(caml_nonstd_[a-zA-Z0-9_]+)/void \1(){}/p" $^ > $@
+	sed -nE 's/.*[ \t]+caml_PRIM__(caml_nonstd_[a-zA-Z](_?[a-zA-Z0-9])*).*/void \1(){}/p' $^ > $@
 
 libcamlrun.a: $(CMI) $(CMO) $(LIBRUN) stdlib.cma
 	cp $(OCAMLSTDLIB)/$@ .

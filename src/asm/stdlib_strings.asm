@@ -19,15 +19,17 @@
 !zone caml_STRINGS {
 
 !ifdef caml_PRIM__caml_string_of_bytes {
-	!set caml_string_of_bytes = caml_bytes_of_string
+caml_string_of_bytes
+	RTS
 }
+
 !ifdef caml_PRIM__caml_bytes_of_string {
 caml_bytes_of_string
         RTS
 }
 
 !ifdef caml_PRIM__caml_create_bytes {
-	!set caml_create_bytes = caml_create_string
+caml_create_bytes = caml_create_string
 }
 !ifdef caml_PRIM__caml_create_string {
 caml_create_string
@@ -70,7 +72,7 @@ caml_create_string
 }
 
 !ifdef caml_PRIM__caml_ml_bytes_length {
-	!set caml_ml_bytes_length = caml_ml_string_length
+caml_ml_bytes_length = caml_ml_string_length
 }
 !ifdef caml_PRIM__caml_ml_string_length {
 caml_ml_string_length
@@ -90,7 +92,7 @@ caml_ml_string_length
 }
 
 !ifdef caml_PRIM__caml_bytes_get {
-	!set caml_bytes_get = caml_string_get
+caml_bytes_get = caml_string_get
 }
 !ifdef caml_PRIM__caml_string_get {
 caml_string_get
@@ -110,7 +112,7 @@ caml_string_get
 }
 
 !ifdef caml_PRIM__caml_bytes_set {
-	!set caml_bytes_set = caml_string_set
+caml_bytes_set = caml_string_set
 }
 !ifdef caml_PRIM__caml_string_set {
 caml_string_set
@@ -137,7 +139,7 @@ caml_string_set
 }
 
 !ifdef caml_PRIM__caml_fill_bytes {
-	!set caml_fill_bytes = caml_fill_string
+caml_fill_bytes = caml_fill_string
 }
 !ifdef caml_PRIM__caml_fill_string {
 caml_fill_string
@@ -200,7 +202,7 @@ caml_fill_string
 }
 
 !ifdef caml_PRIM__caml_blit_bytes {
-	!set caml_blit_bytes = caml_blit_string
+caml_blit_bytes = caml_blit_string
 }
 !ifdef caml_PRIM__caml_blit_string {
 caml_blit_string
@@ -265,8 +267,8 @@ caml_nonstd_string_of_float
         ;; Stdlib.string_of_float
         LDA ACCU
         LDX ACCU + 1
-        STA caml_float_loadFAC_addr
-        STX caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr
+        STX caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         LDA $47                                 ;WARNING: FOUT OVERWRITES $47
         PHA                                     ;save it

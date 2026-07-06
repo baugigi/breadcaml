@@ -79,8 +79,8 @@ caml_loader
 !ifndef caml_basic_rom_overlap {
 !if caml_stack_end > C64_BASROM {
   caml_basic_rom_overlap = 1
-  !set .x=   "\nbreadcaml> WARNING: used memory overlaps BASIC ROM address space;"
-  !set .x=.x+"\nbreadcaml>          calls to BASIC routines will be wrapped."
+  !set .x=   "WARNING: used memory overlaps BASIC ROM address space;"
+  !set .x=.x+"         calls to BASIC routines will be wrapped."
   !warn .x 
 }}
 

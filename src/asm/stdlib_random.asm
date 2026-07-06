@@ -46,72 +46,84 @@
 ;; 4294967296   30
 ;;
 ;; Please note that those statistics are about 8-bit random numbers (returned in
-;; .a); for BreadCaml purposes, I take a 15-bit OCaml integer from .a (lo bits) and
-;; .b (hi bits, discarding bit #7): this may affect the whole algorithm strength.
+;; caml_nonstd_random_int__a); for BreadCaml purposes, I take a 15-bit OCaml
+;; integer from caml_nonstd_random_int__a (lo bits) and caml_nonstd_random_int__b
+;; (hi bits, discarding bit #7): this may affect the whole algorithm strength.
 
 !zone caml_RANDOM {
-.x      = .lx + 1                               ;4-byte seed
-.a      = .la + 1
-.b      = .lb + 1
-.c      = .lc + 1
+
+!ifdef caml_PRIM__caml_nonstd_random_int {
 caml_nonstd_random_int
-        INC .x
-.lx     LDA # $00                               ;SMC: LDA .x
-        EOR .c
-.la     EOR # $00                               ;SMC: EOR .a
-        STA .a
+        INC caml_nonstd_random_int__x
+caml_nonstd_random_int__x = * + 1
+        LDA # $00                               ;SMC: LDA __x
+        EOR caml_nonstd_random_int__c
+caml_nonstd_random_int__a = * + 1
+        EOR # $00                               ;SMC: EOR __a
+        STA caml_nonstd_random_int__a
         CLC
-.lb     ADC # $00                               ;SMC: ADC .b
-        STA .b
+caml_nonstd_random_int__b = * + 1
+        ADC # $00                               ;SMC: ADC __b
+        STA caml_nonstd_random_int__b
         LSR
         BCC +                                   ;Stix's mod: LSR changed with
         ORA # $80                               ;8-bit right rotate
-+       EOR .a
-.lc     ADC # $00                               ;SMC: ADC .c
-        STA .c
-        LDA .a                                  ;.a is the 8-bit random number
++       EOR caml_nonstd_random_int__a
+caml_nonstd_random_int__c = * + 1
+        ADC # $00                               ;SMC: ADC __c
+        STA caml_nonstd_random_int__c
+        LDA caml_nonstd_random_int__a           ;__a is the 8-bit random number
         ;; end of PRNG algo
         SEC
         ROL                                     ;Return a 15-bit OCaml integer
-        STA ACCU                                ;from .a (lo bits) and .b (hi
-        LDA .b                                  ;bits), discarding bit#7 of .b
+        STA ACCU                                ;from __a and __b, discarding
+        LDA caml_nonstd_random_int__b           ;bit#7 of __b
         ROL
         STA ACCU + 1
         RTS
+}
+
+!ifdef caml_PRIM__caml_nonstd_random_self_init {
 caml_nonstd_random_self_init
         ;; ARG0 is (), returned as is
         LDA C64_TIME + 2                        ;Use the jiffy clock and the
-        STA .x                                  ;current raster line no. to
+        STA caml_nonstd_random_int__x           ;current raster line no. to
         EOR C64_VIC_RASTER                      ;generate a "random" seed
-        STA .a
+        STA caml_nonstd_random_int__a
 -       ASL                                     ;"random" delay
         BNE -
-        LDA .x
+        LDA caml_nonstd_random_int__x
         EOR C64_VIC_RASTER
-        STA .b
+        STA caml_nonstd_random_int__b
 -       LSR                                     ;"random" delay
         BNE -
         LDA C64_VIC_RASTER
-        STA .c
+        STA caml_nonstd_random_int__c
         RTS
+}
+
+!ifdef caml_PRIM__caml_nonstd_random_set_state {
 caml_nonstd_random_set_state
         ;; ARG0 is a 4-char string "xabc"
         LDY #3
         LDA (ACCU),Y
-        STA .c
+        STA caml_nonstd_random_int__c
         DEY
         LDA (ACCU),Y
-        STA .b
+        STA caml_nonstd_random_int__b
         DEY
         LDA (ACCU),Y
-        STA .a
+        STA caml_nonstd_random_int__a
         DEY
         LDA (ACCU),Y
-        STA .x
+        STA caml_nonstd_random_int__x
         STY ACCU + 1
         LDA #<Val_unit
         STA ACCU
         RTS
+}
+
+!ifdef caml_PRIM__caml_nonstd_random_get_state {
 caml_nonstd_random_get_state
         ;; return a 4-char string "xabc"
         LDX # 3
@@ -124,20 +136,21 @@ caml_nonstd_random_get_state
         LDA # 0                                 ;OCaml string padding \000
         STA (BLK),Y
         DEY
-        LDA .c
+        LDA caml_nonstd_random_int__c
         STA (BLK),Y
         DEY
-        LDA .b
+        LDA caml_nonstd_random_int__b
         STA (BLK),Y
         DEY
-        LDA .a
+        LDA caml_nonstd_random_int__a
         STA (BLK),Y
         DEY
-        LDA .x
+        LDA caml_nonstd_random_int__x
         STA (BLK),Y
         LDA BLK
         STA ACCU
         LDA BLK + 1
         STA ACCU + 1
         RTS
+}
 }       ;; !zone caml_RANDOM

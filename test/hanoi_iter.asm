@@ -4,7 +4,7 @@
 caml_stack_start = $9c00
 caml_stack_end = $a000
 
-!source "/home/piero/.opam/LTS/lib/breadcaml/c64defs.asm"
+!source "/home/pifu/.opam/LTS/lib/breadcaml/c64defs.asm"
 caml_PRIM__caml_nonstd_read_line = 1
 caml_PRIM__caml_nonstd_print_char = 1
 caml_PRIM__caml_nonstd_string_of_int = 1
@@ -18,8 +18,8 @@ caml_PRIM__caml_string_of_bytes = 1
 caml_PRIM__caml_fresh_oo_id = 1
 caml_PRIM__caml_equal = 1
 caml_PRIM__caml_lessthan = 1
-!source "/home/piero/.opam/LTS/lib/breadcaml/loader.asm"
-!source "/home/piero/.opam/LTS/lib/breadcaml/codegen.asm"
+!source "/home/pifu/.opam/LTS/lib/breadcaml/loader.asm"
+!source "/home/pifu/.opam/LTS/lib/breadcaml/codegen.asm"
 
 caml_program
 
@@ -105,9 +105,9 @@ caml_01cb +i2b 0,caml_0196:+i39 14:+i2b 0,caml_0161:+i39 15:+i2b 0,caml_0129
           +i63:+i36 35:+i21:+i0b:+i21:+i63:+i36 25:+i21:+i13 2:+i8f
 caml_program_end
 
-!source "/home/piero/.opam/LTS/lib/breadcaml/runtime.asm"
-!source "/home/piero/.opam/LTS/lib/breadcaml/memory.asm"
-!source "/home/piero/.opam/LTS/lib/breadcaml/stdlib.asm"
+!source "/home/pifu/.opam/LTS/lib/breadcaml/runtime.asm"
+!source "/home/pifu/.opam/LTS/lib/breadcaml/memory.asm"
+!source "/home/pifu/.opam/LTS/lib/breadcaml/stdlib.asm"
 !align $01, $00
 caml_externals_lo
 	!byte <(caml_nonstd_read_line)
@@ -152,4 +152,4 @@ caml_glob_end
 !if caml_stack_start < caml_glob_end {
 	!serious "ERROR: Not enough memory for stack."
 }
-!source "/home/piero/.opam/LTS/lib/breadcaml/showmem.asm"
+!source "/home/pifu/.opam/LTS/lib/breadcaml/showmem.asm"

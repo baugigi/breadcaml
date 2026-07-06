@@ -24,15 +24,15 @@
 
 !ifndef caml_int64_warn {
 caml_int64_warn
-  !warn "\nbreadcaml> TODO: caml_int64_bits_of_float(value vd)"
-  !warn "\nbreadcaml> TODO: caml_int64_div(value v1, value v2)"
-  !warn "\nbreadcaml> TODO: caml_int64_mod(value v1, value v2)"
-  !warn "\nbreadcaml> TODO: caml_int64_bswap(value v)"
-  !warn "\nbreadcaml> TODO: caml_int64_of_int(value v)"
-  !warn "\nbreadcaml> TODO: caml_int64_to_int(value v)"
-  !warn "\nbreadcaml> TODO: caml_int64_of_float"
-  !warn "\nbreadcaml> TODO: caml_int64_of_int32(value v)"
-  !warn "\nbreadcaml> TODO: caml_int64_to_int32(value v)"
+  !warn "TODO: caml_int64_bits_of_float(value vd)"
+  !warn "TODO: caml_int64_div(value v1, value v2)"
+  !warn "TODO: caml_int64_mod(value v1, value v2)"
+  !warn "TODO: caml_int64_bswap(value v)"
+  !warn "TODO: caml_int64_of_int(value v)"
+  !warn "TODO: caml_int64_to_int(value v)"
+  !warn "TODO: caml_int64_of_float"
+  !warn "TODO: caml_int64_of_int32(value v)"
+  !warn "TODO: caml_int64_to_int32(value v)"
 }
 
 !macro caml_int64_alloc {
@@ -44,9 +44,9 @@ caml_int64_warn
 !ifdef  caml_PRIM__caml_int64_custom    {
 !align $01, $00
 caml_int64_custom
-        !word caml_int64_compare
-        !word caml_int64_hash
-caml_int64_compare
+        !word @caml_int64_compare
+        !word @caml_int64_hash
+@caml_int64_compare
         STY TMP + 2
         LDA (SP),Y
         STA TMP
@@ -83,7 +83,7 @@ caml_int64_compare
         STY ACCU + 1
         INY
         RTS
-caml_int64_hash
+@caml_int64_hash
         LDY # 9
         LDA (ACCU),Y
   !for @i, 1, 3 {

@@ -77,9 +77,9 @@ caml_nonstd_sign_float
 !ifdef caml_PRIM__caml_neg_float {
 caml_neg_float
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_NEGOP
         JMP caml_float_alloc_result
@@ -88,9 +88,9 @@ caml_neg_float
 !ifdef caml_PRIM__caml_abs_float {
 caml_abs_float
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_ABS
         JMP caml_float_alloc_result
@@ -99,9 +99,9 @@ caml_abs_float
 !ifdef caml_PRIM__caml_exp_float {
 caml_exp_float
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_EXP
         JMP caml_float_alloc_result
@@ -110,9 +110,9 @@ caml_exp_float
 !ifdef caml_PRIM__caml_expm1_float {
 caml_expm1_float
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_EXP
         LDA # <C64_M1
@@ -124,9 +124,9 @@ caml_expm1_float
 !ifdef caml_PRIM__caml_log_float {
 caml_log_float
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_LOG
         JMP caml_float_alloc_result
@@ -135,9 +135,9 @@ caml_log_float
 !ifdef caml_PRIM__caml_log1p_float {
 caml_log1p_float
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         LDA # <C64_ONE
         LDY # >C64_ONE
@@ -150,9 +150,9 @@ caml_log1p_float
 caml_log10_float
         ;; log10 x = ln x / ln 10
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_LOG
         LDA # <@rln10
@@ -166,9 +166,9 @@ caml_log10_float
 !ifdef caml_PRIM__caml_sin_float {
 caml_sin_float
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_SIN
         JMP caml_float_alloc_result
@@ -177,9 +177,9 @@ caml_sin_float
 !ifdef caml_PRIM__caml_cos_float {
 caml_cos_float
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_COS
         JMP caml_float_alloc_result
@@ -188,9 +188,9 @@ caml_cos_float
 !ifdef caml_PRIM__caml_tan_float {
 caml_tan_float
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_TAN
         JMP caml_float_alloc_result
@@ -199,9 +199,9 @@ caml_tan_float
 !ifdef caml_PRIM__caml_sqrt_float {
 caml_sqrt_float
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_SQR
         JMP caml_float_alloc_result
@@ -210,9 +210,9 @@ caml_sqrt_float
 !ifdef caml_PRIM__caml_atan_float {
 caml_atan_float
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_ATN
         JMP caml_float_alloc_result
@@ -221,9 +221,9 @@ caml_atan_float
 !ifdef caml_PRIM__caml_floor_float {
 caml_floor_float
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_INT
         JMP caml_float_alloc_result
@@ -233,9 +233,9 @@ caml_floor_float
 caml_ceil_float
         ;; let fl = floor x in if fl = x then fl else fl +. 1.
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_INT
         LDA # ACCU
@@ -269,9 +269,9 @@ caml_classify_float
 !ifdef caml_PRIM__caml_int_of_float {
 caml_int_of_float
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         +caml_JSR_BASROM C64_FACINX             ; result in Y(lo), A(hi)
         STY ACCU
@@ -299,9 +299,9 @@ caml_float_of_int
 !ifdef caml_PRIM__caml_copysign_float {
 caml_copysign_float
         LDA ACCU
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         LDA ACCU + 1
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         LDA (SP),Y
         STA ACCU
@@ -437,15 +437,15 @@ caml_frexp_float
 !ifdef caml_PRIM__caml_add_float {
 caml_add_float
         LDA (SP),Y
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         INY
         LDA (SP),Y
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         LDA ACCU
-        STA caml_float_loadARG_addr
+        STA caml_float_loadARG__addr
         LDA ACCU + 1
-        STA caml_float_loadARG_addr + 1
+        STA caml_float_loadARG__addr + 1
         JSR caml_float_loadARG
         +caml_JSR_BASROM C64_FADDT
         JMP caml_float_alloc_result
@@ -454,15 +454,15 @@ caml_add_float
 !ifdef caml_PRIM__caml_sub_float {
 caml_sub_float
         LDA (SP),Y
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         INY
         LDA (SP),Y
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         LDA ACCU
-        STA caml_float_loadARG_addr
+        STA caml_float_loadARG__addr
         LDA ACCU + 1
-        STA caml_float_loadARG_addr + 1
+        STA caml_float_loadARG__addr + 1
         JSR caml_float_loadARG
         +caml_JSR_BASROM C64_FSUBT
         JMP caml_float_alloc_result
@@ -471,15 +471,15 @@ caml_sub_float
 !ifdef caml_PRIM__caml_mul_float {
 caml_mul_float
         LDA (SP),Y
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         INY
         LDA (SP),Y
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         LDA ACCU
-        STA caml_float_loadARG_addr
+        STA caml_float_loadARG__addr
         LDA ACCU + 1
-        STA caml_float_loadARG_addr + 1
+        STA caml_float_loadARG__addr + 1
         JSR caml_float_loadARG
         +caml_JSR_BASROM C64_FMULT
         JMP caml_float_alloc_result
@@ -488,15 +488,15 @@ caml_mul_float
 !ifdef caml_PRIM__caml_div_float {
 caml_div_float
         LDA (SP),Y
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         INY
         LDA (SP),Y
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         LDA ACCU
-        STA caml_float_loadARG_addr
+        STA caml_float_loadARG__addr
         LDA ACCU + 1
-        STA caml_float_loadARG_addr + 1
+        STA caml_float_loadARG__addr + 1
         JSR caml_float_loadARG
         +caml_JSR_BASROM C64_FDIVT
         JMP caml_float_alloc_result
@@ -505,15 +505,15 @@ caml_div_float
 !ifdef caml_PRIM__caml_power_float {
 caml_power_float
         LDA (SP),Y
-        STA caml_float_loadFAC_addr
+        STA caml_float_loadFAC__addr
         INY
         LDA (SP),Y
-        STA caml_float_loadFAC_addr + 1
+        STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
         LDA ACCU
-        STA caml_float_loadARG_addr
+        STA caml_float_loadARG__addr
         LDA ACCU + 1
-        STA caml_float_loadARG_addr + 1
+        STA caml_float_loadARG__addr + 1
         JSR caml_float_loadARG
         +caml_JSR_BASROM C64_FPWRT
         JMP caml_float_alloc_result
@@ -539,11 +539,11 @@ caml_float_alloc_result
 
 !ifdef caml_PRIM__caml_float_loadFAC {
         ;; how to use:
-        ;; 1) set  caml_float_loadFAC_addr
+        ;; 1) set  caml_float_loadFAC__addr
         ;; 2) call caml_float_loadFAC
 caml_float_loadFAC
         LDX # 4
-caml_float_loadFAC_addr = * + 1
+caml_float_loadFAC__addr = * + 1
 -       LDA .dummy,X            ;SMC: replaced with real address
         STA C64_FAC,X
         DEX
@@ -559,11 +559,11 @@ caml_float_loadFAC_addr = * + 1
 
 !ifdef caml_PRIM__caml_float_loadARG {
         ;; how to use:
-        ;; 1) set  caml_float_loadARG_addr
+        ;; 1) set  caml_float_loadARG__addr
         ;; 2) call caml_float_loadARG
 caml_float_loadARG
         LDX # 4
-caml_float_loadARG_addr = * + 1
+caml_float_loadARG__addr = * + 1
 -       LDA .dummy,X            ;SMC: replaced with real address
         STA C64_ARG,X
         DEX

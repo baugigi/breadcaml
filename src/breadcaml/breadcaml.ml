@@ -48,6 +48,17 @@ let where () =
   print_endline Config.libdir;
   exit 0
 
+let where_ocamlc () = 
+  print_endline Config.ocamlc;
+  exit 0
+
+let where_acme () = 
+  print_endline Config.acme;
+  exit 0
+
+let help () =
+  exit (Sys.command "man breadcaml")
+
 let exec_cmd cmd =
   if !verbose then Printf.printf "Executing command: «%s»\n%!" cmd;
   match Sys.command cmd with
@@ -80,70 +91,55 @@ let acme in_file =
        @ [quote in_file]) in
   exec_cmd cmd
 
-let usage =
-  Printf.sprintf
-    ("Usage:\
-      \t%s\t[-o outfile.ext] [OPTIONS] [OCAMLC_OPTIONS] FILE ...\n\
-      \t\t[-- [ACME_OPTIONS]]\n\
-      \t%s\t-c [OCAMLC_OPTIONS] FILE ...\n\
-      \t%s\t( -where | -version | -help | --help )\n\n\
-      Compile and links the given FILEs and build an executable file for \
-      Commodore 64\n\
-      computers. Full documentation available online \
-      <https://github/baugigi/breadcaml>\n\
-      or locally via 'man %s'.\n\n\
-      Options:") myself myself myself myself
+let usage = Printf.sprintf
+ ("Usage:\n\
+   %s [-o outfile.ext] [OPTIONS] [OCAMLC_OPTIONS] FILE… [--[ACME_OPTIONS]]\n\
+   %s -c [OCAMLC_OPTIONS] FILE…\n\
+   %s (-where|-ocamlc|-acme|-version|-help|--help )\n\
+   \n\
+   Compile and links the given FILEs into an executable file for C64 computers.\n\
+   See also <https://github/baugigi/breadcaml> and the breadcaml(1) man page.\n\
+   \n\
+   FILE type is determined by extension:\n\
+   \  .ml/.mli:  OCaml compilation unit, implementation/interface source code\n\
+   \  .cmo/.cmi: OCaml compiled bytecode/interface\n\
+   \  .cma:      OCaml bytecode library\n\
+   \  .c/.o:     C source/object code\n\
+   \  .asm:      ACME assembly source code\n\
+   \n\
+   Options:") myself myself myself
 
 let breadcaml_opts =
+  let spacer = String.make 18 ' ' in
   Arg.["-o", Set_string o_arg,
-       "outfile.ext\
-        \tDefine the output files and the compilation process.\n\
-        \t· If ext is 'asm', generate the assembly file 'outfile.asm',\n\
-        \t  suitable to be assembled by the ACME cross assembler.\n\
-        \t· If ext is 'prg', also call ACME to assemble 'outfile.asm' into\n\
-        \t  the native-code executable file 'outfile.prg'.\n\
-        \tExtensions other than 'asm' and 'prg' are not allowed. If the\n\
-        \t'-o' option is not present, outfile.ext is assumed to be the\n\
-        \tbasename of the last FILE (without the trailing extension)\n\
-        \twith '.prg' appended.\n";
+       "outfile.ext "
+       ^ "Define the output files and the compilation process: if ext is\n"
+       ^ spacer
+       ^ "'asm', generate the assembly file 'outfile.asm'; if .ext is\n"
+       ^ spacer
+       ^ "'prg', also assemble it into the executable 'outfile.prg'.";
        "-c", Set compile_only,
-       "\tCompile only. Just run ocamlc with '-c' and OCAMLC_OPTIONS,\n\
-        \tthen exit. The '-c' and '-o' options are incompatible.\n";
+       " Compile only.";
        "-interp", Set interp,
-       "\tBytecode interpretation.\n\
-        \tAdd '-Dcaml_INTERP=1' to ACME_OPTIONS so that ACME generates\n\
-        \ta '.prg' file containing OCaml bytecode and an interpreter,\n\
-        \tinstead of a native-code compiled executable. The generated\n\
-        \tfile is smaller than the corresponding native-code one, but\n\
-        \tthe execution speed will be slower.\n";
+       " Generate a bytecode file that includes the interpreter.";
        "-mem", Set_int mem_arg,
-       Printf.sprintf
-         "address\
-          \tSet the maximum memory address available for the executable.\n\
-          \tValid values range from 0x1000 to 0xcfff. Default: 0x%4x.\n"
-         !mem_arg;
+       "address Set the maximum available memory address for the executable.\n"
+       ^ spacer ^ (Printf.sprintf "Default: %#4x (%5d)." !mem_arg !mem_arg);
        "-stack", Set_int stack_arg,
-       Printf.sprintf
-         "pages\
-          \tDefine the stack size, in 256-byte pages. Valid values are\n\
-          \tpositive integers. Default: %d pages.\n"
-         !stack_arg;
-       "-showmem", Set showmem,
-       "\tTell ACME to show information related to the allocation of\n\
-        \tglobal data, code, libraries, heap, and stack. This effect\n\
-        \tis achieved by adding '-Dcaml_SHOWMEM=1' to ACME_OPTIONS.\n";
-       "-verbose", Set verbose,
-       "\tVerbose mode.\n\
-        \tAdd '-verbose' to OCAMLC_OPTIONS and '-v9' to ACME_OPTIONS.\n";
+       "pages Define the stack size, in 256-byte pages.\n"
+       ^ spacer ^ (Printf.sprintf "Default: %d." !stack_arg);
+       "-showmem", Set showmem, " Show information on memory allocation.";
+       "-verbose", Set verbose, " Verbose mode.";
        "-where", Unit where,
-       "\tShow the location of the BreadCaml standard library and exit.\n";
-       "-version", Unit version,
-       "\tShow version and exit.\n";
+       " Show the location of the BreadCaml standard library and exit.";
+       "-ocamlc", Unit where_ocamlc,
+       " Show the location of the OCaml bytecode compiler and exit.";
+       "-acme", Unit where_acme,
+       " Show the location of the ACME cross-assembler and exit.";
+       "-version", Unit version, " Show version and exit.";
        "--", Rest_all rest_all,
-       "\tPass the following ACME_OPTIONS to the ACME cross assembler.\n\
-        \n\
-        \tOCAMLC_OPTIONS: any other options not listed above and not\n\
-        \tfollowing '--' are passed to ocamlc.\n"]
+       "ACME_OPTIONS Pass the options following -- to acme.\n"
+       ^ "  OCAMLC_OPTIONS  Pass any options not listed above to ocamlc."]
 
 let rec dyn_add_ocamlc_opts acc n =
   (* dynamically add any non-breadcaml options to the ocamlc ones *)
@@ -163,12 +159,15 @@ let () =
   try
     let specs = dyn_add_ocamlc_opts breadcaml_opts 1 in
     Arg.parse (Arg.align specs) anon_fun usage;
-    fail_if (!stack_arg <= 0)
-      "-stack argument must be greater than 0.";
+    let not_found =
+      List.filter (fun f -> not (Sys.file_exists f)) !input_files in
+    fail_if (not_found != []) (String.concat ", " not_found ^ " not found.");
+    fail_if (!input_files = []) "No input file specified.";
+    fail_if (!stack_arg <= 0)  "-stack argument must be greater than 0.";
     fail_if (!mem_arg < 0x1000 || !mem_arg >= 0xD000)
       "-mem argument must range from 0x1000 to 0xCFFF.";
     let o_default = match !input_files with
-      | f :: _ -> remove_extension (basename f) ^ ".prg"
+      | f :: _ -> remove_extension f ^ ".prg"
       | [] -> "" in
     input_files := List.rev !input_files;
     ocamlc_opts := List.rev !ocamlc_opts;
@@ -177,7 +176,7 @@ let () =
         fail_if !asm ".asm files are not allowed with the «-c» option.";
         fail_if !cmo ".cmo files are not allowed with the «-c» option.";
         fail_if (!o_arg <> "") "Options «-c» and «-o» are incompatible.";
-        fail_if (not (!ml || !mli)) "No «.ml»/«.mli» files to compile.";
+        fail_if (not (!ml || !mli)) "No «.ml» or «.mli» files to compile.";
         ocamlc ()
       end
     else
@@ -187,7 +186,7 @@ let () =
         fail_if (o_ext <> ".asm" && o_ext <> ".prg")
           "«-o» argument must end with «.asm» or «.prg».";
         fail_if (not (!ml || !cmo))
-          "No «.ml»/«.cmo» files to compile/link.";
+          "No «.ml» or «.cmo» files to compile or link.";
         let bytefile = temp_file ~temp_dir:"." o_name ".byte" in
         let asmfile = o_name ^ ".asm" in
         let prgfile = o_name ^ ".prg" in
