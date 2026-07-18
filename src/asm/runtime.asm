@@ -1793,9 +1793,9 @@ caml_uncaught_exn_warn
 caml_uncaught_exn
         @VAL = TMP                              ;current value
         @PRFL = TMP + 2                         ;print block fields:0=yes/$FF=no
-        @SIZE = TMP + 3                         ;@pr_val: block size
-        @SKP0 = TMP + 4                         ;@pr_int: flag, skip initial 0s
-        @DGT =  TMP + 5                         ;@pr_int: decimal digit to print
+        @SIZE = TMP + 3                         ;for @pr_val: block size
+        @SKP0 = TMP + 4                         ;for @pr_int: flag, skip leading 0s
+        @DGT =  TMP + 5                         ;for @pr_int: digit to print
         LDY # 0
         STY @PRFL                               ;flag: print fields=yes
         LDX # 0                                 ;print error message
@@ -1822,7 +1822,10 @@ caml_uncaught_exn
         LDA (@VAL),Y                            ;  load EXN_BLK[0], lo
         STX @VAL + 1                            ;  VAL := EXN_BLK[0] (exn name)
         STA @VAL
-        JSR @pr_val                             ;  print exception name
+;;	JSR @pr_val                             ;  print "exn name"
+        JSR @pr_str                             ;  print exn name, no quotes
+	LDA # ' '
+	JSR C64_CHROUT
         LDY # 3
         LDA (ACCU),Y
         STA @VAL + 1
@@ -1837,10 +1840,11 @@ caml_uncaught_exn
         DEY
         LDA (ACCU),Y
         STA @VAL                                ;  VAL := ACCU[0] (exn name)
-        JSR @pr_val                             ;  print string
+;;	JSR @pr_val                             ;  print "string"
+	JSR @pr_str                             ;  print string, no quotes
         JMP STOP                                ;  exit.
 !convtab pet
-@err    !text 13, "Fatal error: exception ", 0
+@err    !text 13, "Exception: ", 0
 
         ;; Print VAL if int or string, or its fields if tag(VAL)=0 & PRFL=0
 @pr_val BIT caml_is_block                       ;Is VAL a block?

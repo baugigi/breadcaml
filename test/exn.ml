@@ -11,6 +11,6 @@
    it under the terms of the  GNU General Public License (GPL) version 2,
    as specified in the LICENSE-en file in the project root.
    —————————————————————————————————————————————————————————————————————— *)
+exception MiaEcc of string
+let _ = raise (MiaEcc "Prova Prova")
 
-let a = ("aaa",1,2);;
-raise (Match_failure a);;

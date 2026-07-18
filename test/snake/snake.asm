@@ -4,7 +4,7 @@
 caml_stack_start = $9c00
 caml_stack_end = $a000
 
-!source "/home/pifu/.opam/LTS/lib/breadcaml/c64defs.asm"
+!source "/home/piero/.opam/LTS/lib/bcamlc/c64defs.asm"
 caml_PRIM__caml_ml_string_length = 1
 caml_PRIM__caml_create_bytes = 1
 caml_PRIM__caml_blit_string = 1
@@ -25,8 +25,8 @@ caml_PRIM__caml_nonstd_print_string = 1
 caml_PRIM__IOtools_videoram_write = 1
 caml_PRIM__IOtools_videoram_read = 1
 caml_PRIM__caml_nonstd_string_of_int = 1
-!source "/home/pifu/.opam/LTS/lib/breadcaml/loader.asm"
-!source "/home/pifu/.opam/LTS/lib/breadcaml/codegen.asm"
+!source "/home/piero/.opam/LTS/lib/bcamlc/loader.asm"
+!source "/home/piero/.opam/LTS/lib/bcamlc/codegen.asm"
 
 caml_program
 
@@ -193,8 +193,8 @@ caml_03a2 +i65:+i28 2
 caml_03a4 +i00:+i6c 32:+i7a:+i56 caml_03a9:+i54 caml_03aa
 caml_03a9 +i28 2
 caml_03aa +i64:+i28 2
-caml_03ac +i00:+i87 78,caml_03c1:+i00:+i83 145,caml_03bf:+i00:+i83 157,caml_03bd
-          +i00:+i86 90,caml_03cd:+i00:+i7f -78
+caml_03ac +i00:+i87 110,caml_03c1:+i00:+i83 145,caml_03bf:+i00
+          +i83 157,caml_03bd:+i00:+i86 122,caml_03cd:+i00:+i7f -110
           +i57 12,[caml_03b7,caml_03cd,caml_03b9,caml_03cd,caml_03cd,caml_03cd,caml_03cd,caml_03cd,caml_03cd,caml_03cd,caml_03cd,caml_03bb]
 caml_03b7 +i66:+i28 1
 caml_03b9 +i64:+i28 1
@@ -233,9 +233,9 @@ caml_0407 +i35 75:+i09:+i39 28:+i00:+i13 1:+i09:+i2b 0,caml_03fd:+i39 36
 caml_program_end
 
 !source "iOtools.asm"
-!source "/home/pifu/.opam/LTS/lib/breadcaml/runtime.asm"
-!source "/home/pifu/.opam/LTS/lib/breadcaml/memory.asm"
-!source "/home/pifu/.opam/LTS/lib/breadcaml/stdlib.asm"
+!source "/home/piero/.opam/LTS/lib/bcamlc/runtime.asm"
+!source "/home/piero/.opam/LTS/lib/bcamlc/memory.asm"
+!source "/home/piero/.opam/LTS/lib/bcamlc/stdlib.asm"
 !align $01, $00
 caml_externals_lo
 	!byte <(caml_ml_string_length)
@@ -296,10 +296,10 @@ caml_glob_data
 !h 6e 74 00 01 fc 06 69 4f 74 6f 6f 6c 73 2e 6d 6c 00 01 00 03:+p $004e
 !h 47 00 05 00 fc 06 69 4f 74 6f 6f 6c 73 2e 6d 6c 00 01 00 03:+p $0064
 !h 3f 00 05 00 fc 06 69 4f 74 6f 6f 6c 73 2e 6d 6c 00 01 00 03:+p $007a
-!h 37 00 05 00 00 01 03 00 fc 0a 20 2a 2a 2a 20 59 4f 55 20 4c 4f 53 54 21
-!h 20 2a 2a 2a 20 00 fc 0a 20 50 4c 41 59 20 41 47 41 49 4e 20 28 59 2f 4e
-!h 29 3f 20 00 00 02 05 00 07 00 fc 05 6d 6f 76 65 5f 74 61 69 6c 00 fc 04
-!h 53 43 4f 52 45 3a 00 01 00 02 05 00 31 00 fc 05 70 75 74 5f 63 65 6c 6c
+!h 37 00 05 00 00 01 03 00 fc 0a 20 2a 2a 2a 20 79 6f 75 20 6c 6f 73 74 21
+!h 20 2a 2a 2a 20 00 fc 0a 20 70 6c 61 79 20 61 67 61 69 6e 20 28 79 2f 6e
+!h 29 3f 20 00 00 02 05 00 07 00 fc 05 4d 4f 56 45 a4 54 41 49 4c 00 fc 04
+!h 73 63 6f 72 65 3a 00 01 00 02 05 00 31 00 fc 05 50 55 54 a4 43 45 4c 4c
 !h 00 01 00 02 01 00 03 00 00 02 05 00 07 00 00 02 03 00 05 00 00 02 01 00
 !h 07 00 00 02 01 00 05 00 00 02 03 00 07 00 00 01 05 00 00 01 01 00 00 01
 !h 07 00 00 01 03 00 00 06 15 00 f5 01 09 00 65 00 29 00 07 00
@@ -307,4 +307,4 @@ caml_glob_end
 !if caml_stack_start < caml_glob_end {
 	!serious "ERROR: Not enough memory for stack."
 }
-!source "/home/pifu/.opam/LTS/lib/breadcaml/showmem.asm"
+!source "/home/piero/.opam/LTS/lib/bcamlc/showmem.asm"

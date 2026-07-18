@@ -19,10 +19,8 @@
 !zone caml_STRINGS {
 
 !ifdef caml_PRIM__caml_string_of_bytes {
-caml_string_of_bytes
-	RTS
+caml_string_of_bytes = caml_bytes_of_string
 }
-
 !ifdef caml_PRIM__caml_bytes_of_string {
 caml_bytes_of_string
         RTS
@@ -77,7 +75,7 @@ caml_ml_bytes_length = caml_ml_string_length
 !ifdef caml_PRIM__caml_ml_string_length {
 caml_ml_string_length
         ;; ACCU = string
-        ;; return the string length (0 to 509) 
+        ;; return the string length (0 to 509)
 
         JSR caml_string_length_yx               ;TMP, TMP + 1 := len
         TYA
@@ -236,7 +234,7 @@ caml_blit_string
         LDA (SP),Y                              ; <dst
         CLC
         ADC @TO
-        STA @TO                                 ; TO := <(dst + int_val(dofs)) 
+        STA @TO                                 ; TO := <(dst + int_val(dofs))
         TXA
         ADC @TO + 1
         STA @TO + 1                             ; TO + 1:= >(dst+int_val(dofs))

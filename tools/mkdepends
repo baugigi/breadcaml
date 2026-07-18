@@ -2,67 +2,79 @@
 
 # depends.asm generator for src/asm/stdlib_*.asm routines
 
-# CODING RULES for stdlib_*.asm files to let this script work:
-
-# 1) Each routine MUST have this structure:
-#       <IFDEF><ROUTINE_LABEL> {
-#       <ROUTINE_LABEL>
-#           asm code...
-#       }
-#    where  <LABEL_PART>    ::= [[:alpha:]](_?[[:alnum:]])*
-#           <IFDEF>         ::= ^[ \t]*!ifdef[ \t]+caml_PRIM__
-#           <ROUTINE_LABEL> ::= caml_<LABEL_PART>
-#    The final '}' must be at 1st column; any '}' in asm code must not.
-
-# 2) Other global labels in asm code MUST match this regex:
-#           <GLOBAL_LABEL>  ::= <ROUTINE_LABEL>__<LABEL_PART>
-#    (note the two underscore characters.)
-
-# 3) All charachters from the LEFTMOST ';' to end of line will be treated as
-#    comments and discarded, also if the semicolon is quoted by ' or ":
-#           LDA #';':JSR caml_my_great_routine      ;BAD!
-#
-#           LDA #';'                                ;GOOD!
-#           JSR caml_my_great_routine
-
-# 4) The unique exception to rule 3) is a comment as
-#           ;FALLTHROUGH caml_following_routine
-#    which is treated as a dependency.
-#    All fallthroughs MUST be commented as above! (Case-insensitive)
-
-PWD="$(pwd)"
-[[ ${PWD%/src/asm} == $PWD ]] && { echo "Not in 'src/asm'!"; exit 1; }
-
 # Input and output files
-INFILE=stdlib_*.asm
-OUTFILE=depends.asm
+OUTFILE="$1"
+shift
+INFILE="$@"
+
+# CODING RULES for stdlib_*.asm files to let this script work:
+#
+# 1) Each routine MUST have this structure:
+#
+#       !ifdef caml_PRIM__<ROUTINE_LABEL(i)> '{'
+#       <ROUTINE_LABEL(i)>
+#           acme_code
+#       [<GLOBAL_LABEL(i,1)> ['=' acme_expr]]
+#           acme_code
+#           ...
+#       [<GLOBAL_LABEL(i,n)> ['=' acme_expr]]
+#           acme_code
+#           [; fallthrough <ROUTINE_LABEL(i+1)>]
+#       '}'
+#
+#  · <ROUTINE_LABEL(x)> is the string "caml_", followed by a sequence of
+#    alphanumeric strings, separated by "_"; the first string of the sequence
+#    must start with a letter.
+#
+#  · <GLOBAL_LABEL(i,x)> is the <ROUTINE_LABEL(i)>, followed by "__" and a
+#    sequence of alphanumeric strings, separated by "_"; the first string of
+#    the sequence must start with a letter.
+#
+#  · Both acme_code and acme_expr may obviously contain references to other
+#    <ROUTINE_LABEL(j)> and/or <GLOBAL_LABEL(j)>s, which will be treated
+#    as dependencies of <ROUTINE_LABEL(i)> on <ROUTINE_LABEL(j)>.
+#
+#  · A fallthrough point MUST be commented by one or more ';', followed by
+#    optional spaces/tabs, the case-insensitive string "fallthrough", one or
+#    more spaces/tabs, and finally the <ROUTINE_LABEL(i+1)>; the comment will
+#    be treated as a dependency of <ROUTINE_LABEL(i)> on <ROUTINE_LABEL(i+1)>;
+#    the comment MUST precede the final closing brace '}'.
+#
+#  · The final closing brace '}' MUST be in the FIRST column; no other '}' in
+#    acme_code may appear in the first column.
+#
+# 2) All charachters from the LEFTMOST ';' to the end of line will be treated
+#    as comments and DISCARDED by this script (except "; fallthrough..."),
+#    even if the semicolon is enclosed in single- or double-quote characters:
+#    .BAD:  LDA #';':JSR caml_my_routine   ;this dep will be discarded
+#    .GOOD: LDA #';'
+#           JSR caml_my_routine            ;this dep will be caught
 
 # sed program to extract deps
-LBLPART='[[:alpha:]](_?[[:alnum:]])*'
+SEQ='[a-zA-Z](_?[a-zA-Z0-9])*'
+ROUT="caml_$SEQ"
 IFDEF='^[ \t]*!ifdef[ \t]+caml_PRIM__'
-ROUTINE="caml_$LBLPART"
-COMMENT=';.*$'
-FALLTHROUGH=';+[ \t]*fallthrough[ \t]+'
+FALLTH='^[^;]*;+[ \t]*fallthrough[ \t]+'
 SEDPROGRAM="
   /$IFDEF/, /^}/ {
-  /$IFDEF/ {                            # First line:
-    s/$IFDEF($ROUTINE).*$/\1 \"/        #  isolate routine name and add '"'
-    h                                   #  copy to hold space
-    d                                   #  delete, start next cycle
+  /$IFDEF/ {                   # First line:
+    s/$IFDEF($ROUT).*$/\1 \"/  #  isolate the routine name, add quote
+    h                          #  copy the line to the hold space
+    d                          #  delete it and start next cycle
   }
-  /^}/ {                                # Last line:
-    g                                   #  get held text; then add '"'
+  /^}/ {                       # Last line:
+    g                          #  get the whole held text; add quote
     a \"
-    p                                   #  print: routine '"' dep dep... '"'
-    d                                   #  delete, start next cycle
+    p                          #  print routine name followed by deps
+    d                          #  delete all and start next cycle
   }
-                                        # Lines in between:
-  s/^.*$FALLTHROUGH($ROUTINE).*$/ \1/i  #  extract dep from fallthrough comment
-  s/$COMMENT//g                         #  remove other ACME comments
-  s/.*($ROUTINE)(__$LBLPART)?/§\1/g     #  prepend § to each dep
-  /§/! d                                #  no deps: delete, start next cycle
-  s/[^§]*§($ROUTINE)[^§]*/\1 /g         #  remove § and text between deps
-  H                                     #  append deps to hold space
+                               # Lines in between:
+  s/$FALLTH($ROUT).*$/ \1/i    #  extract dep from fallthrough comment
+  s/;.*$//g                    #  remove other ACME comments
+  s/.*($ROUT)(__$SEQ)?/§\1/g   #  prepend § to each dep
+  /§/! d                       #  if no deps, delete and start next cycle
+  s/[^§]*§($ROUT)[^§]*/\1 /g   #  remove § and text between deps
+  H                            #  append deps to the hold space
 }"
 
 # Init DEPS array
@@ -105,7 +117,7 @@ done
 
 # Generate the output file
 {   echo ";; AUTO-GENERATED FILE - DO NOT EDIT"
-    echo ";; Generated $(date -u -Iseconds) by $0"
+    echo ";; Generated $(date -Iseconds) by $0"
     echo ""
     for ROUTINE in $(printf "%s\n" ${!DEPS[@]}|sort); do
 	[[ ${TRCLOS[$ROUTINE]} ]] && {

@@ -21,10 +21,8 @@
 
 #####
 
-# Config files
+# Config file
 MAKE_CONF_FILE="etc/Makefile.conf"
-BREADCAML_CONF_FILE="etc/config.ml"
-BREADCAML_CONF_TEMPLATE="src/breadcaml/config.template.ml"
 
 # BreadCaml version
 VERSION="$(<VERSION)"
@@ -32,7 +30,7 @@ VERSION="$(<VERSION)"
 # Default installation paths
 PREFIX="${OPAM_SWITCH_PREFIX:-~}"
 BINDIR="$PREFIX/bin"
-LIBDIR="$PREFIX/lib/breadcaml"
+LIBDIR="$PREFIX/lib/bcamlc"
 MANDIR="$PREFIX/man"
 
 # Section for Breadcaml Stdlib man pages
@@ -129,11 +127,11 @@ Usage: $0 [ OPTIONS... ]
   -b, --bindir <dir>  Target directory for Breadcaml binaries
                       (default: $PREFIX/bin)
   -l, --libdir <dir>  Target directory for the BreadCaml Stdlib files
-                      (default: $PREFIX/lib/breadcaml)
+                      (default: $PREFIX/lib/bcamlc)
   -m, --mandir <dir>  Target directory for manual pages
                       (default: $PREFIX/man)
   -p, --prefix <dir>  Shortcut for
-                      -b <dir>/bin -l <dir>/lib/breadcaml -m <dir>/man
+                      -b <dir>/bin -l <dir>/lib/bcamlc -m <dir>/man
   -y, --yes           Automatically accept the ACME installation prompt
   -s, --silent        Like '-y', also do not display messages (except errors)
   -h, --help          Show this text.
@@ -164,7 +162,7 @@ while (( $# )); do
             shift
             PREFIX="$(realpath -m "${1:-$PREFIX}")"
             BINDIR="$PREFIX/bin"
-            LIBDIR="$PREFIX/lib/breadcaml"
+            LIBDIR="$PREFIX/lib/bcamlc"
             MANDIR="$PREFIX/man"
             ;;
         -y | --yes)
@@ -245,7 +243,7 @@ message end "Done."
 SAFE_OPTS="-safe-string -strict-formats -strict-sequence"
 cat > "$MAKE_CONF_FILE" <<EOF
 $(sed -nE '/^# —+$/,/^# —+$/p' "$0")
-BREADCAML_CONF = $(printf "%q" "$BREADCAML_CONF_FILE")
+BCAMLC_CONF = $(printf "%q" "$BCAMLC_CONF_FILE")
 BINDIR = $(printf "%q" "$BINDIR")
 LIBDIR = $(printf "%q" "$LIBDIR")
 MAN1DIR = $(printf "%q" "$MANDIR/man1")
@@ -256,15 +254,8 @@ OCAMLC = $(printf "%q" "${COMMANDS[ocamlc]}") $SAFE_OPTS
 OCAMLSTDLIB = $(printf "%q" "$("${COMMANDS[ocamlc]}" -where)")
 OCAMLDOC = $(printf "%q" "${COMMANDS[ocamldoc]}")
 OCAMLOPT = $(printf "%q" "${COMMANDS[ocamlopt]}") $SAFE_OPTS
-EOF
-
-# Export configuration data to $BREADCAML_CONF_FILE
-cat > "$BREADCAML_CONF_FILE" <<EOF
-$(<"$BREADCAML_CONF_TEMPLATE")
-let ocamlc  = "${COMMANDS[ocamlc]}"
-let libdir  = "$LIBDIR"
-let acme    = "${COMMANDS[acme]}"
-let version = "$VERSION"
+ACME = $(printf "%q" "${COMMANDS[acme]}")
+VERSION = $VERSION
 EOF
 
 # Show the result of the configuration
@@ -273,7 +264,7 @@ ${bld}BreadCaml version $VERSION configured successfully as follows:${nrm}
   BINDIR = $BINDIR
   LIBDIR = $LIBDIR
   MANDIR = $MANDIR
-  The breadcaml compiler will use
+  The ${bld}bcamlc${nrm} compiler will use
   - the OCaml bytecode compiler ${COMMANDS[ocamlc]}
   - the ACME cross-assembler    ${COMMANDS[acme]}
 

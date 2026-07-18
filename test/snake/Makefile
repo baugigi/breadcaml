@@ -24,13 +24,13 @@ CMI := $(DEPENDS:=.cmi)
 C := $(EXTERNS:.asm=.c)
 
 $(PRG:=.prg): $(CMO) $(EXTERNS) $(C) $(PRG:=.ml)
-	breadcaml $(OPTIONS) $^ -- -r snake.txt
+	bcamlc $(OPTIONS) $^ -- -r snake.txt
 
 %.cmo: %.ml %.cmi
-	breadcaml -c $<
+	bcamlc -c $<
 
 %.cmi: %.mli
-	breadcaml -c $<
+	bcamlc -c $<
 
 %.o: %.c
 	cc -o $@ -c $<
@@ -45,7 +45,7 @@ clean:
 .PHONY: merlin
 merlin: $(CMI)
 	@echo -ne "\
-	STDLIB $(shell breadcaml -where)\n\
+	STDLIB $(shell bcamlc -where)\n\
 	S .\n\
 	B .\n\
 	" > .$@

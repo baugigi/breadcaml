@@ -25,7 +25,7 @@ stdlib.asm: depends.asm stdlib_*.asm
 	caml_stdlib_end" > $@
 
 depends.asm: stdlib_*.asm
-	../../tools/mkdepends
+	../../tools/mkdepends $@ $^
 
 .PHONY: clean
 clean:

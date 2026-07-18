@@ -19,7 +19,7 @@
   modules documentation for more info.
 
 * **CHARS:**
-  Since OCaml uses the ASCII  and ISO 8859-1 standards, while the
+  since OCaml uses the ASCII  and ISO 8859-1 standards, while the
   Commodore 64 uses the [PETSCII](https://en.wikipedia.org/wiki/PETSCII)
   character  sets,   programmers  should   be  aware   that  some
   conversions may be necessary.
@@ -33,11 +33,15 @@
   limited to  a maximum of  **255 elements**, due to  the maximum
   BreadCaml block  size.  Unboxed float  arrays may have  no more
   than **85 elements**.  For larger arrays, see also the provided
-  **C64.BigArray** module.
+  **C64lib.BigArray** module.
 
 * **VARIANTS:**
   each  variant  type  may  have  at  most  **246  non-constant**
   and **32768 constant** constructors.
+
+* **POLYMORPHIC VARIANTS:**
+  a maximum  of **32768** different polymorphic variant tags  may
+  be specified  globally in  all compilation  units.
 
 * **FUNCTIONS:**
   the number of arguments plus the environment size cannot exceed
@@ -47,30 +51,12 @@
   no  more than  **127 values**  in a  `let rec ... and ...`  are
   admitted, due to the block size limit.
 
-* **POLYMORPHIC VARIANTS:**
-  the set of admitted polymorphic variants is restricted to  
-  `` `( [A-Z] | [A-H][_'0-9A-Za-z] | I[_'0-9A-Za-g] ) `` i.e., 
-  
-  |             |             |                         |**`` `A  `` ... `` `Z``**|                         |
-  |:-----------:|:-----------:|:-----------------------:|:-----------------------:|:-----------------------:|
-  |**`` `A_ ``**|**`` `A' ``**|**`` `A0 ``...`` `A9 ``**|**`` `AA ``...`` `AZ ``**|**`` `Aa ``...`` `Az ``**|
-  |      ⋮      |      ⋮      |            ⋮            |            ⋮            |            ⋮            |
-  |      ⋮      |      ⋮      |            ⋮            |            ⋮            |**`` `Ha ``...`` `Hz ``**|
-  |**`` `I_ ``**|**`` `I' ``**|**`` `I0 ``...`` `I9 ``**|**`` `IA ``...`` `IZ ``**|**`` `Ia ``...`` `Ig ``**|
-  |             |             |                         |                         |                         |
-  
-  since they  are represented  in memory  with integers  using an
-  OCaml internal hash function.
-  
-  Coming  soon: a  PPX  rewriter to  pre-process  OCaml code  and
-  rename all polymorphic variants properly.
-
 * **EXTERNAL PRIMITIVES:**
   **256 maximum**; if  you need more, you need  to factorize them
   by adding  extra arguments.
   Developers should  be aware of the  BreadCaml C_CALL semantics:
   the environment is not pushed onto the stack; all arguments are
-  pushed but  the first; the  result is  assumed to be  stored in
+  pushed  but the first; the  result is  assumed to be  stored in
   Accumulator by the primitive.
 
 

@@ -162,8 +162,8 @@ make
 
 #### 3. Install the system
 
-This copies  the `breadcaml` binary,  the BreadCaml Stdlib  files, and
-the man pages into your selected target directories:
+This copies the `bcaml` compiler,  the BreadCaml Stdlib files, and the
+man pages into your selected target directories:
 
 ```bash
 make install
