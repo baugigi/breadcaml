@@ -23,14 +23,10 @@ OCAMLCLEAN = step1 prim step2 step3 data cleanbra rmnop globalise cleanenvs
 BCAMLC = $(OCAMLCLEAN) config globals opcodes export
 VPATH = ./ocamlclean
 
-.PHONY: all
-all: $(TARGET)
-
-$(BIN)/bcamlc: $(BCAMLC:=.ml) bcamlc.ml
+$(TARGET): $(BCAMLC:=.ml) bcamlc.ml
 	$(OCAMLOPT) -I +/../obytelib/ -I $(VPATH) obytelib.cmxa $^ -o $@
 
-.PHONY: config.ml
-config.ml:
+config.ml: config.ml.tpl $(CONF)
 	cp $@.tpl $@
 	echo 'let ocamlc  = "$(OCAMLC_UNSAFE)"' >> $@
 	echo 'let libdir  = "$(LIBDIR)"'        >> $@

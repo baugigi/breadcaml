@@ -4,18 +4,18 @@
 caml_stack_start = $9c00
 caml_stack_end = $a000
 
-!source "/home/piero/.opam/LTS/lib/breadcaml/c64defs.asm"
-!source "/home/piero/.opam/LTS/lib/breadcaml/loader.asm"
-!source "/home/piero/.opam/LTS/lib/breadcaml/codegen.asm"
+!source "/home/pifu/.opam/LTS/lib/bcamlc/c64defs.asm"
+!source "/home/pifu/.opam/LTS/lib/bcamlc/loader.asm"
+!source "/home/pifu/.opam/LTS/lib/bcamlc/codegen.asm"
 
 caml_program
 
 caml_0000 +i8f
 caml_program_end
 
-!source "/home/piero/.opam/LTS/lib/breadcaml/runtime.asm"
-!source "/home/piero/.opam/LTS/lib/breadcaml/memory.asm"
-!source "/home/piero/.opam/LTS/lib/breadcaml/stdlib.asm"
+!source "/home/pifu/.opam/LTS/lib/bcamlc/runtime.asm"
+!source "/home/pifu/.opam/LTS/lib/bcamlc/memory.asm"
+!source "/home/pifu/.opam/LTS/lib/bcamlc/stdlib.asm"
 !align $01, $00
 caml_externals_lo
 caml_externals_hi
@@ -29,4 +29,4 @@ caml_glob_end
 !if caml_stack_start < caml_glob_end {
 	!serious "ERROR: Not enough memory for stack."
 }
-!source "/home/piero/.opam/LTS/lib/breadcaml/showmem.asm"
+!source "/home/pifu/.opam/LTS/lib/bcamlc/showmem.asm"

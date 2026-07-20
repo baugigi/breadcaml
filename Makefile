@@ -28,21 +28,18 @@ all:
 install: all
 	mkdir -p $(LIBDIR) $(LIBDIR)/c64lib $(BINDIR) $(MAN1DIR) $(MAN3DIR)
 	cp src/asm/*.asm $(LIBDIR)
-	cp bin/bcamlc $(BINDIR)/bcamlc
-	cp bin/bcamlppx $(BINDIR)/bcamlppx
-	cp man/bcamlc.1.gz $(MAN1DIR)/bcamlc.1.gz
-	cp man/bcamlppx.1.gz $(MAN1DIR)/bcamlppx.1.gz
+	cp bin/bcaml{c,ppx} $(BINDIR)
+	ln -f -s -T $(BINDIR)/bcamlc $(BINDIR)/bcamlopt
+	cp man/* $(MAN1DIR)
 	cp src/stdlib/{stdlib.cma,libcamlrun.a,*.{ml,mli,cmo,cmi}} $(LIBDIR)
 	cp src/stdlib/*.$(MAN3EXT) $(MAN3DIR)
 
 .PHONY: uninstall
 uninstall:
 	rm -fr $(LIBDIR)
-	rm -f $(BINDIR)/bcamlc
+	rm -f $(BINDIR)/bcaml{c,opt,ppx}
 	rm -f $(BINDIR)/acme
-	rm -f $(BINDIR)/bcamlppx
-	rm -f $(MAN1DIR)/bcamlc.1.gz
-	rm -f $(MAN1DIR)/bcamlppx.1.gz
+	rm -f $(MAN1DIR)/bcaml{c,opt,ppx}.1.gz
 	rm -f $(MAN3DIR)/*.$(MAN3EXT)
 
 .PHONY: clean

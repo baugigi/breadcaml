@@ -21,19 +21,7 @@ BIN = ../../bin
 TARGET = $(BIN)/bcamlppx
 BCAMLPPX = petscii petsciiPPX polyvarArray polyvarPPX
 
-.PHONY: all
-all: $(TARGET)
-
-.PHONY: config.ml
-config.ml:
-	cp $@.tpl $@
-	echo 'let ocamlc  = "$(OCAMLC_UNSAFE)"' >> $@
-	echo 'let libdir  = "$(LIBDIR)"'        >> $@
-	echo 'let bindir  = "$(BINDIR)"'        >> $@
-	echo 'let acme    = "$(ACME)"'          >> $@
-	echo 'let version = "$(VERSION)"'       >> $@
-
-$(BIN)/bcamlppx: $(BCAMLPPX:=.mli) $(BCAMLPPX:=.ml) bcamlppx.ml
+$(TARGET): $(BCAMLPPX:=.mli) $(BCAMLPPX:=.ml) bcamlppx.ml
 	$(OCAMLOPT) -I +compiler-libs \
 		ocamlcommon.cmxa str.cmxa unix.cmxa $^ -o $@
 
