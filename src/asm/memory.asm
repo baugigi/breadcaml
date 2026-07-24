@@ -103,8 +103,8 @@ caml_alloc
         BNE +
         INC BLK + 1                             ;  BLK=address of field(0)
 +       PLP                                     ;  pop GC-done flag
-        TAX                                     ;  RETURN A=X=size, BLK=addr
-        RTS
+        TAX                                     ;  RETURN A=X=size, BLK=addr,
+        RTS                                     ;    C=GC-done flag.
         ;; else try a GC or, if already done, raise OOM
 @gctry  PLP                                     ;get GC-done flag from HW stack
         BCS @oom                                ;check if GC done yet:
