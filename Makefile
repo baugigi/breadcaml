@@ -28,6 +28,7 @@ all:
 install: all
 	mkdir -p $(LIBDIR) $(LIBDIR)/c64lib $(BINDIR) $(MAN1DIR) $(MAN3DIR)
 	cp src/asm/*.asm $(LIBDIR)
+	strip bin/bcaml{c,ppx}
 	cp bin/bcaml{c,ppx} $(BINDIR)
 	ln -f -s -T $(BINDIR)/bcamlc $(BINDIR)/bcamlopt
 	cp man/* $(MAN1DIR)

@@ -24,13 +24,13 @@ CMI := $(DEPENDS:=.cmi)
 C := $(EXTERNS:.asm=.c)
 
 $(PRG:=.prg): $(CMO) $(EXTERNS) $(C) $(PRG:=.ml)
-	bcamlc $(OPTIONS) $^ -- -r snake.txt
+	bcamlopt $(OPTIONS) $^ -- -r snake.txt
 
 %.cmo: %.ml %.cmi
-	bcamlc -c $<
+	bcamlopt -c $<
 
 %.cmi: %.mli
-	bcamlc -c $<
+	bcamlopt -c $<
 
 %.o: %.c
 	cc -o $@ -c $<
@@ -41,6 +41,7 @@ $(PRG:=.prg): $(CMO) $(EXTERNS) $(C) $(PRG:=.ml)
 .PHONY: clean
 clean:
 	rm snake.prg snake.asm snake.txt *.byte *.c* *.o &> /dev/null || true
+	rm bcamlppx.db
 
 .PHONY: merlin
 merlin: $(CMI)

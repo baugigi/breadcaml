@@ -1,15 +1,20 @@
-(** [expr_extender] rewrites all ASCII characters in literal char and
-    string in expressions with the corresponding PETSCII ones, and
-    allows to specify special PETSCII characters with {TAG}s. *)
-val expr_extender :
-  Ast_mapper.mapper -> Parsetree.expression -> Parsetree.expression
+(* ——————————————————————————————————————————————————————————————————————
+   Progetto BreadCaml / The BreadCaml Project
+   Copyright (C) 2026 Piero Furiesi
 
-(** [struct_item_extender] is similar to [expr_extender] but operates
-    on whole structure blocks. *)
-val struct_item_extender :
-  Ast_mapper.mapper -> Parsetree.structure_item -> Parsetree.structure_item
+   Questo  programma è  software libero;  è possibile  ridistribuirlo e/o
+   modificarlo secondo i  termini della GNU General  Public License (GPL)
+   versione  2,  come specificato  nel  file  LICENZA-it nella  directory
+   principale del progetto.
 
-(** [sig_item_extender] is similar to [expr_extender] but operates
-    on whole signature blocks. *)
-val sig_item_extender :
-  Ast_mapper.mapper -> Parsetree.signature_item -> Parsetree.signature_item
+   This program is  free software; you can redistribute  it and/or modify
+   it under the terms of the  GNU General Public License (GPL) version 2,
+   as specified in the LICENSE-en file in the project root.
+   —————————————————————————————————————————————————————————————————————— *)
+
+(** [mapper] converts all ASCII characters in char and string literals in
+    expressions and patterns with the corresponding PETSCII ones, and allows to
+    specify special PETSCII characters with tokens as [{RED}], [{CLR}],
+    [{RVSON}], etc.  To protect a literal from conversion, use [%ascii "string"]
+    or [%ascii 'c']. *)
+val mapper : Ast_mapper.mapper

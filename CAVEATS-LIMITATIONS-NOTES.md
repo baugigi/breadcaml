@@ -58,30 +58,3 @@
   the environment is not pushed onto the stack; all arguments are
   pushed  but the first; the  result is  assumed to be  stored in
   Accumulator by the primitive.
-
-
-## Some notes on the bytecode emitted by the OCaml compiler:
-
-* **RETURN:**
-  A function  might be  called with more  arguments on  the stack
-  than expected. If there is  any extra argument, RETURN does not
-  give control back to the caller: instead, it assumes that there
-  is a closure in the accumulator and gives it immediate control.
-
-* **RESTART and GRAB:**
-  GRAB checks  that the caller  passed enough arguments  onto the
-  stack. If not,  it creates a closure, stores  all the available
-  arguments in  it, points  the closure  code to  the instruction
-  just  before GRAB  (which is  assumed  to be  a RESTART),  then
-  returns to  the caller, as  if executing a  RETURN instruction.
-  When the new closure is called, RESTART will push the arguments
-  onto the stack again and fallthrough GRAB.
-
-* **PUSHRETADDR and APPLY n, APPLY1, APPLY2, APPLY3:**
-  A closure  application to  n arguments  is usually  compiled by
-  ocamlc  by  emitting a  PUSHRETADDR  (which  pushes the  return
-  address onto the stack),  followed by instructions that compute
-  and push the arguments, and finally an APPLY n instruction that
-  jump to  the closure  code; but  when n <  4, ocamlc  skips the
-  PUSHRETADDR:  its work  is left  up  to APPLY1  (or APPLY2,  or
-  APPLY3).
