@@ -1,0 +1,261 @@
+(* ----------------------------------------------------------------------
+   Progetto BreadCaml / The BreadCaml Project
+   Copyright (C) 21-Apr-2026 Piero Furiesi
+
+   Questo  programma  è software  libero;  può  essere ridistribuito  e/o
+   modificato nei termini della GNU General Public License (GPL) versione
+   2; si veda il file LICENZA-it nella cartella radice del progetto.
+
+   This program is  free software; you can redistribute  it and/or modify
+   it under the terms of the  GNU General Public License (GPL) version 2,
+   as specified in the LICENSE-en file in the project root folder.
+   ---------------------------------------------------------------------- *)
+
+(* SYNOPSIS:
+   command [-o outfile] [OPTIONS] [OCAMLC_OPTIONS] FILE... [-- [ACME_OPTIONS]]
+   command -c [OCAMLC_OPTIONS] FILE...
+   command (-where|-ocamlc|-acme|-version|-help|--help)
+   OPTIONS:[-db dbfile][-mem address][-stack npages][-showmem][-verbose]
+ *)
+
+(* The type for the result of command line parsing *)
+type t =
+  { ocamlc_cmdline : string;
+    verbose        : bool;
+    mode           : mode_t }
+
+(* The sum type for the presence or absence of -c option *)
+and mode_t =
+  | Compileonly         (* -c option present *)
+  | Fullprocess of fp_t (* -c option not present *)
+
+(* The type for the Fullprocess variant argumnent *)
+and fp_t =
+  { acme_cmdline : string;
+    prgfile      : string;
+    top_of_mem   : int;
+    stack_pages  : int;
+    externs      : string list }
+
+(* Default values for options, option arguments, and file type flags *)
+let compile_only = ref false
+let o_arg        = ref ""
+let db_arg       = ref ""
+let mem_arg      = ref 0x9FFF
+let stack_arg    = ref 4
+let showmem      = ref false
+let verbose      = ref false
+let input_files  = ref []
+let ocamlc_opts  = ref []
+let ml, mli, cmo, asm = ref false, ref false, ref false, ref false
+
+(* Set comp_desc and acme_opts according to the compiler type *)
+let comp_desc, acme_opts = match Filename.basename Sys.argv.(0) with
+  | "bcamlopt" -> "native code", ref []
+  | "bcamlc"   -> "bytecode",    ref ["-Dcaml_INTERP=1"]
+  | unknown    -> Printf.eprintf "Unknown compiler: %s\n%!" unknown; exit 1
+
+(* Treat anonymous arguments as input FILEs or OCAMLC_OPTIONS *)
+let anon_fun arg = match Filename.extension arg with
+  | ".ml"  -> ml  := true; input_files := arg :: !input_files
+  | ".mli" -> mli := true; input_files := arg :: !input_files
+  | ".cmo" -> cmo := true; input_files := arg :: !input_files
+  | ".asm" -> asm := true; input_files := arg :: !input_files
+  | _ -> ocamlc_opts := arg :: !ocamlc_opts
+
+(* Treat all options following '--' as ACME_OPTIONS *)
+let rest_all args = acme_opts := !acme_opts @ args
+
+(* Manage -where, -ocamlc, -acme, and -version options *)
+let where ()        = print_endline Config.libdir; exit 0
+let where_ocamlc () = print_endline Config.ocamlc; exit 0
+let where_acme ()   = print_endline Config.acme;   exit 0
+let version () =
+  Printf.printf
+    "The OCaml %s compiler for the Commodore C64, version %s\n%!"
+    comp_desc Config.version;
+  exit 0
+
+(* Usage message *)
+let usage =
+  let me = Sys.argv.(0) in
+  Printf.sprintf
+    ("Usage:\n\
+      %s [-o outfile] [OPTIONS] [OCAMLC_OPTS] FILE... [-- [ACME_OPTS]]\n\
+      %s -c [OCAMLC_OPTS] FILE...\n\
+      %s (-where|-ocamlc|-acme|-version|-help|--help )\n\
+      \n\
+      Compile and links the given FILEs into a standalone %s executable\n\
+      file for Commodore 64 computers.\n\
+      See also <https://github/baugigi/breadcaml> and the %s(1) man page.\n\
+      \n\
+      FILE type is determined by extension:\n\
+      \  .ml:  OCaml compilation unit, implementation source code\n\
+      \  .mli: OCaml compilation unit, interface source code\n\
+      \  .cmo: OCaml compiled bytecode\n\
+      \  .cma: OCaml bytecode library\n\
+      \  .c:   C source code\n\
+      \  .o:   C object code\n\
+      \  .asm: ACME assembly source code\n\n\
+      Options:")
+    me me me comp_desc (Filename.basename me)
+
+(* Arg.(key * spec * doc) list for Arg.align and Arg.parse *)
+let speclist =
+  let nl_tab s = "\n" ^ String.make 18 ' ' ^ s in
+  Arg.[
+      "-o", Set_string o_arg,
+      "<outfile>"
+      ^ " Specify the name of the output file. If the -o option is not"
+      ^ nl_tab "present, <outfile> defaults to the last FILE specified,"
+      ^ nl_tab "without its extension (if present), and ‘.prg’ appended."
+    ; 
+      "-c", Set compile_only,
+      " Compile only: run ocamlc with [OCAMLC_OPTIONS] on given FILEs."
+      ^ nl_tab "The -c and -o options are incompatible."
+    ;
+      "-mem", Set_int mem_arg,
+      "<address>"
+      ^ " Set the maximum available memory address for the executable."
+      ^ nl_tab (Printf.sprintf "Default: %#4x (%5d)." !mem_arg !mem_arg)
+    ;
+      "-stack", Set_int stack_arg,
+      "<pages>"
+      ^ " Define the stack size, in 256-byte pages."
+      ^ nl_tab (Printf.sprintf "Default: %d pages." !stack_arg)
+    ;
+      "-showmem", Set showmem,
+      " Show information on memory allocation."
+    ;
+      "-db", Set_string db_arg,
+      "<dbfile>"
+      ^ " Set the pathname for the BreadCaml preprocessor database. If the"
+      ^ nl_tab "-db option is not present, <dbfile> defaults to <outfile>,"
+      ^ nl_tab "without its extension (if present), and ‘.db’ appended."
+    ;
+      "-verbose", Set verbose,
+      " Verbose mode."
+    ;
+      "-where", Unit where,
+      " Show the location of the BreadCaml standard library and exit."
+    ;
+      "-ocamlc", Unit where_ocamlc,
+      " Show the location of the OCaml bytecode compiler and exit."
+    ;
+      "-acme", Unit where_acme,
+      " Show the location of the ACME cross-assembler and exit."
+    ;
+      "-version", Unit version,
+      " Show version and exit."
+    ;
+      "--", Rest_all rest_all,
+      "ACME_OPTIONS Pass the options following ‘--’ to acme.\n"
+      ^ "  OCAMLC_OPTIONS  Pass any options not listed above to ocamlc."
+  ]
+
+(* Add to ocamlc_opts any options not listed above and not following '--' *)
+let rec dyn_add_ocamlc_opts i accu =
+  let nargs = Array.length Sys.argv in
+  if i = nargs then accu
+  else
+    match Sys.argv.(i) with
+    | "--" | "-help" | "--help" -> accu
+    | opt when opt.[0] = '-'
+               && not (List.exists (fun (o, _, _) -> o = opt) speclist) ->
+       let add opt () = ocamlc_opts := opt :: !ocamlc_opts in
+       dyn_add_ocamlc_opts (succ i) ((opt, Arg.Unit(add opt), "") :: accu)
+    | _ ->
+       dyn_add_ocamlc_opts (succ i) accu
+
+(* Check all arguments according to a checklist *)
+let check_args () =
+  let missing = (* list of missing files *)
+    List.filter
+      (fun f -> not (Sys.file_exists f))
+      !input_files in
+  let ( => ) b1 b2 = b2 || not b1 in  (* logical implication *)
+  let checklist = [|
+      (* condition, error message if condition not met *)
+      !input_files <> [], "no input file specified.";
+      missing = [], "file(s) ‘" ^ String.concat "’, ‘" missing ^ "’ not found.";
+      !stack_arg > 0, "-stack argument must be greater than 0.";
+      0x1000 <= !mem_arg && !mem_arg < 0xD000, "-mem argument out of range.";
+      !compile_only => not !asm, ".asm files not allowed with the -c option.";
+      !compile_only => not !cmo, ".cmo files not allowed with the -c option.";
+      !compile_only => (!o_arg = ""), "options -c and -o are incompatible.";
+      !compile_only => (!ml || !mli), "no .ml or .mli files specified.";
+      not !compile_only => (!ml || !cmo), "no .ml or .cmo files specified.";
+    |] in
+  let check (cond, err) = if not cond then failwith err in
+  try Array.iter check checklist
+  with Failure err ->
+    let me = Sys.argv.(0) in
+    Printf.eprintf
+      "Error: %s\nTry ‘%s -help’ or ‘man %s’ for more info.\n%!" err me me;
+    exit 1
+
+(* Concatenate, adding a space as separator *)
+let ( ^+ ) s1 s2 = s1 ^ " " ^ s2
+
+
+(* Main *)
+let parse () =
+  (* Process command line *)
+  let specs () = dyn_add_ocamlc_opts 1 speclist in
+  Arg.parse (Arg.align (specs ())) anon_fun usage;
+  (* Check arguments *)
+  check_args ();    
+  (* Get the rightmost filename specified (the 1st in list) *)
+  let last_file =
+    (* !input_files passed check_args(), so List.hd cannot fail *)
+    Filename.remove_extension (List.hd !input_files) in
+  (* Reverse lists to match the left-to-right order of cmdline args *)
+  ocamlc_opts := List.rev !ocamlc_opts;
+  input_files := List.rev !input_files;
+  (* Set dbfile according to -db/-o opts, or default value *)
+  let dbfile = match !db_arg, !o_arg with
+    | "", "" -> last_file ^ ".db"
+    | "", oa -> (Filename.remove_extension oa) ^ ".db"
+    | _ , _  -> !db_arg in
+  (* File lists for Export.export and ocamlc *)
+  let externs, ocamlc_files =
+    List.partition
+      (fun f -> Filename.check_suffix f ".asm")
+      !input_files in
+  (* Define the command line for ocamlc *)
+  let ocamlc_cmdline =
+    "CAMLLIB=" ^ Filename.quote Config.libdir
+    ^+ Filename.quote Config.ocamlc
+    ^+ "-custom"
+    ^+ (if !verbose then "-verbose" else "")
+    ^+ (if !compile_only then "-c" else "")
+    ^+ "-ppx"
+    ^+ Filename.quote (Config.bindir ^ "/bcamlppx " ^ dbfile)
+    ^+ String.concat " "
+         (!ocamlc_opts @ List.map Filename.quote ocamlc_files) in
+  (* Return the parsing result *)
+  if !compile_only then
+    (* Parsing result when -c present *)
+    { ocamlc_cmdline;
+      verbose = !verbose;
+      mode = Compileonly }
+  else
+    (* Set prgfile according to -o opt, or default value *)
+    let prgfile =
+      if !o_arg = "" then last_file ^ ".prg" else !o_arg in
+    (* Define the command line for acme *)
+    let acme_cmdline =
+      Filename.quote Config.acme
+      ^+ (if !showmem then "-Dcaml_SHOWMEM=1" else "")
+      ^+ (if !verbose then "-v9" else "")
+      ^+ String.concat " " !acme_opts in
+    (* Parsing result when -c not present *)
+    let fp_arg = 
+      { acme_cmdline;
+        prgfile;
+        externs;
+        top_of_mem  = !mem_arg;
+        stack_pages = !stack_arg } in
+    { ocamlc_cmdline;
+      verbose = !verbose;
+      mode = Fullprocess fp_arg }

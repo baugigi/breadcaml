@@ -1,16 +1,15 @@
-(* ——————————————————————————————————————————————————————————————————————
+(* ----------------------------------------------------------------------
    Progetto BreadCaml / The BreadCaml Project
-   Copyright (C) 2026 Piero Furiesi
+   Copyright (C) 21-Apr-2026 Piero Furiesi
 
-   Questo  programma è  software libero;  è possibile  ridistribuirlo e/o
-   modificarlo secondo i  termini della GNU General  Public License (GPL)
-   versione  2,  come specificato  nel  file  LICENZA-it nella  directory
-   principale del progetto.
+   Questo  programma  è software  libero;  può  essere ridistribuito  e/o
+   modificato nei termini della GNU General Public License (GPL) versione
+   2; si veda il file LICENZA-it nella cartella radice del progetto.
 
    This program is  free software; you can redistribute  it and/or modify
    it under the terms of the  GNU General Public License (GPL) version 2,
-   as specified in the LICENSE-en file in the project root.
-   —————————————————————————————————————————————————————————————————————— *)
+   as specified in the LICENSE-en file in the project root folder.
+   ---------------------------------------------------------------------- *)
 
 module CtlChar = struct
   (* cursor movements *)
@@ -202,9 +201,18 @@ include CtlChar
 include UcaseGlyph
 include LcaseGlyph
 
+let of_char = function
+  | 'A' .. 'Z' as ch -> Char.(chr (code ch + 0x80))
+  | 'a' .. 'z' as ch -> Char.(chr (code ch - 0x20))
+  | '_' -> under
+  | '|' -> cvl
+  | '\163' -> pound
+  | ch -> ch
+
 let token_ht =
   Hashtbl.of_seq
     (List.to_seq
+     (List.map (fun (k, v) -> String.map of_char k, v)
        [ (* --- Petscii.CommonGlyph --- *)
          (* 1px-wide lines *)
          ("{UNDER}", under); ("{UPPER}", upper);
@@ -278,9 +286,9 @@ let token_ht =
          ("{CTLLARR}", ctl larr);
          (* misc *)
          ("{NUL}", nul)
-    ])
+    ]))
 
-let petscii_of_token token =
+let of_token token =
   let tkn = String.uppercase_ascii token in
   try Hashtbl.find token_ht tkn with Not_found ->
     if String.length tkn = 6 && tkn.[5] = '}' then
@@ -290,14 +298,6 @@ let petscii_of_token token =
       | _ -> invalid_arg "petscii_of_token"
     else invalid_arg "petscii_of_token"
 
-let of_char = function
-  | 'A' .. 'Z' as ch -> Char.lowercase_ascii ch
-  | 'a' .. 'z' as ch -> Char.uppercase_ascii ch
-  | '_' -> under
-  | '|' -> cvl
-  | '\163' -> pound
-  | ch -> ch 
-
 let of_string str =
   let valid_str_regexp = Str.regexp {vld|^\([^{}]*{[^{}]+}\)*[^{}]*$|vld} in
   let token_regexp = Str.regexp {tkn|{[^{}]+}|tkn} in
@@ -305,6 +305,6 @@ let of_string str =
   if Str.string_match valid_str_regexp str' 0 then
     Str.global_substitute
       token_regexp
-      (fun _ -> String.make 1 (petscii_of_token (Str.matched_string str')))
+      (fun _ -> String.make 1 (of_token (Str.matched_string str')))
       str'
   else invalid_arg "petsciify_string"

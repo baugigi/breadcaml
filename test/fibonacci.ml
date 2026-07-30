@@ -20,7 +20,7 @@ let fibo_tail n =
     if n <= 0 then a else aux (n - 1) (a + b) b
   in aux n 1 0
    
-let n = 40
+let n = 20
 
 let _ =
   print_string ("fibo_tail " ^ (string_of_int n) ^ "=");

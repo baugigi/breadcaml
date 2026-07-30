@@ -1,27 +1,24 @@
 #!/bin/bash
 
-# ——————————————————————————————————————————————————————————————————————
+# -----------------------------------------------------------------------
 # Progetto BreadCaml / The BreadCaml Project
 # Copyright (C) 2026 Piero Furiesi
 #
-# Questo  programma è  software  libero; è  possibile ridistribuirlo  e/o
-# modificarlo secondo  i termini della  GNU General Public  License (GPL)
-# versione  2,  come  specificato  nel file  LICENZA-it  nella  directory
-# principale del progetto.
+# Questo  programma  è  software  libero; può  essere  ridistribuito  e/o
+# modificato nei termini della GNU  General Public License (GPL) versione
+# 2; si veda il file LICENZA-it nella cartella radice del progetto.
 #
-# This program is  free software; you can redistribute  it and/or modify
-# it under the terms of the  GNU General Public License (GPL) version 2,
-# as specified in the LICENSE-en file in the project root.
-# ——————————————————————————————————————————————————————————————————————
+# This program is free software; you can redistribute it and/or modify it
+# under the terms  of the GNU General Public License  (GPL) version 2, as
+# specified in the LICENSE-en file in the project root folder.
+# -----------------------------------------------------------------------
 
 if [[ "$1" = "--help" || "$1" = "-h" || -n "$2" ]]; then
     cat <<EOF
 $0 [DIRECTORY]
-
 Aggiunge gli header appropriati a tutti i file sorgenti OCaml o ACME
 nella DIRECTORY indicata e nelle sue subdirectory.
 Se DIRECTORY non è indicata, stampa i modelli di header disponibili.
-
 EOF
     exit 0
 fi
@@ -30,103 +27,93 @@ fi
 
 DATE="21-Apr-2026"
 SIGNATURE="Progetto BreadCaml / The BreadCaml Project"
-COPYRIGHT="Copyright (C) $DATE Piero Furiesi"
+AUTHOR="Piero Furiesi"
 
 TITLE[1]="Sorgenti OCaml - no terze parti (GPL v2)"
-FIND[1]='-name "*.ml" -o -name "*.mli" -o -name "*.ml.template"'
+FIND[1]='-name "*.ml" -o -name "*.mli" -o -name "*.ml.tpl"'
 HEADER[1]=$(cat <<EOF
-(* ——————————————————————————————————————————————————————————————————————
+(* ----------------------------------------------------------------------
    $SIGNATURE
-   $COPYRIGHT
+   Copyright (C) $DATE $AUTHOR
 
-   Questo  programma è  software libero;  è possibile  ridistribuirlo e/o
-   modificarlo secondo i  termini della GNU General  Public License (GPL)
-   versione  2,  come specificato  nel  file  LICENZA-it nella  directory
-   principale del progetto.
+   Questo  programma  è software  libero;  può  essere ridistribuito  e/o
+   modificato nei termini della GNU General Public License (GPL) versione
+   2; si veda il file LICENZA-it nella cartella radice del progetto.
 
    This program is  free software; you can redistribute  it and/or modify
    it under the terms of the  GNU General Public License (GPL) version 2,
-   as specified in the LICENSE-en file in the project root.
-   —————————————————————————————————————————————————————————————————————— *)
+   as specified in the LICENSE-en file in the project root folder.
+   ---------------------------------------------------------------------- *)
 EOF
 )
 
 TITLE[2]="Sorgenti ACME - no terze parti (GPL v2)"
 FIND[2]='-name "*.asm"'
 HEADER[2]=$(cat <<EOF
-;; ——————————————————————————————————————————————————————————————————————
+;; ----------------------------------------------------------------------
 ;; $SIGNATURE
-;; $COPYRIGHT
+;; Copyright (C) $DATE $AUTHOR
 ;;
-;; Questo  programma è  software libero;  è possibile  ridistribuirlo e/o
-;; modificarlo secondo i  termini della GNU General  Public License (GPL)
-;; versione  2,  come specificato  nel  file  LICENZA-it nella  directory
-;; principale del progetto.
+;; Questo  programma  è software  libero;  può  essere ridistribuito  e/o
+;; modificato nei termini della GNU General Public License (GPL) versione
+;; 2; si veda il file LICENZA-it nella cartella radice del progetto.
 ;;
 ;; This program is  free software; you can redistribute  it and/or modify
 ;; it under the terms of the  GNU General Public License (GPL) version 2,
-;; as specified in the LICENSE-en file in the project root.
-;; ——————————————————————————————————————————————————————————————————————
+;; as specified in the LICENSE-en file in the project root folder.
+;; ----------------------------------------------------------------------
 EOF
 )
 
 TITLE[3]="StdLib di OCaml modificata (LGPL v2.1 + Eccezione)"
 FIND[3]='-name "*.ml" -o -name "*.mli"'
 HEADER[3]=$(cat <<EOF
-(* ——————————————————————————————————————————————————————————————————————
+(* ----------------------------------------------------------------------
    $SIGNATURE
                                      SOFTWARE DI TERZI/3RD PARTY SOFTWARE
    OCaml Standard Library
      Origine/Source: https://ocaml.org
      Copyright (C) 1996 Institut National de Recherche en Informatique et
      en Automatique
-     Modifiche/Modifications: $COPYRIGHT
+     Modifiche/Modifications: $DATE $AUTHOR
 
-   Questo file contiene  modifiche apportate da Piero  Furiesi alla OCaml
-   Standard  Library ed  è  distribuito nei  termini  della licenza  LGPL
-   ver. 2.1  con la  cosiddetta "OCaml LGPL  Linking Exception"  (si veda
-   src/stdlib/LGPL-LICENSE).  Il codice originale  rimosso o sostituito è
-   racchiuso tra  i marcatori (*-- e  --*).  Il codice prodotto  da Piero
-   Furiesi è chiaramente  identificato dai marcatori (*++  e ++*), oppure
-   con "{i {b BreadCaml Note} nuovo testo...}" nei commenti per OCamlDoc.
+   Questo file è distribuito nei termini  della licenza LGPL ver. 2.1 con
+   le eccezioni riportate nel file LICENSE (in inglese).
+   Il codice originale rimosso o sostituito è incluso tra (*-- e --*); le
+   aggiunte sono  identificate da  (*++ e ++*)  oppure, nei  commenti per
+   OCamldoc, da {i {b BreadCaml Note} ... }.
 
-   This file is a modified version by Piero Furiesi of the OCaml Standard
-   Library and  is distributed under the  terms of the LGPL  License ver.
-   2.1   with  the   so-called  "OCaml   LGPL  Linking   Exception"  (see
-   src/stdlib/LGPL-LICENSE).   Original  code   removed  or  replaced  is
-   enclosed between  (*-- and --*)  markers.  New code authored  by Piero
-   Furiesi  is  explicitly  identified  by  (*++ and ++*) markers,  or by
-   "{i {b BreadCaml Note} new text...}" in OCamlDoc comments.
-   —————————————————————————————————————————————————————————————————————— *)
+   This file is distributed under the terms of the LGPL License ver.  2.1
+   with the exceptions stated in file LICENSE.
+   Original code  removed or replaced  is enclosed between (*--  and --*)
+   markers;  new code  is  identified by  (*++ and  ++*)  markers, or  by
+   {i {b BreadCaml Note} ... } in OCamldoc comments.
+   ---------------------------------------------------------------------- *)
 EOF
 )
 
 TITLE[4]="OCamlclean (CeCILL -> GPL v2)"
 FIND[4]='-name "*.ml" -o -name "*.mli"'
 HEADER[4]=$(cat <<EOF
-(* ——————————————————————————————————————————————————————————————————————
+(* ----------------------------------------------------------------------
    $SIGNATURE
                                      SOFTWARE DI TERZI/3RD PARTY SOFTWARE
    OCamlclean
      Origine/Source: https://github.com/bvaugon/ocamlclean
      Copyright (C) 2015 Benoît Vaugon
      Integrazione in BreadCaml/Integration into BreadCaml:
-     $COPYRIGHT
+     $DATE $AUTHOR
 
-   Questo file  è distribuito  nei termini della  licenza CeCILL  (il cui
-   testo  è riportato  in src/breadcaml/ocamlclean/CeCILL-LICENSE-fr,  in
-   lingua francese,  e in  src/breadcaml/ocamlclean/CeCILL-LICENSE-en, in
-   lingua  inglese).   L'art.   5.3.4   di  detta  licenza   ne  consente
-   l'integrazione nel  Progetto BreadCaml e la  sua ridistribuzione sotto
-   licenza GNU GPL.
+   Questo file  è distribuito nei  termini della licenza CeCILL  (si veda
+   CeCILL-LICENSE-fr, in francese, oppure CeCILL-LICENSE-en, in inglese),
+   il cui art. 5.3.4 ne  consente l'integrazione nel Progetto BreadCaml e
+   la sua ridistribuzione sotto licenza GNU GPL.
 
-   This file  is distributed under the  terms of the CeCILL  License (the
-   text  of which  is  in src/breadcaml/ocamlclean/CeCILL-LICENSE-fr,  in
-   French language, or  in src/breadcaml/ocamlclean/CeCILL-LICENSE-en, in
+   This file  is distributed under the  terms of the CeCILL  License (see
+   CeCILL-LICENSE-fr,  in  French  language,  and  CeCILL-LICENSE-en,  in
    English). Article  5.3.4 of that  license allows its  integration into
-   The BreadCaml  Project and  its redistribution  under the  GNU General
-   Public License.
-   —————————————————————————————————————————————————————————————————————— *)
+   The BreadCaml Project and its redistribution under the GNU GPL.
+   ---------------------------------------------------------------------- *)
 EOF
 )
 

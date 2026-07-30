@@ -1,16 +1,15 @@
-(* ——————————————————————————————————————————————————————————————————————
+(* ----------------------------------------------------------------------
    Progetto BreadCaml / The BreadCaml Project
-   Copyright (C) 2026 Piero Furiesi
+   Copyright (C) 21-Apr-2026 Piero Furiesi
 
-   Questo  programma è  software libero;  è possibile  ridistribuirlo e/o
-   modificarlo secondo i  termini della GNU General  Public License (GPL)
-   versione  2,  come specificato  nel  file  LICENZA-it nella  directory
-   principale del progetto.
+   Questo  programma  è software  libero;  può  essere ridistribuito  e/o
+   modificato nei termini della GNU General Public License (GPL) versione
+   2; si veda il file LICENZA-it nella cartella radice del progetto.
 
    This program is  free software; you can redistribute  it and/or modify
    it under the terms of the  GNU General Public License (GPL) version 2,
-   as specified in the LICENSE-en file in the project root.
-   —————————————————————————————————————————————————————————————————————— *)
+   as specified in the LICENSE-en file in the project root folder.
+   ---------------------------------------------------------------------- *)
 
 (* PPX rewriter for BreadCaml *)
 
@@ -35,55 +34,37 @@ let usage () =
      \tprint this message\n"
     bn_self bn_self bn_self bn_self
 
-let petscii_mapper _argv = PetsciiPPX.mapper
-let polyvar_mapper _argv = PolyvarPPX.mapper
-
-let run_petscii_mapper infile outfile =
-  run_main (fun _ -> petscii_mapper [| self; infile; outfile |])
-  
-let run_polyvar_mapper dbfile infile outfile =
-  let fd = Unix.(openfile dbfile [O_RDWR; O_CREAT] 0o666) in
-  Unix.(lockf fd F_LOCK 0);
-  begin (* critical section *)
-    if Unix.((fstat fd).st_size) > 0 then
-      PolyvarPPX.db_load (Unix.in_channel_of_descr fd);
-    run_main (fun _ -> polyvar_mapper [| self; infile; outfile |]);
-    ignore Unix.(lseek fd 0 SEEK_SET);
-    Unix.ftruncate fd 0;
-    PolyvarPPX.db_save (Unix.out_channel_of_descr fd);
-  end; (* critical section *)
-  Unix.(lockf fd F_ULOCK 0);
-  Unix.close fd
+let ppx _argv =
+  let m1 = PolyvarPPX.mapper in
+  let m2 = PetsciiPPX.mapper in
+  { default_mapper with
+    expr = (fun mapper expr' -> m2.expr m2 (m1.expr m1 expr'));
+    pat  = (fun mapper pat'  -> m2.pat  m2 (m1.pat  m1 pat'));
+    typ  = (fun mapper typ'  -> m2.typ  m2 (m1.typ  m1 typ')) }
 
 let () =
   match Sys.argv with
   | [| self; dbfile; infile; outfile |] ->
-     (* temp file for mapper-to-mapper AST piping  *)
-     (try
-        let (tmpfile, tmpch) =
-          Filename.open_temp_file ~mode:[Open_binary] "bcamlppx" ".ast" in
-        (* Run polyvar_mapper, output to temp file *)
-        Unix.handle_unix_error run_polyvar_mapper dbfile infile tmpfile;
-        flush tmpch;
-        (* Run petscii_mapper, input from temp file *)
-        run_petscii_mapper tmpfile outfile;
-        (* Delete temp file *)
-        Sys.remove tmpfile
-      with
-      | Sys_error err ->
-         Printf.eprintf "%s: %s\n%!" self err;
-         exit 1
-      | _ ->
-         Printf.eprintf "%s: Unknown error\n%!" self;
-         exit 1)
-  | [| _; o; dbfile |] when List.mem o ["-d"; "--dump"] ->
+     let fd = Unix.(openfile dbfile [O_RDWR; O_CREAT] 0o666) in
+     Unix.(lockf fd F_LOCK 0);
+     begin (* critical section *)
+       if Unix.((fstat fd).st_size) > 0 then
+         PolyvarPPX.db_load (Unix.in_channel_of_descr fd);
+       run_main (fun _ -> ppx [| self; infile; outfile |]);
+       ignore Unix.(lseek fd 0 SEEK_SET);
+       Unix.ftruncate fd 0;
+       PolyvarPPX.db_save (Unix.out_channel_of_descr fd);
+     end; (* critical section *)
+     Unix.(lockf fd F_ULOCK 0);
+     Unix.close fd
+  | [| _; opt; dbfile |] when List.mem opt ["-d"; "--dump"] ->
      Unix.handle_unix_error
        (fun file -> 
          let fd = Unix.(openfile file [O_RDONLY; O_NONBLOCK] 0o666) in
          PolyvarPPX.db_dump (Unix.in_channel_of_descr fd) stdout;
          Unix.close fd)
        dbfile
-  | [| _; o |] when List.mem o ["-h"; "-help"; "--help"] ->
+  | [| _; opt |] when List.mem opt ["-h"; "-help"; "--help"] ->
      usage ();
      exit 0
   | _ ->

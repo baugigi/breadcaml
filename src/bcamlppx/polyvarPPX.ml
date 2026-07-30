@@ -1,21 +1,20 @@
-(* ——————————————————————————————————————————————————————————————————————
+(* ----------------------------------------------------------------------
    Progetto BreadCaml / The BreadCaml Project
-   Copyright (C) 2026 Piero Furiesi
+   Copyright (C) 21-Apr-2026 Piero Furiesi
 
-   Questo  programma è  software libero;  è possibile  ridistribuirlo e/o
-   modificarlo secondo i  termini della GNU General  Public License (GPL)
-   versione  2,  come specificato  nel  file  LICENZA-it nella  directory
-   principale del progetto.
+   Questo  programma  è software  libero;  può  essere ridistribuito  e/o
+   modificato nei termini della GNU General Public License (GPL) versione
+   2; si veda il file LICENZA-it nella cartella radice del progetto.
 
    This program is  free software; you can redistribute  it and/or modify
    it under the terms of the  GNU General Public License (GPL) version 2,
-   as specified in the LICENSE-en file in the project root.
-   —————————————————————————————————————————————————————————————————————— *)
+   as specified in the LICENSE-en file in the project root folder.
+   ---------------------------------------------------------------------- *)
 
 open Asttypes
 open Parsetree 
 open Ast_mapper
-
+open Ast_helper
 
 (* Global database of polymorphic variant renamings *)
 type db_t =  { mutable index : int;
@@ -33,65 +32,74 @@ let db_save out_ch =
 let db_dump in_ch out_ch =
   let count = ref 0 in
   Hashtbl.iter
-    (fun k v ->
+    (fun key value ->
       incr count;
-      Printf.fprintf out_ch "%5d: `%s\t->\t`%s\n" !count k v)
+      Printf.fprintf out_ch "%5d: `%s\t->\t`%s\n" !count key value)
     (Marshal.from_channel in_ch).renamings;
   flush out_ch
 
 
 (* Renaming function *)
-exception Too_many_tags
 let rename_polyvar tag =
-  try Hashtbl.find !db.renamings tag with
-  | Not_found ->
-     let i = succ !db.index in
-     let new_tag =
-       try PolyvarArray.a.(i) with
-       | Invalid_argument _ -> raise Too_many_tags in
-     !db.index <- i;
-     Hashtbl.add !db.renamings tag new_tag;
-     new_tag
+  try Hashtbl.find !db.renamings tag
+  with Not_found ->
+    let i = succ !db.index in
+    if i < 32768 then
+      let new_tag = PolyvarArray.a.(i) in
+      !db.index <- i;
+      Hashtbl.add !db.renamings tag new_tag;
+      new_tag
+    else raise Exit
 
+let error ~loc =
+  let fmt = Scanf.format_from_string
+              "the number of polymorphic variants in all compilation \
+               units exceeds 32768." "" in
+  extension_of_error (Location.errorf ~loc fmt)
 
-(* PPX rewriters *)
+(* PPX rewriter *)
 let expr_rewriter mapper expr = match expr.pexp_desc with
   | Pexp_variant (lbl, exp_opt) ->
-     Ast_helper.Exp.variant
-       ~loc:expr.pexp_loc
-       ~attrs:expr.pexp_attributes
-       (rename_polyvar lbl)
-       exp_opt
-  | _ -> default_mapper.expr mapper expr
+     (try Exp.variant ~loc:expr.pexp_loc ~attrs:expr.pexp_attributes
+            (rename_polyvar lbl)
+            (Option.map (mapper.expr mapper) exp_opt)
+      with Exit ->
+        Exp.extension ~loc:expr.pexp_loc (error ~loc:expr.pexp_loc))
+  | _ ->
+     default_mapper.expr mapper expr
 
 let pat_rewriter mapper pat = match pat.ppat_desc with
   | Ppat_variant (lbl, pat_opt) ->
-     Ast_helper.Pat.variant
-       ~loc:pat.ppat_loc
-       ~attrs:pat.ppat_attributes
-       (rename_polyvar lbl)
-       pat_opt
-  | _ -> default_mapper.pat mapper pat
+     (try
+        Pat.variant ~loc:pat.ppat_loc ~attrs:pat.ppat_attributes
+          (rename_polyvar lbl)
+          (Option.map (mapper.pat mapper) pat_opt)
+      with Exit ->
+        Pat.extension ~loc:pat.ppat_loc (error ~loc:pat.ppat_loc))
+  | _ ->
+     default_mapper.pat mapper pat
+
+let rf_rewriter mapper rf = match rf.prf_desc with
+  | Rtag(lbl, bool_, ctyp_l) ->
+     Rf.tag ~loc:rf.prf_loc ~attrs:rf.prf_attributes
+       { lbl with txt = rename_polyvar lbl.txt }
+       bool_
+       (List.map (mapper.typ mapper) ctyp_l)
+  | Rinherit core_typ ->
+     Rf.inherit_ ~loc:rf.prf_loc
+       (mapper.typ mapper core_typ)
 
 let typ_rewriter mapper typ = match typ.ptyp_desc with
-  | Ptyp_variant (row_flds, flag, lbls_opt) ->
-     let row_field_rewriter = function
-       | { prf_desc = Rtag(lbl_loc, bflag, ctypl) } ->
-          Ast_helper.Rf.tag
-            { lbl_loc with
-              txt = rename_polyvar lbl_loc.txt }
-            bflag ctypl
-       | rf -> rf in
-     let lbls_opt_rewriter = function
-       | Some lbls -> Some (List.map rename_polyvar lbls)
-       | None -> None in
-     Ast_helper.Typ.variant
-       ~loc:typ.ptyp_loc
-       ~attrs:typ.ptyp_attributes
-       (List.map row_field_rewriter row_flds)
-       flag
-       (lbls_opt_rewriter lbls_opt)
-  | _ -> default_mapper.typ mapper typ
+  | Ptyp_variant (rf_l, clos_fl, lbls_opt) ->
+     (try
+        Typ.variant ~loc:typ.ptyp_loc ~attrs:typ.ptyp_attributes
+          (List.map (rf_rewriter mapper) rf_l)
+          clos_fl
+          (Option.map (List.map rename_polyvar) lbls_opt)
+      with Exit ->
+        Typ.extension ~loc:typ.ptyp_loc (error ~loc:typ.ptyp_loc))
+  | _ ->
+     default_mapper.typ mapper typ
 
 let mapper =
   { default_mapper with

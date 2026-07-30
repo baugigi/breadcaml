@@ -116,7 +116,7 @@ PUSH
         DEC SP                                  ;Decrement the stack pointer, lo
         LDA ACCU                                ;Copy ACCU
         STA (SP),Y                              ;to SP[0], lo byte
-        ;; No +caml_NEXT here! Called by JSR from interpreter routines
+        ;; No +caml_NEXT here! Always called by JSR
         RTS                             ;{X = x, Y = 0}
 }
 
@@ -1816,12 +1816,12 @@ caml_uncaught_exn_warn
 }
 caml_uncaught_exn
         @VAL = TMP                              ;current value
-        @PRFL = TMP + 2                         ;print block fields:0=yes/$FF=no
-        @SIZE = TMP + 3                         ;for @pr_val: block size
-        @SKP0 = TMP + 4                         ;for @pr_int: flag, skip leading 0s
-        @DGT =  TMP + 5                         ;for @pr_int: digit to print
+        @PRFLD = TMP + 2                        ;print blk fields: =0 yes/<>0 no
+        @SIZE  = TMP + 3                        ;for @pr_val: block size
+        @SKP0  = TMP + 4                        ;for @pr_int: skip leading 0s
+        @DGT  =  TMP + 5                        ;for @pr_int: digit to print
         LDY # 0
-        STY @PRFL                               ;flag: print fields=yes
+        STY @PRFLD                              ;flag: print fields=yes
         LDX # 0                                 ;print error message
 -       LDA @err,X
         BEQ +
@@ -1846,8 +1846,7 @@ caml_uncaught_exn
         LDA (@VAL),Y                            ;  load EXN_BLK[0], lo
         STX @VAL + 1                            ;  VAL := EXN_BLK[0] (exn name)
         STA @VAL
-;;	JSR @pr_val                             ;  print "exn name"
-        JSR @pr_str                             ;  print exn name, no quotes
+	JSR @pr_exn                             ;  print exn name
 	LDA # ' '
 	JSR C64_CHROUT
         LDY # 3
@@ -1864,24 +1863,22 @@ caml_uncaught_exn
         DEY
         LDA (ACCU),Y
         STA @VAL                                ;  VAL := ACCU[0] (exn name)
-;;	JSR @pr_val                             ;  print "string"
-	JSR @pr_str                             ;  print string, no quotes
+	JSR @pr_exn                             ;  print exn name, petscii conv.
         JMP STOP                                ;  exit.
 !convtab pet
 @err    !text 13, "Exception: ", 0
 
-        ;; Print VAL if int or string, or its fields if tag(VAL)=0 & PRFL=0
+        ;; Print VAL if int or string, or its fields if tag(VAL)=0 & PRFLD=0
 @pr_val BIT caml_is_block                       ;Is VAL a block?
-        BEQ +                                   ;No:print integer & return.
+        BEQ +                                   ;No: print integer & return.
         JMP @pr_int                             ; JMP=JSR+RTS
 +       DEC @VAL + 1                            ;Yes: prepare access to tag(VAL)
         LDY # -2
         LDA (@VAL),Y                            ; Get tag(VAL)
-        INC @VAL + 1                            ; Restore pointer
-        ORA # 0                                 ; Set status bits according to A
         BEQ @tag0                               ; branch if tag=0
         CMP # String_tag
         BNE @othblk                             ; branch if tag <> String_tag
+        INC @VAL + 1                            ; Restore pointer
         LDA # '"'                               ;== STRING BLOCK ==
         JSR C64_CHROUT                          ; Print '"'
         JSR @pr_str                             ; Print the string
@@ -1895,14 +1892,15 @@ caml_uncaught_exn
         BNE -
 +       RTS                                     ; Return.
 @msg    !text "<BLOCK>", 0
-@tag0   BIT @PRFL                               ;== BLOCK WITH TAG=0 ==
-        BMI @othblk                             ; If @PRFL=$FF, do as above.
+@tag0   BIT @PRFLD                              ;== BLOCK WITH TAG=0 ==
+        BMI @othblk                             ; If @PRFLD=$FF, do as above.
         LDA # '('                               ; Print '('
         JSR C64_CHROUT
         INY
         LDA (@VAL),Y                            ; Get size(VAL)
         STA @SIZE                               ;  and save it
-        DEC @PRFL                               ; PRFL := $FF
+        INC @VAL + 1                            ; Restore pointer
+        DEC @PRFLD                              ; PRFLD := $FF
 -       LDA @VAL + 1                            ; Loop on size(VAL):
         PHA                                     ;  Push VAL,hi onto h/w stack
         LDA @VAL
@@ -1916,7 +1914,7 @@ caml_uncaught_exn
         STA @VAL + 1
         TYA
         PHA                                     ;  Push Y onto h/w stack
-        JSR @pr_val                             ;  Rec.call pr_val(VAL,PRFL=$FF)
+        JSR @pr_val                             ;  Recall pr_val(VAL,PRFLD=$FF)
         PLA                                     ;  Pop Y register from h/w stack
         TAY
         PLA                                     ;  Pop VAL,lo from h/w stack
@@ -1933,6 +1931,28 @@ caml_uncaught_exn
 +       LDA # ')'                               ; Print ')'
         JSR C64_CHROUT
         RTS                                     ; Return.
+
+        ;; Convert the exn name ptd by VAL to PETSCII and print it
+@pr_exn LDY # 0
+-       LDA (@VAL),Y                            ;A := VAL[Y]
+        BEQ +++                                 ;Exit if null
+	CMP # $5F				;test for underscore
+	BNE +
+	LDA # $A4
+	BNE ++				        ;JMP
++	CMP # $61				;test for lowercase letter
+	BCC +
+	SBC # $20
+	BNE ++				        ;JMP
++	CMP # $41				;test for uppercase letter
+	BCC ++
+	EOR # $80
+++      JSR C64_CHROUT                          ;Print VAL[Y]
+        INY
+        BNE -
+        INC @VAL + 1
+        BNE -
++++     RTS
 
         ;; Print the string pointed by VAL
 @pr_str LDY # 0
@@ -2223,7 +2243,7 @@ SWITCH
                 BEQ @pptrs
                 LDA PC
                 LDX PC + 1
-                BNE SWITCHI                     ;BNE=JMP
+                JMP SWITCHI
 @pptrs          LDX PC + 1
                 ASL TMP
                 BCC +

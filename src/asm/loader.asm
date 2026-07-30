@@ -56,8 +56,8 @@ caml_loader
 !addr   TRAPSP          = $32                   ; 2 by. Trap pointer
 !addr   ENV             = $34                   ; 2 by. Environment
 !ifdef  caml_INTERP {
-        !addr   caml_interp_fetch = $36         ;15 by. Fetch-exec ($36-$44)
-        !addr   PC                = $37         ;       (2 by. Program counter)
+  !addr caml_interp_fetch = $36                 ;15 by. Fetch-exec ($36-$44)
+  !addr PC                = $37                 ;       (2 by. Program counter)
 }
 	;; CAUTION: $47, $56-$60 are used by BASIC floating point routines
 !addr   TMP             = $45                   ;18 by. Temp. area ($45-$56)

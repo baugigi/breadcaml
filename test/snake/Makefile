@@ -15,7 +15,7 @@
 PRG = snake
 DEPENDS = iOtools
 EXTERNS = iOtools.asm
-
+COMP = bcamlc
 SHELL = /bin/bash
 SED_GENC = s/^[ \t]*\(IOtools_[a-zA-Z0-9_]*\)/void \1 () {}/p
 
@@ -23,14 +23,14 @@ CMO := $(DEPENDS:=.cmo)
 CMI := $(DEPENDS:=.cmi)
 C := $(EXTERNS:.asm=.c)
 
-$(PRG:=.prg): $(CMO) $(EXTERNS) $(C) $(PRG:=.ml)
-	bcamlopt $(OPTIONS) $^ -- -r snake.txt
+$(PRG).prg: $(CMO) $(EXTERNS) $(C) $(PRG).ml
+	$(COMP) $(OPTIONS) $^ -- -r $(PRG).rep
 
 %.cmo: %.ml %.cmi
-	bcamlopt -c $<
+	$(COMP) -c -db $(PRG).db $<
 
 %.cmi: %.mli
-	bcamlopt -c $<
+	$(COMP) -c -db $(PRG).db $<
 
 %.o: %.c
 	cc -o $@ -c $<
@@ -40,8 +40,7 @@ $(PRG:=.prg): $(CMO) $(EXTERNS) $(C) $(PRG:=.ml)
 
 .PHONY: clean
 clean:
-	rm snake.prg snake.asm snake.txt *.byte *.c* *.o &> /dev/null || true
-	rm bcamlppx.db
+	rm -f *.cm? *.o $(PRG).{prg,db,rep}
 
 .PHONY: merlin
 merlin: $(CMI)
@@ -50,3 +49,7 @@ merlin: $(CMI)
 	S .\n\
 	B .\n\
 	" > .$@
+
+show:	$(PRG).prg
+	sed -nE "/^........[0-9a-f]/ p" $(PRG).rep | less
+

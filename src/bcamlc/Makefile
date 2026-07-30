@@ -20,7 +20,7 @@ include $(if $(wildcard $(CONF)),$(CONF),$(error \
 BIN = ../../bin
 TARGET = $(BIN)/bcamlc
 OCAMLCLEAN = step1 prim step2 step3 data cleanbra rmnop globalise cleanenvs
-BCAMLC = $(OCAMLCLEAN) config globals opcodes export
+BCAMLC = $(OCAMLCLEAN) config globals opcodes export cmdline
 VPATH = ./ocamlclean
 
 $(TARGET): $(BCAMLC:=.ml) bcamlc.ml

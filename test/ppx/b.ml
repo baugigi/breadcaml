@@ -1,2 +1,2 @@
-let l = [`Common1; `D; `Common2]
+let l = [`Common1; `DDD; `Common2]
 

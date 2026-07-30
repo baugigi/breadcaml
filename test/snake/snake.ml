@@ -92,9 +92,9 @@ let action_of_key = function
   | '\017' -> Move Down
   | '\157' -> Move Left
   | '\029' -> Move Right
-  | 'P'    -> Pause
-  | 'Y'    -> Answer_yes
-  | 'N'    -> Answer_no
+  | 'p'    -> Pause
+  | 'y'    -> Answer_yes
+  | 'n'    -> Answer_no
   | '\000' -> No_action
   | _      -> Unknown
 ;;
@@ -168,7 +168,7 @@ let print_center y str = print_at ((40 - String.length str) / 2, y) str
 let print_score st =
   let score = string_of_int st.score in
   let score = String.(sub score 1 (pred (length score))) in
-  print_at (2, 24) ("SCORE:" ^ score)
+  print_at (2, 24) ("score:" ^ score)
 ;;
 
 (*****)
@@ -279,8 +279,8 @@ let rec game_loop st =
       | Answer_yes -> true
       | Answer_no -> false
       | _ -> get_answer () in
-    print_center 12 " *** YOU LOST! *** ";
-    print_center 11 " PLAY AGAIN (Y/N)? ";
+    print_center 12 " *** you lost! *** ";
+    print_center 11 " play again (y/n)? ";
     if get_answer () then game_loop (init ())
 ;;
 

@@ -1,16 +1,15 @@
-(* ——————————————————————————————————————————————————————————————————————
+(* ----------------------------------------------------------------------
    Progetto BreadCaml / The BreadCaml Project
-   Copyright (C) 2026 Piero Furiesi
+   Copyright (C) 21-Apr-2026 Piero Furiesi
 
-   Questo  programma è  software libero;  è possibile  ridistribuirlo e/o
-   modificarlo secondo i  termini della GNU General  Public License (GPL)
-   versione  2,  come specificato  nel  file  LICENZA-it nella  directory
-   principale del progetto.
+   Questo  programma  è software  libero;  può  essere ridistribuito  e/o
+   modificato nei termini della GNU General Public License (GPL) versione
+   2; si veda il file LICENZA-it nella cartella radice del progetto.
 
    This program is  free software; you can redistribute  it and/or modify
    it under the terms of the  GNU General Public License (GPL) version 2,
-   as specified in the LICENSE-en file in the project root.
-   —————————————————————————————————————————————————————————————————————— *)
+   as specified in the LICENSE-en file in the project root folder.
+   ---------------------------------------------------------------------- *)
 
 open Printf
 
@@ -61,8 +60,8 @@ module OCamlclean = struct
 end
 
 let export ~bytefile ~asmfile ~prgfile ~externs ~top_of_mem ~stack_pages =
-  let stack_end = !top_of_mem + (!top_of_mem land 1) in
-  let stack_start = 256 * ((stack_end lsr 8) - !stack_pages) in
+  let stack_end = top_of_mem + (top_of_mem land 1) in
+  let stack_start = 256 * ((stack_end lsr 8) - stack_pages) in
   try
     let ch = open_out_bin asmfile in
     fprintf ch
