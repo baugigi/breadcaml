@@ -18,24 +18,30 @@
    OPTIONS:[-db dbfile][-mem address][-stack npages][-showmem][-verbose]
  *)
 
+(* Some useful operators *)
+let ( ^+ ) s1 s2 = s1 ^ " " ^ s2        (* "str1" ^+ "str2" is "str1 str2" *)
+let ( => ) b1 b2 = b2 || not b1         (* logical implication *)
+
+
+
+
 (* The type for the result of command line parsing *)
 type t =
+  | Fullprocess of fullprocess_t        (* no -c option *)
+  | Compileonly of compileonly_t        (* -c option *)
+  | Show of show_t                      (* -where, -ocamlc, -acme, -version *)
+and fullprocess_t =
   { ocamlc_cmdline : string;
-    verbose        : bool;
-    mode           : mode_t }
-
-(* The sum type for the presence or absence of -c option *)
-and mode_t =
-  | Compileonly         (* -c option present *)
-  | Fullprocess of fp_t (* -c option not present *)
-
-(* The type for the Fullprocess variant argumnent *)
-and fp_t =
-  { acme_cmdline : string;
-    prgfile      : string;
-    top_of_mem   : int;
-    stack_pages  : int;
-    externs      : string list }
+    acme_cmdline   : string;
+    prgfile        : string;
+    top_of_mem     : int;
+    stack_pages    : int;
+    externs        : string list;
+    verbose        : bool }
+and compileonly_t =
+  { ocamlc_cmdline : string;
+    verbose        : bool }
+and show_t = Where | Ocamlc | Acme | Version
 
 (* Default values for options, option arguments, and file type flags *)
 let compile_only = ref false
@@ -47,9 +53,10 @@ let showmem      = ref false
 let verbose      = ref false
 let input_files  = ref []
 let ocamlc_opts  = ref []
+let show_opt     = ref None
 let ml, mli, cmo, asm = ref false, ref false, ref false, ref false
 
-(* Set comp_desc and acme_opts according to the compiler type *)
+(* Set comp_desc and acme_opts according to the compiler name *)
 let comp_desc, acme_opts = match Filename.basename Sys.argv.(0) with
   | "bcamlopt" -> "native code", ref []
   | "bcamlc"   -> "bytecode",    ref ["-Dcaml_INTERP=1"]
@@ -66,15 +73,10 @@ let anon_fun arg = match Filename.extension arg with
 (* Treat all options following '--' as ACME_OPTIONS *)
 let rest_all args = acme_opts := !acme_opts @ args
 
-(* Manage -where, -ocamlc, -acme, and -version options *)
-let where ()        = print_endline Config.libdir; exit 0
-let where_ocamlc () = print_endline Config.ocamlc; exit 0
-let where_acme ()   = print_endline Config.acme;   exit 0
-let version () =
-  Printf.printf
-    "The OCaml %s compiler for the Commodore C64, version %s\n%!"
-    comp_desc Config.version;
-  exit 0
+(* -where, -ocamlc, -acme, -version: the early bird gets the worm. *)
+let show info () = match !show_opt with
+  | None -> show_opt := Some info
+  | _ -> ()
 
 (* Usage message *)
 let usage =
@@ -136,16 +138,16 @@ let speclist =
       "-verbose", Set verbose,
       " Verbose mode."
     ;
-      "-where", Unit where,
+      "-where", Unit (show Where),
       " Show the location of the BreadCaml standard library and exit."
     ;
-      "-ocamlc", Unit where_ocamlc,
+      "-ocamlc", Unit (show Ocamlc),
       " Show the location of the OCaml bytecode compiler and exit."
     ;
-      "-acme", Unit where_acme,
+      "-acme", Unit (show Acme),
       " Show the location of the ACME cross-assembler and exit."
     ;
-      "-version", Unit version,
+      "-version", Unit (show Version),
       " Show version and exit."
     ;
       "--", Rest_all rest_all,
@@ -169,13 +171,10 @@ let rec dyn_add_ocamlc_opts i accu =
 
 (* Check all arguments according to a checklist *)
 let check_args () =
-  let missing = (* list of missing files *)
-    List.filter
-      (fun f -> not (Sys.file_exists f))
-      !input_files in
-  let ( => ) b1 b2 = b2 || not b1 in  (* logical implication *)
-  let checklist = [|
-      (* condition, error message if condition not met *)
+  let missing = List.filter (fun f -> not (Sys.file_exists f)) !input_files in
+  let check (cond, err) = if not cond then failwith err in
+  let checklist =
+    [| (* condition to check, error message when condition is false *)
       !input_files <> [], "no input file specified.";
       missing = [], "file(s) ‘" ^ String.concat "’, ‘" missing ^ "’ not found.";
       !stack_arg > 0, "-stack argument must be greater than 0.";
@@ -186,7 +185,6 @@ let check_args () =
       !compile_only => (!ml || !mli), "no .ml or .mli files specified.";
       not !compile_only => (!ml || !cmo), "no .ml or .cmo files specified.";
     |] in
-  let check (cond, err) = if not cond then failwith err in
   try Array.iter check checklist
   with Failure err ->
     let me = Sys.argv.(0) in
@@ -194,15 +192,7 @@ let check_args () =
       "Error: %s\nTry ‘%s -help’ or ‘man %s’ for more info.\n%!" err me me;
     exit 1
 
-(* Concatenate, adding a space as separator *)
-let ( ^+ ) s1 s2 = s1 ^ " " ^ s2
-
-
-(* Main *)
-let parse () =
-  (* Process command line *)
-  let specs () = dyn_add_ocamlc_opts 1 speclist in
-  Arg.parse (Arg.align (specs ())) anon_fun usage;
+let return_parse_result () =
   (* Check arguments *)
   check_args ();    
   (* Get the rightmost filename specified (the 1st in list) *)
@@ -230,15 +220,15 @@ let parse () =
     ^+ (if !verbose then "-verbose" else "")
     ^+ (if !compile_only then "-c" else "")
     ^+ "-ppx"
-    ^+ Filename.quote (Config.bindir ^ "/bcamlppx " ^ dbfile)
+    ^+ Filename.quote (Config.bindir ^ "/bcamlppx" ^+ dbfile)
     ^+ String.concat " "
          (!ocamlc_opts @ List.map Filename.quote ocamlc_files) in
   (* Return the parsing result *)
   if !compile_only then
     (* Parsing result when -c present *)
-    { ocamlc_cmdline;
-      verbose = !verbose;
-      mode = Compileonly }
+    Compileonly
+      { ocamlc_cmdline;
+        verbose = !verbose }
   else
     (* Set prgfile according to -o opt, or default value *)
     let prgfile =
@@ -250,12 +240,22 @@ let parse () =
       ^+ (if !verbose then "-v9" else "")
       ^+ String.concat " " !acme_opts in
     (* Parsing result when -c not present *)
-    let fp_arg = 
-      { acme_cmdline;
+    Fullprocess 
+      { ocamlc_cmdline;
+        acme_cmdline;
         prgfile;
-        externs;
         top_of_mem  = !mem_arg;
-        stack_pages = !stack_arg } in
-    { ocamlc_cmdline;
-      verbose = !verbose;
-      mode = Fullprocess fp_arg }
+        stack_pages = !stack_arg;
+        externs;
+        verbose = !verbose }
+
+(* Main *)
+let parse () =
+  (* Process command line *)
+  let specs () = dyn_add_ocamlc_opts 1 speclist in
+  Arg.parse (Arg.align (specs ())) anon_fun usage;
+  (* Give way to "show only" options *)
+  match !show_opt with
+  | Some info -> Show info
+  | None -> return_parse_result ()
+

@@ -1,17 +1,3 @@
-# ——————————————————————————————————————————————————————————————————————
-# Progetto BreadCaml / The BreadCaml Project
-# Copyright (C) 2026 Piero Furiesi
-#
-# Questo  programma è  software  libero; è  possibile ridistribuirlo  e/o
-# modificarlo secondo  i termini della  GNU General Public  License (GPL)
-# versione  2,  come  specificato  nel file  LICENZA-it  nella  directory
-# principale del progetto.
-#
-# This program is  free software; you can redistribute  it and/or modify
-# it under the terms of the  GNU General Public License (GPL) version 2,
-# as specified in the LICENSE-en file in the project root.
-# ——————————————————————————————————————————————————————————————————————
-
 SHELL = /bin/bash
 CONF = ../../etc/Makefile.conf
 include $(if $(wildcard $(CONF)),$(CONF),$(error \
@@ -19,15 +5,18 @@ include $(if $(wildcard $(CONF)),$(CONF),$(error \
 
 BIN = ../../bin
 TARGET = $(BIN)/bcamlppx
-BCAMLPPX = petscii petsciiPPX polyvarArray polyvarPPX
+SOURCE = petscii petsciiPPX polyvarArray polyvarPPX bcamlppx
+FLAGS =  -I +compiler-libs ocamlcommon.cmxa str.cmxa unix.cmxa
 
-$(TARGET): $(BCAMLPPX:=.mli) $(BCAMLPPX:=.ml) bcamlppx.ml
-	$(OCAMLOPT) -I +compiler-libs \
-		ocamlcommon.cmxa str.cmxa unix.cmxa $^ -o $@
+$(TARGET): $(SOURCE:=.mli) $(SOURCE:=.ml)
+	$(OCAMLOPT) $(FLAGS) -o $@ $^
+
+%.mli: %.ml
+	$(OCAMLOPT) $(FLAGS) -i $< > $@
 
 .PHONY: clean
 clean:
-	rm -f $(TARGET) *.o *.cm?
+	rm -f $(TARGET) *.{o,cm?}
 
 .PHONY: gitclean
 gitclean: clean

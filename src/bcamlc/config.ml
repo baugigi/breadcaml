@@ -19,8 +19,9 @@ let pre_code_includes	= ["loader.asm"; "codegen.asm"]
 let post_code_includes	= ["runtime.asm"; "memory.asm"; "stdlib.asm"]
 let trailer_includes	= ["showmem.asm"]
 
-let ocamlc  = "/home/pifu/.opam/LTS/bin/ocamlc.opt"
-let libdir  = "/home/pifu/.opam/LTS/lib/bcamlc"
-let bindir  = "/home/pifu/.opam/LTS/bin"
-let acme    = "/home/pifu/.opam/LTS/bin/acme"
+let ocamlc  = "/home/piero/.opam/LTS/bin/ocamlc.opt"
+let libdir  = "/home/piero/.opam/LTS/lib/bcamlc"
+let bindir  = "/home/piero/.opam/LTS/bin"
+let acme    = "/home/piero/.opam/LTS/bin/acme"
 let version = "0.0.alpha_4.14.2"
+

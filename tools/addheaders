@@ -13,21 +13,56 @@
 # specified in the LICENSE-en file in the project root folder.
 # -----------------------------------------------------------------------
 
-if [[ "$1" = "--help" || "$1" = "-h" || -n "$2" ]]; then
+function help {
     cat <<EOF
 $0 [DIRECTORY]
 Aggiunge gli header appropriati a tutti i file sorgenti OCaml o ACME
 nella DIRECTORY indicata e nelle sue subdirectory.
 Se DIRECTORY non è indicata, stampa i modelli di header disponibili.
 EOF
-    exit 0
-fi
+}
 
-# Definizione degli header
+function print_templates {
+    for I in ${!TITLE[@]}; do
+	echo
+	echo "MODELLO $I) ${TITLE[$I]}"
+	echo "${HEADER[$I]}"
+	echo
+    done | less
+}
+
+function ask_user {
+    echo "Quale header vuoi applicare ai file in '$DIR'?"
+    for I in ${!TITLE[@]}; do
+	echo " $I) ${TITLE[$I]}"
+    done
+    echo "Scegli un'opzione da 1 a ${#TITLE[@]},"
+    read -p "oppure 0 per RIMUOVERE tutti gli header: " CHOICE
+}
+
+function add_header { #FILE #CHOICE
+    # Salta il file se nelle prime tre righe contiene già la firma
+    if grep -q -m 3 "$SIGNATURE" "$1"; then
+        echo "Saltato (header già presente): $1"
+    else
+        TEMP_FILE=$(mktemp)
+        echo "${HEADER[$2]}" > "$TEMP_FILE"
+        echo >> "$TEMP_FILE"
+        cat "$1" >> "$TEMP_FILE"
+        mv "$TEMP_FILE" "$1"
+        echo "Header n° $2 inserito in: $1"
+    fi
+}
+
+
+# DATI DESCRITTIVI
 
 DATE="21-Apr-2026"
 SIGNATURE="Progetto BreadCaml / The BreadCaml Project"
 AUTHOR="Piero Furiesi"
+
+
+# DEFINIZIONE DEGLI HEADER
 
 TITLE[1]="Sorgenti OCaml - no terze parti (GPL v2)"
 FIND[1]='-name "*.ml" -o -name "*.mli" -o -name "*.ml.tpl"'
@@ -117,53 +152,45 @@ HEADER[4]=$(cat <<EOF
 EOF
 )
 
-# Se non è stata passata una cartella come argomento, stampa i modelli
-# disponibili; altrimenti controlla che la cartella esista
-if [[ -z $1 ]]; then
-    for I in ${!TITLE[@]}; do
-	echo ""
-	echo "vvv $I) ${TITLE[$I]}"
-	echo "${HEADER[$I]}"
-	echo "^^^ $I) FINE MODELLO"
-	echo ""
-    done | less
+####
+
+if (( $# == 0 )); then
+    # nessun argomento: stampa i modelli disponibili.
+    print_templates
+    exit 0
+elif (( $# > 1 )); then
+    echo "$0: troppi argomenti." 1>&2
+    echo "Usa '$0 --help' per informazioni." 1>&2
+    exit 1
+elif [[ $1 == "-help" || $1 == "--help" ]]; then
+    help
     exit 0
 elif [[ ! -d $1 ]]; then
-    echo "Errore: La cartella '$1' non esiste."
+    echo "$0: la cartella '$1' non esiste." 1>&2
     exit 1
 fi
 
 DIR="$1"
 
-# Selezione dell'header
-echo "Quale header vuoi applicare ai file in '$DIR'?"
-for I in ${!TITLE[@]}; do
-    echo " $I) ${TITLE[$I]}"
+# Attende dall'utente una scelta valida
+ask_user
+until [[ $CHOICE == 0 || ( $CHOICE =~ ^[0-9]+ && -n ${TITLE[$CHOICE]} ) ]]; do
+    read -p "Scelta non valida, riprova (^C per uscire): " CHOICE 
 done
-read -p "Scegli un'opzione (1 ... ${#TITLE[@]}): " CHOICE
 
-# Assegna lo header scelto
-if [[ $CHOICE =~ ^[0-9]+ && -n ${TITLE[$CHOICE]} ]]; then
-    echo "Applicazione di ${TITLE[$CHOICE]}..."
-else
-    echo "Scelta non valida. Uscita."
-    exit 1
-fi
-
-# Trova tutti i file da elaborare nella directory e nelle sue subdirectory
-# Usa eval per evitare l'espansione di * in FIND
-eval "find \"\$DIR\" -type f \( ${FIND[$CHOICE]} \)" | while read -r FILE; do
-    # Salta il file se nelle prime tre righe contiene già la firma
-    if grep -q -m 3 "$SIGNATURE" "$FILE"; then
-        echo "Saltato (header già presente): $FILE"
+if [[ $CHOICE == 0 ]]; then
+    echo "Rimuovo gli header da tutti i file in '$(pwd)' e nelle subdirectory,"
+    read -p "CONFERMI? (s/n) " CONFIRM
+    if [[ $CONFIRM =~ [sS] ]]; then
+	remove_all_headers
     else
-        TEMP_FILE=$(mktemp)
-        echo "${HEADER[$CHOICE]}" > "$TEMP_FILE"
-        echo "" >> "$TEMP_FILE"		# Riga vuota di separazione
-        cat "$FILE" >> "$TEMP_FILE"
-        mv "$TEMP_FILE" "$FILE"
-        echo "Header inserito in: $FILE"
+	echo "Rimozione annullata".
     fi
-done
-
-echo "Operazione completata!"
+else
+    echo "Applicazione di ${TITLE[$CHOICE]}..."
+    # Usa eval per evitare l'espansione di * in FIND.
+    eval "find \"\$DIR\" -type f \( ${FIND[$CHOICE]} \)"|while read -r FILE; do
+	add_header "$FILE" "$CHOICE"
+    done
+    echo "Operazione completata!"
+fi
