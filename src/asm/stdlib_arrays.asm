@@ -17,43 +17,33 @@ caml_make_vect
         ;; SP[0] = init
 @NFLO2  = TMP
 @INIT   = TMP + 2
-        ;; load init
-        INY
-        LDA (SP),Y
+        INY				;@INIT = SP[0]
+        LDA (SP),Y			
         STA @INIT + 1
         DEY
         LDA (SP),Y
         STA @INIT
-        ;; is init a block?
-        BIT caml_is_block                       ; test @INIT
+        BIT caml_is_block               ;If @INIT is a block
         BNE @no_float_array
-        ;; tag(init) = Double_tag?
-        LDY # -2
+        LDY # -2			;and tag(@INIT) = Double_tag
         DEC @INIT + 1
         LDA (@INIT),Y
         INC @INIT + 1
         LDY # 0
         CMP # Double_tag
         BNE @no_float_array
-;;      ;; is init in heap?
-;;      SEC
-;;      LDA @INIT
-;;      SBC # < caml_heap_start
-;;      STA TMP
-;;      LDA @INIT + 1
-;;      SBC # > caml_heap_start
-;;      STA TMP + 1
-;;      LDA TMP
-;;      CMP # < caml_heap_sz
-;;      LDA TMP + 1
-;;      SBC # > caml_heap_sz
-;;      BCS @no_float_array
-        ;; allocate float array 
-        JSR caml_floatarray_create
+        JSR caml_floatarray_create	;then allocate a floatarray.
+        BCC +
+        INY				;Reload @INIT if a GC occurred
+        LDA (SP),Y
+        STA @INIT + 1
+        DEY
+        LDA (SP),Y
+        STA @INIT
         ;; init floats
-        LDA @NFLO2                      ; see caml_floatarray_create
++       LDA @NFLO2                      ;See caml_floatarray_create
         LSR
-        TAX                             ; X = no. of floats
+        TAX                             ;X = no. of floats
 ;       CLC
 -       +caml_move_float @INIT, BLK
         LDA # < (2 * Double_wosize)
@@ -81,8 +71,15 @@ caml_make_vect
         ;; length > 0, allocate array
 +       TAX                             ; size
         TYA                             ; tag = 0
-        JSR caml_alloc
-        LDA BLK
+        JSR caml_alloc                  ;if C set, must reload @INIT here
+        BCC +
+        INY
+        LDA (SP),Y
+        STA @INIT + 1
+        DEY
+        LDA (SP),Y
+        STA @INIT
++       LDA BLK
         STA ACCU
         LDA BLK + 1
         STA ACCU + 1
@@ -153,12 +150,12 @@ caml_make_array
         ;; exit if Field(init,0) is not a block
 +       INY
         LDA (ACCU),Y
+        BIT caml_is_block                       ; test @FIELD0
+        BNE @exit
         STA @FIELD0
         INY
         LDA (ACCU),Y
         STA @FIELD0 + 1
-        BIT caml_is_block                       ; test @FIELD0
-        BNE @exit
 ;;      ;; exit if Field(init,0) is out of heap
 ;;      SEC
 ;;      LDA @FIELD0
@@ -184,7 +181,7 @@ caml_make_array
 +       INY
         DEC ACCU + 1
         LDA (ACCU),Y
-;       inc ACCU + 1
+        INC ACCU + 1
         INY
         CMP # 255 DIV Double_wosize + 1
         BCC +
@@ -202,7 +199,7 @@ caml_make_array
         STA ACCU
         LDA BLK + 1
         STA ACCU + 1
-        ;; init fields
+        ;; init fields           BUG! FIELD0 may be an invalid ptr after GC
         INC @FIELD0 + 1                 ; previously dec'ed
 -       +caml_move_float @FIELD0, BLK
         DEX
@@ -314,7 +311,7 @@ caml_floatarray_get__loadsize
         ;; allocate float
 +       LDA # Double_tag
         LDX # Double_wosize
-        JSR caml_alloc
+        JSR caml_alloc            ;BUG: ACCU INTERNAL PTR!
         ;; copy float
         +caml_move_float ACCU, BLK
         ;; return float
@@ -381,7 +378,7 @@ caml_floatarray_unsafe_get
         ;; allocate float
 +       LDA # Double_tag
         LDX # Double_wosize
-        JSR caml_alloc
+        JSR caml_alloc        ;BUG: ACCU INTERNAL PTR!
         ;; copy float
         +caml_move_float ACCU, BLK
         ;; return float
@@ -821,7 +818,7 @@ caml_array_sub
         ROR
         TAX
         LDA # Double_array_tag
-        JSR caml_alloc
+        JSR caml_alloc                  ;BUG: ACCU INTERNAL PTR!
         JMP @copy
 @no_floats
         ;; ordinary array, compute source start address
@@ -856,7 +853,7 @@ caml_array_sub
         ROR
         TAX
         LDA # 0
-        JSR caml_alloc
+        JSR caml_alloc        ;BUG: ACCU INTERNAL PTR!
         ;; copy bytes from source to destination
 @copy   LSR @NBY + 1
         LDY @NBY
@@ -900,7 +897,7 @@ caml_array_append
 +       DEY
         TAX                             ; size
         LDA (ACCU),Y                    ; tag
-        JSR caml_alloc
+        JSR caml_alloc            ;BUG: @AUX INVALID PTR!
         ;; copy arr1 to dest
         INC ACCU + 1
         LDA @SIZE1
@@ -1008,7 +1005,7 @@ caml_array_concat
 @alloc  LDX @SIZE
         BEQ @atom0
         LDA @TAG
-        JSR caml_alloc
+        JSR caml_alloc          ;BUG: @TAIL INVALID PTR
         LDA BLK
         STA @RESULT
         LDA BLK + 1

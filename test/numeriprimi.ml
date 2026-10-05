@@ -20,7 +20,7 @@ and primo n = function
      if n mod e = 0
      then false
      else primo n tl
-let _ =
-  for i = 1 to 80 do
-    ignore (numeri_primi 250)
-  done
+;;
+let p250 = List.rev (numeri_primi 250) in
+    List.iteri (fun i p -> print_int i; print_int p; print_newline()) p250
+;;

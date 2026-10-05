@@ -31,7 +31,7 @@ caml_create_string
         INX                                     ;take into account Ocaml padding
         BEQ ++                                  ;Exception if size > 255
         LDA # String_tag                        ;load tag
-        JSR caml_alloc                          ;allocate block
+        JSR caml_alloc                          ;allocate block BUG: ACCU NOT A VALUE!
         LDA BLK
         STA ACCU
         LDA BLK + 1

@@ -148,11 +148,21 @@ let cat s1 s2 =
 external char_code: char -> int = "%identity"
 external char_chr: int -> char = "%identity"
 
+(*-- Moved to the Ascii module
 let is_space = function
   | ' ' | '\012' | '\n' | '\r' | '\t' -> true
   | _ -> false
-
+--*)
+(*++ New implementation based on PETSCII whitespace characters *)
+let is_space = function
+  | ' ' | '\r' -> true
+  | _ -> false
+(* ++*)
+(*--
 let trim s =
+--*)
+(*++ *)
+let trim_aux is_space s =
   let len = length s in
   let i = ref 0 in
   while !i < len && is_space (unsafe_get s !i) do
@@ -166,6 +176,8 @@ let trim s =
     sub s !i (!j - !i + 1)
   else
     empty
+let trim s = trim_aux is_space s
+(* ++*)
 
 let escaped s =
   let n = ref 0 in
@@ -252,19 +264,30 @@ let for_all p s =
     else if p (unsafe_get s i) then loop (succ i)
     else false in
   loop 0
-
+(*--
 let uppercase_ascii s = map Char.uppercase_ascii s
 let lowercase_ascii s = map Char.lowercase_ascii s
-
+--*)
 let apply1 f s =
   if length s = 0 then s else begin
     let r = copy s in
     unsafe_set r 0 (f(unsafe_get s 0));
     r
   end
-
+(*--
 let capitalize_ascii s = apply1 Char.uppercase_ascii s
 let uncapitalize_ascii s = apply1 Char.lowercase_ascii s
+--*)
+(*++ *)
+let uppercase_petscii s = map Char.uppercase_petscii s
+let lowercase_petscii s = map Char.lowercase_petscii s
+let capitalize_petscii s = apply1 Char.uppercase_petscii s
+let uncapitalize_petscii s = apply1 Char.lowercase_petscii s
+let uppercase_ascii = uppercase_petscii
+let lowercase_ascii = lowercase_petscii
+let capitalize_ascii = capitalize_petscii
+let uncapitalize_ascii = uncapitalize_petscii
+(* ++*)
 
 (* duplicated in string.ml *)
 let starts_with ~prefix s =
@@ -384,7 +407,7 @@ let split_on_char sep s =
     end
   done;
   sub s 0 !j :: !r
-
+(*--
 (* Deprecated functions implemented via other deprecated functions *)
 [@@@ocaml.warning "-3"]
 let uppercase s = map Char.uppercase s
@@ -392,6 +415,13 @@ let lowercase s = map Char.lowercase s
 
 let capitalize s = apply1 Char.uppercase s
 let uncapitalize s = apply1 Char.lowercase s
+--*)
+(*++ New implementation based on the PETSCII character set *)
+let uppercase = uppercase_petscii
+let lowercase = lowercase_petscii
+let capitalize = capitalize_petscii
+let uncapitalize = uncapitalize_petscii
+(* ++*)
 
 (** {1 Iterators} *)
 
@@ -842,3 +872,26 @@ let is_valid_utf_16le b =
   in
   loop (length b - 1) b 0
 --*)
+
+(*++ *)
+module Ascii = struct
+  let is_space = function
+    | ' ' | '\012' | '\n' | '\r' | '\t' -> true
+    | _ -> false
+  let trim s = trim_aux is_space s
+  let escaped = escaped
+  let uppercase_ascii s = map Char.Ascii.uppercase_ascii s
+  let lowercase_ascii s = map Char.Ascii.lowercase_ascii s
+  let capitalize_ascii s = apply1 Char.Ascii.uppercase_ascii s
+  let uncapitalize_ascii s = apply1 Char.Ascii.lowercase_ascii s
+  let to_petscii s = map Char.Ascii.to_petscii s
+  let of_petscii s = map Char.Ascii.of_petscii s
+
+  (* Deprecated functions implemented via other deprecated functions *)
+  [@@@ocaml.warning "-3"]
+  let uppercase s = map Char.Ascii.uppercase s
+  let lowercase s = map Char.Ascii.lowercase s
+  let capitalize s = apply1 Char.Ascii.uppercase s
+  let uncapitalize s = apply1 Char.Ascii.lowercase s
+end
+(* ++*)

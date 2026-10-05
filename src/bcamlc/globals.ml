@@ -83,67 +83,67 @@ let rec add_global value globals =
   (* Add a global value to the collection *)
   match value with
   | OByteLib.Value.Block (tag, fields) ->
-     (match Array.length fields with
-      | 0 ->
-         fail_if (tag > 0) "Atom with tag > 0";
-         globals
-         |> add_item_to_table (Label "caml_atom0")
-      | size ->
-         fail_if (size > 255) "Block too large";
-         fail_if (tag = Obj.custom_tag) "Unknown custom block";
-         let g = Array.fold_left #% add_global fields globals in
-         let (fields, rest) = list_rev_split size g.table in
-         { g with table = rest }
-         |> store_item (Bytes [| tag; size |])
-         |> add_new_pointer_to_table
-         |> List.fold_left #% store_item fields)
+    (match Array.length fields with
+     | 0 ->
+       fail_if (tag > 0) "Atom with tag > 0";
+       globals
+       |> add_item_to_table (Label "caml_atom0")
+     | size ->
+       fail_if (size > 255) "Block too large";
+       fail_if (tag = Obj.custom_tag) "Unknown custom block";
+       let g = Array.fold_left #% add_global fields globals in
+       let (fields, rest) = list_rev_split size g.table in
+       { g with table = rest }
+       |> store_item (Bytes [| tag; size |])
+       |> add_new_pointer_to_table
+       |> List.fold_left #% store_item fields)
   | Int n ->
-     fail_if (n < -0x4000 || n > 0x7FFF) "Integer out of range";
-     let v = (n lsl 1) lor 1 in
-     globals
-     |> add_item_to_table (Bytes [| 0xFF land v; 0xFF land (v lsr 8) |])
+    fail_if (n < -0x4000 || n > 0x7FFF) "Integer out of range";
+    let v = (n lsl 1) lor 1 in
+    globals
+    |> add_item_to_table (Bytes [| 0xFF land v; 0xFF land (v lsr 8) |])
   | Int32 n ->
-     let bytes i = Int32.(shift_right n (8 * i) |> logand 255l |> to_int) in
-     globals
-     |> store_item (Bytes [| 255 (* Custom_tag *); 3 |])
-     |> add_new_pointer_to_table
-     |> store_item (Label "caml_int32_custom")
-     |> store_item (Bytes (Array.init 4 bytes))
+    let bytes i = Int32.(shift_right n (8 * i) |> logand 255l |> to_int) in
+    globals
+    |> store_item (Bytes [| 255 (* Custom_tag *); 3 |])
+    |> add_new_pointer_to_table
+    |> store_item (Label "caml_int32_custom")
+    |> store_item (Bytes (Array.init 4 bytes))
   | Int64 n ->
-     let bytes i = Int64.(shift_right n (8 * i) |> logand 255L |> to_int) in
-     globals
-     |> store_item (Bytes [| 255 (* Custom_tag *); 5 |])
-     |> add_new_pointer_to_table
-     |> store_item (Label "caml_int64_custom")
-     |> store_item (Bytes (Array.init 8 bytes))
+    let bytes i = Int64.(shift_right n (8 * i) |> logand 255L |> to_int) in
+    globals
+    |> store_item (Bytes [| 255 (* Custom_tag *); 5 |])
+    |> add_new_pointer_to_table
+    |> store_item (Label "caml_int64_custom")
+    |> store_item (Bytes (Array.init 8 bytes))
   | Nativeint _ -> failwith "Nativeint not impleented."
   | Float x ->
-     globals
-     |> store_item (Bytes [| 253 (* Double_tag *); 3 |])
-     |> add_new_pointer_to_table
-     |> store_item (Bytes (c64float x))
+    globals
+    |> store_item (Bytes [| 253 (* Double_tag *); 3 |])
+    |> add_new_pointer_to_table
+    |> store_item (Bytes (c64float x))
   | Float_array tab ->
-     let size = 3 * Array.length tab in
-     fail_if (size = 0) "Empty float array";
-     fail_if (size > 255) "Float array too large";
-     let add_float_item x = store_item (Bytes (c64float x)) in
-     globals
-     |> store_item (Bytes [| 254 (* Double_array_tag *); size |])
-     |> add_new_pointer_to_table
-     |> Array.fold_left #% add_float_item tab
+    let size = 3 * Array.length tab in
+    fail_if (size = 0) "Empty float array";
+    fail_if (size > 255) "Float array too large";
+    let add_float_item x = store_item (Bytes (c64float x)) in
+    globals
+    |> store_item (Bytes [| 254 (* Double_array_tag *); size |])
+    |> add_new_pointer_to_table
+    |> Array.fold_left #% add_float_item tab
   | String str ->
-     let len = String.length str in
-     let size = len / 2 + 1 in
-     fail_if (size > 255) "String too long";
-     let suffix = if len mod 2 = 0 then "\000\001" else "\000" in
-     let bytes i = int_of_char (str ^ suffix).[i] in
-     globals
-     |> store_item (Bytes [| 252 (* String_tag *); size |])
-     |> add_new_pointer_to_table
-     |> store_item (Bytes (Array.init (2 * size) bytes))
+    let len = String.length str in
+    let size = len / 2 + 1 in
+    fail_if (size > 255) "String too long";
+    let suffix = if len mod 2 = 0 then "\000\001" else "\000" in
+    let bytes i = int_of_char (str ^ suffix).[i] in
+    globals
+    |> store_item (Bytes [| 252 (* String_tag *); size |])
+    |> add_new_pointer_to_table
+    |> store_item (Bytes (Array.init (2 * size) bytes))
   | Object data ->
-     globals
-     |> add_global (Block (248 (* Object_tag *), data))
+    globals
+    |> add_global (Block (248 (* Object_tag *), data))
 
 let col, last_cmd =
   (* References for pretty-printing asm commands *)
@@ -164,14 +164,14 @@ let emit_asm ch asm_cmd asm_arg =
        col := len_newline_cmd) in
   match asm_cmd with
   | Some cmd ->
-     if asm_cmd = !last_cmd then
-       emit_cmd " " asm_arg (cmd ^ asm_arg)
-     else
-       (emit_cmd ":" (cmd ^ asm_arg) (cmd ^ asm_arg);
-        last_cmd := asm_cmd)
+    if asm_cmd = !last_cmd then
+      emit_cmd " " asm_arg (cmd ^ asm_arg)
+    else
+      (emit_cmd ":" (cmd ^ asm_arg) (cmd ^ asm_arg);
+       last_cmd := asm_cmd)
   | None ->
-     emit_cmd ":" asm_arg asm_arg;
-     last_cmd := asm_cmd
+    emit_cmd ":" asm_arg asm_arg;
+    last_cmd := asm_cmd
 
 let export ch globals =
   (* Convert an array of OCaml global values to asm code and output it *)
@@ -181,12 +181,12 @@ let export ch globals =
   let table = List.rev glob_no_exn.table in
   let export_item = function
     | Pointer ptr ->
-       emit_asm ch None (Printf.sprintf "+p $%04x" ptr)
+      emit_asm ch None (Printf.sprintf "+p $%04x" ptr)
     | Label lbl ->
-       emit_asm ch None (Printf.sprintf "!wo %s" lbl)
+      emit_asm ch None (Printf.sprintf "!wo %s" lbl)
     | Bytes bytes ->
-       let emit_byte by = emit_asm ch (Some "!h ") (Printf.sprintf "%02x" by) in
-       Array.iter emit_byte bytes in
+      let emit_byte by = emit_asm ch (Some "!h ") (Printf.sprintf "%02x" by) in
+      Array.iter emit_byte bytes in
   output_string ch "!macro p .ptr { !wo caml_glob_data + .ptr }\n";
   output_string ch "!align $01, $00\n";
   output_string ch "caml_glob_table\n";

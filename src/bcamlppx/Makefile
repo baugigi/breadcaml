@@ -13,4 +13,4 @@ $(TARGET): $(SOURCE:=.ml)
 
 .PHONY: clean
 clean:
-	rm -f $(TARGET) *.{o,cm?}
+	rm -f $(TARGET) *.{cmi,cmx,o}

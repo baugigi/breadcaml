@@ -203,11 +203,20 @@ val exists : f:(char -> bool) -> bytes -> bool
     [p].
     @since 4.13.0 *)
 
+(*-- Moved to the Ascii module
 val trim : bytes -> bytes
 (** Return a copy of the argument, without leading and trailing
     whitespace. The bytes regarded as whitespace are the ASCII
     characters [' '], ['\012'], ['\n'], ['\r'], and ['\t']. *)
+--*)
+(*++ New implementation based on PETSCII whitespace characters *)
+val trim : bytes -> bytes
+(** Return a copy of the argument, without leading and trailing whitespace. The
+    bytes regarded as whitespace are the PETSCII characters [' '] and ['\r'].
+    Use {!Ascii.trim} to trim according to ASCII whitespace characters. *)
+(* ++*)
 
+(*-- Moved to the "Deprecated functions" section, copied to Ascii module
 val escaped : bytes -> bytes
 (** Return a copy of the argument, with special characters represented
     by escape sequences, following the lexical conventions of OCaml.
@@ -215,7 +224,7 @@ val escaped : bytes -> bytes
     escaped, as well as backslash and double-quote.
     @raise Invalid_argument if the result is longer than
     {!Sys.max_string_length} bytes. *)
-
+--*)
 val index : bytes -> char -> int
 (** [index s c] returns the index of the first occurrence of byte [c]
     in [s].
@@ -281,55 +290,219 @@ val rcontains_from : bytes -> int -> char -> bool
     @raise Invalid_argument if [stop < 0] or [stop+1] is not a valid
     position in [s]. *)
 
-val uppercase : bytes -> bytes
-  [@@ocaml.deprecated
-    "Use Bytes.uppercase_ascii/BytesLabels.uppercase_ascii instead."]
-(** Return a copy of the argument, with all lowercase letters
-   translated to uppercase, including accented letters of the ISO
-   Latin-1 (8859-1) character set.
-   @deprecated Functions operating on Latin-1 character set are deprecated. *)
+(*++ *)
+val uppercase_petscii : bytes -> bytes
+(** Return a copy of the argument, with all lowercase letters translated to
+    uppercase, using the PETSCII character set. Use {!Ascii.uppercase_ascii} to
+    translate according to the ASCII character set. *)
+
+val lowercase_petscii : bytes -> bytes
+(** Return a copy of the argument, with all uppercase letters translated to
+    lowercase, using the PETSCII character set.  Use {!Ascii.lowercase_ascii} to
+    translate according to the ASCII character set. *)
+
+val capitalize_petscii : bytes -> bytes
+(** Return a copy of the argument, with the first character set to uppercase,
+    using the PETSCII character set. Use {!Ascii.capitalize_ascii} to translate
+    according to the ASCII character set. *)
+
+val uncapitalize_petscii : bytes -> bytes
+(** Return a copy of the argument, with the first character set to lowercase,
+    using the PETSCII character set. Use {!Ascii.uncapitalize_ascii} to
+    translate according to the ASCII character set. *)
+
+(** {1 Deprecated functions}
+
+    These functions are here only for compatibility with the original OCaml
+    [Bytes] and [BytesLabels] modules.
+*)
+
+val escaped : bytes -> bytes
+    [@@ocaml.deprecated
+       "Use [Bytes.Ascii.escaped] or [BytesLabels.Ascii.escaped] instead."]
+(** Return a copy of the argument, with special characters represented
+    by escape sequences, following the lexical conventions of OCaml.
+    All characters outside the ASCII printable range (32..126) are
+    escaped, as well as backslash and double-quote.
+    @raise Invalid_argument if the result is longer than
+      {!Sys.max_string_length} bytes.
+    @deprecated Use the functions in the {!Ascii} module to operate on the ASCII
+      character set. *)
 
 val lowercase : bytes -> bytes
-  [@@ocaml.deprecated
-    "Use Bytes.lowercase_ascii/BytesLabels.lowercase_ascii instead."]
-(** Return a copy of the argument, with all uppercase letters
-   translated to lowercase, including accented letters of the ISO
-   Latin-1 (8859-1) character set.
-   @deprecated Functions operating on Latin-1 character set are deprecated. *)
+   [@@ocaml.deprecated "Use [lowercase_petscii] instead."]
+(** [lowercase] is an alias for {!lowercase_petscii}, which operates on the
+    PETSCII character sets.
+    @deprecated Use the functions in the {!Ascii} module to operate on the
+      Latin-1 extension of the ASCII character set. *)
 
-val capitalize : bytes -> bytes
-  [@@ocaml.deprecated
-    "Use Bytes.capitalize_ascii/BytesLabels.capitalize_ascii instead."]
-(** Return a copy of the argument, with the first character set to uppercase,
-   using the ISO Latin-1 (8859-1) character set.
-   @deprecated Functions operating on Latin-1 character set are deprecated. *)
-
-val uncapitalize : bytes -> bytes
-  [@@ocaml.deprecated
-    "Use Bytes.uncapitalize_ascii/BytesLabels.uncapitalize_ascii instead."]
-(** Return a copy of the argument, with the first character set to lowercase,
-   using the ISO Latin-1 (8859-1) character set.
-   @deprecated Functions operating on Latin-1 character set are deprecated. *)
-
-val uppercase_ascii : bytes -> bytes
-(** Return a copy of the argument, with all lowercase letters
-   translated to uppercase, using the US-ASCII character set.
-   @since 4.03.0 (4.05.0 in BytesLabels) *)
+val uppercase : bytes -> bytes
+   [@@ocaml.deprecated "Use [uppercase_petscii] instead."]
+(** [uppercase] is an alias for {!uppercase_petscii}, which operates on the
+    PETSCII character sets.
+    @deprecated Use the functions in the {!Ascii} module to operate on the
+      Latin-1 extension of the ASCII character set. *)
 
 val lowercase_ascii : bytes -> bytes
-(** Return a copy of the argument, with all uppercase letters
-   translated to lowercase, using the US-ASCII character set.
-   @since 4.03.0 (4.05.0 in BytesLabels) *)
+   [@@ocaml.deprecated "Use [lowercase_petscii] instead."]
+(** [lowercase_ascii] is an alias for {!lowercase_petscii}, which operates on
+    the PETSCII character sets.
+    @deprecated Use the functions in the {!Ascii} module to operate on the
+      Latin-1 extension of the ASCII character set. *)
+
+val uppercase_ascii : bytes -> bytes
+   [@@ocaml.deprecated "Use [uppercase_petscii] instead."]
+(** [uppercase_ascii] is an alias for {!uppercase_petscii}, which operates on
+    the PETSCII character sets.
+    @deprecated Use the functions in the {!Ascii} module to operate on the ASCII
+      character set. *)
+
+val capitalize : bytes -> bytes
+   [@@ocaml.deprecated "Use [capitalize_petscii] instead."]
+(** [capitalize] is an alias for {!capitalize_petscii}, which operates on the
+    PETSCII character sets.
+    @deprecated Use the functions in the {!Ascii} module to operate on the
+      Latin-1 extension of the ASCII character set. *)
+
+val uncapitalize : bytes -> bytes
+   [@@ocaml.deprecated "Use [uncapitalize_petscii] instead."]
+(** [uncapitalize] is an alias for {!uncapitalize_petscii}, which operates on
+    the PETSCII character sets.
+    @deprecated Use the functions in the {!Ascii} module to operate on the
+      Latin-1 extension of the ASCII character set. *)
 
 val capitalize_ascii : bytes -> bytes
-(** Return a copy of the argument, with the first character set to uppercase,
-   using the US-ASCII character set.
-   @since 4.03.0 (4.05.0 in BytesLabels) *)
+   [@@ocaml.deprecated "Use [capitalize_petscii] instead."]
+(** [capitalize_ascii] is an alias for {!capitalize_petscii}, which operates on
+    the PETSCII character sets.
+    @deprecated Use the functions in the {!Ascii} module to operate on the
+      Latin-1 extension of the ASCII character set. *)
 
 val uncapitalize_ascii : bytes -> bytes
-(** Return a copy of the argument, with the first character set to lowercase,
-   using the US-ASCII character set.
-   @since 4.03.0 (4.05.0 in BytesLabels) *)
+   [@@ocaml.deprecated "Use [uncapitalize_petscii] instead."]
+(** [uncapitalize_ascii] is an alias for {!uncapitalize_petscii}, which operates
+    on the PETSCII character sets.
+    @deprecated Use the functions in the {!Ascii} module to operate on the
+      Latin-1 extension of the ASCII character set. *)
+
+(** {1 Operations on the ASCII character set} *)
+
+(** Operations on the ASCII character set and its Latin-1 extension.
+
+    Useful for data conversion and communication outside the Commodore world. *)
+module Ascii: sig
+
+  val trim : bytes -> bytes
+  (** Return a copy of the argument, without leading and trailing whitespace.
+      The bytes regarded as whitespace are the ASCII characters [' '], ['\012'],
+      ['\n'], ['\r'], and ['\t']. *)
+
+  val escaped : bytes -> bytes
+  (** Return a copy of the argument, with special characters represented by
+      escape sequences, following the lexical conventions of OCaml.  All
+      characters outside the ASCII printable range (32..126) are escaped, as
+      well as backslash and double-quote.
+      @raise Invalid_argument if the result is longer than
+        {!Sys.max_string_length} bytes. *)
+(* ++*)
+
+  val uppercase : bytes -> bytes
+(*--
+  [@@ocaml.deprecated
+    "Use Bytes.uppercase_ascii/BytesLabels.uppercase_ascii instead."]
+--*)
+(*++ *)
+  [@@ocaml.deprecated
+   "Use Bytes.Ascii.uppercase_ascii/BytesLabels.Ascii.uppercase_ascii instead."]
+(* ++*)
+  (** Return a copy of the argument, with all lowercase letters
+      translated to uppercase, including accented letters of the ISO
+      Latin-1 (8859-1) character set.
+      @deprecated Functions operating on Latin-1 character set are deprecated. *)
+
+  val lowercase : bytes -> bytes
+(*--
+  [@@ocaml.deprecated
+    "Use Bytes.lowercase_ascii/BytesLabels.lowercase_ascii instead."]
+--*)
+(*++ *)
+  [@@ocaml.deprecated
+   "Use Bytes.Ascii.lowercase_ascii/BytesLabels.Ascii.lowercase_ascii instead."]
+(*++ *)
+  (** Return a copy of the argument, with all uppercase letters
+      translated to lowercase, including accented letters of the ISO
+      Latin-1 (8859-1) character set.
+      @deprecated Functions operating on Latin-1 character set are deprecated. *)
+
+  val capitalize : bytes -> bytes
+(*--
+  [@@ocaml.deprecated
+    "Use Bytes.capitalize_ascii/BytesLabels.capitalize_ascii instead."]
+--*)
+(*++ *)
+  [@@ocaml.deprecated
+   "Use Bytes.Ascii.capitalize_ascii/BytesLabels.Ascii.capitalize_ascii instead."]
+(*++ *)
+  (** Return a copy of the argument, with the first character set to uppercase,
+      using the ISO Latin-1 (8859-1) character set.
+      @deprecated Functions operating on Latin-1 character set are deprecated. *)
+
+  val uncapitalize : bytes -> bytes
+(*--
+  [@@ocaml.deprecated
+    "Use Bytes.uncapitalize_ascii/BytesLabels.uncapitalize_ascii instead."]
+--*)
+(*++ *)
+  [@@ocaml.deprecated
+   "Use Bytes.Ascii.uncapitalize_ascii/BytesLabels.Ascii.uncapitalize_ascii instead."]
+(* ++*)
+  (** Return a copy of the argument, with the first character set to lowercase,
+      using the ISO Latin-1 (8859-1) character set.
+      @deprecated Functions operating on Latin-1 character set are deprecated. *)
+
+  val uppercase_ascii : bytes -> bytes
+  (** Return a copy of the argument, with all lowercase letters
+      translated to uppercase, using the US-ASCII character set.
+      @since 4.03.0 (4.05.0 in BytesLabels) *)
+
+  val lowercase_ascii : bytes -> bytes
+  (** Return a copy of the argument, with all uppercase letters
+      translated to lowercase, using the US-ASCII character set.
+      @since 4.03.0 (4.05.0 in BytesLabels) *)
+
+  val capitalize_ascii : bytes -> bytes
+  (** Return a copy of the argument, with the first character set to uppercase,
+      using the US-ASCII character set.
+      @since 4.03.0 (4.05.0 in BytesLabels) *)
+
+  val uncapitalize_ascii : bytes -> bytes
+  (** Return a copy of the argument, with the first character set to lowercase,
+      using the US-ASCII character set.
+      @since 4.03.0 (4.05.0 in BytesLabels) *)
+
+(*++ *)
+  val to_petscii: bytes -> bytes
+  (** Return a copy of the argument, with each byte translated from the US-ASCII
+      coding to the PETSCII one, according to the following mapping:
+      - if the byte is a letter, it is mapped to the {b typeable} character with
+      the corresponding glyph;
+      - if the byte is ['_'], ['|'], or ['\163'] (Latin-1 Pound sign), it is
+      mapped to ['\164'] (LOWER ONE EIGHTH BLOCK [▁]), ['\221'] (BOX DRAWINGS
+      LIGHT VERTICAL [│], or ['\092'] (POUND SIGN [£]), respectively;
+      - otherwise, the byte is mapped to itself. *)
+
+  val of_petscii: bytes -> bytes
+  (** Return a copy of the argument, with each byte translated from the US-ASCII
+      coding to the PETSCII one, according to the following mapping:
+      - if the byte is a letter, it is mapped to the ASCII character with the
+      corresponding glyph;
+      - if the byte is ['\164'] (LOWER ONE EIGHTH BLOCK [▁]), ['\221'] (BOX
+      DRAWINGS LIGHT VERTICAL [│], or ['\092'] (POUND SIGN [£]), it is mapped to
+      ['_'], ['|'], or ['\163'] (Latin-1 Pound sign), respectively;
+      - otherwise, the byte is mapped to itself. *)
+
+end
+(* ++*)
 
 type t = bytes
 (** An alias for the type of byte sequences. *)

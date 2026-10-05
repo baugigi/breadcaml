@@ -88,8 +88,8 @@ let str_of_arg = function
   | Num n -> Printf.sprintf arg_fmt n
   | Ptr p -> Printf.sprintf lbl_fmt p
   | Ptrs ps ->
-     let args = Array.(to_list (map (Printf.sprintf lbl_fmt) ps)) in
-     "[" ^ String.concat arg_sep args ^ "]"
+    let args = Array.(to_list (map (Printf.sprintf lbl_fmt) ps)) in
+    "[" ^ String.concat arg_sep args ^ "]"
 
 let str_of_lbl label = Printf.sprintf lbl_fmt label
 
@@ -100,15 +100,15 @@ let emit_asm oc label instr args =
   let len_cmd = String.length cmd in
   match label with
   | Some lbl ->
-     output_string oc ("\n" ^ str_of_lbl lbl ^... cmd);
-     col := tab + len_cmd
+    output_string oc ("\n" ^ str_of_lbl lbl ^... cmd);
+    col := tab + len_cmd
   | None ->
-     let new_col = !col + String.length arg_sep + len_cmd in
-     if new_col <= max_col
-     then (output_string oc (cmd_sep ^ cmd);
-           col := new_col)
-     else (output_string oc ("\n" ^ "" ^... cmd);
-           col := tab + len_cmd)
+    let new_col = !col + String.length arg_sep + len_cmd in
+    if new_col <= max_col
+    then (output_string oc (cmd_sep ^ cmd);
+          col := new_col)
+    else (output_string oc ("\n" ^ "" ^... cmd);
+          col := tab + len_cmd)
 
 let export oc code =
   let module AdrSet = Set.Make(Int) in
@@ -121,32 +121,32 @@ let export oc code =
     let label = if AdrSet.mem adr pointers then Some adr else None in
     match instr with
     | ACC n | APPLY n | ASSIGN n | CONSTINT n | ENVACC n | GETFIELD n
-      | GETFLOATFIELD n | GETGLOBAL n | GRAB n | OFFSETCLOSURE n
-      | OFFSETINT n | OFFSETREF n | POP n | PUSHACC n | PUSHCONSTINT n
-      | PUSHENVACC n | PUSHGETGLOBAL n | PUSHOFFSETCLOSURE n | RETURN n
-      | SETFIELD n | SETFLOATFIELD n | SETGLOBAL n | APPTERM1 n
-      | APPTERM2 n | APPTERM3 n | ATOM n | MAKEBLOCK1 n | MAKEBLOCK2 n
-      | MAKEBLOCK3 n | PUSHATOM n | MAKEFLOATBLOCK n | C_CALL1 n
-      | C_CALL2 n | C_CALL3 n | C_CALL4 n | C_CALL5 n ->
-       emit_asm oc label instr [Num n]
+    | GETFLOATFIELD n | GETGLOBAL n | GRAB n | OFFSETCLOSURE n
+    | OFFSETINT n | OFFSETREF n | POP n | PUSHACC n | PUSHCONSTINT n
+    | PUSHENVACC n | PUSHGETGLOBAL n | PUSHOFFSETCLOSURE n | RETURN n
+    | SETFIELD n | SETFLOATFIELD n | SETGLOBAL n | APPTERM1 n
+    | APPTERM2 n | APPTERM3 n | ATOM n | MAKEBLOCK1 n | MAKEBLOCK2 n
+    | MAKEBLOCK3 n | PUSHATOM n | MAKEFLOATBLOCK n | C_CALL1 n
+    | C_CALL2 n | C_CALL3 n | C_CALL4 n | C_CALL5 n ->
+      emit_asm oc label instr [Num n]
     | BRANCH ptr | BRANCHIF ptr | BRANCHIFNOT ptr | PUSHTRAP ptr
-      | PUSH_RETADDR ptr ->
-       emit_asm oc label instr [Ptr ptr]
+    | PUSH_RETADDR ptr ->
+      emit_asm oc label instr [Ptr ptr]
     | BEQ (n, ptr) | BGEINT (n, ptr) | BGTINT (n, ptr) | BLEINT (n, ptr)
-      | BLTINT (n, ptr) | BNEQ (n, ptr) | BUGEINT (n, ptr) | BULTINT (n, ptr)
-      | CLOSURE (n, ptr) ->
-       emit_asm oc label instr [Num n; Ptr ptr]
+    | BLTINT (n, ptr) | BNEQ (n, ptr) | BUGEINT (n, ptr) | BULTINT (n, ptr)
+    | CLOSURE (n, ptr) ->
+      emit_asm oc label instr [Num n; Ptr ptr]
     | APPTERM (n, m) | MAKEBLOCK (n, m) | C_CALLN (n, m)
-      | GETGLOBALFIELD (n, m) | PUSHGETGLOBALFIELD (n, m) ->
-       emit_asm oc label instr [Num n; Num m]
+    | GETGLOBALFIELD (n, m) | PUSHGETGLOBALFIELD (n, m) ->
+      emit_asm oc label instr [Num n; Num m]
     | GETPUBMET (tag, _) ->
-       emit_asm oc label instr [Num (tag land 0x7FFF)]
+      emit_asm oc label instr [Num (tag land 0x7FFF)]
     | SWITCH (n, ptrs) ->
-       emit_asm oc label instr [Num (n land 0xFFFF); Ptrs ptrs]
+      emit_asm oc label instr [Num (n land 0xFFFF); Ptrs ptrs]
     | CLOSUREREC (f, v, o, t) ->
-       emit_asm oc label instr [Num f; Num v; Ptr o; Ptrs t]
+      emit_asm oc label instr [Num f; Num v; Ptr o; Ptrs t]
     | _instr_with_no_args_ ->
-       emit_asm oc label instr [] in
+      emit_asm oc label instr [] in
   output_string oc "\ncaml_program\n";
   Array.iteri export_lbl_instr code;
   output_string oc "\ncaml_program_end\n"

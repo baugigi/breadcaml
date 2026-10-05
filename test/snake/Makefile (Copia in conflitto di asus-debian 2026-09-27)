@@ -1,15 +1,14 @@
-
 SHELL := /bin/bash
-
 TARGET := snake.prg
 SOURCE := iOtools snake
 EXTLIB := iOtools
-#COMP = bcamlopt
-COMP = bcamlc
-FLAGS = -db snake.db
+#COMP := bcamlopt
+COMP := bcamlc
+FLAGS := -db snake.db
+ACMEFLAGS := -r snake.rep
 
 $(TARGET): $(EXTLIB:=.asm) $(EXTLIB:=.c) $(SOURCE:=.cmo)
-	$(COMP) $(FLAGS) -o $@ $^ -- -r snake.rep
+	$(COMP) $(FLAGS) -o $@ $^ -- $(ACMEFLAGS)
 
 %.cmo: %.ml $(SOURCE:=.cmi)
 	$(COMP) $(FLAGS) -c $<

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # depends.asm generator for stdlib_*.asm routines.
 # See <project_root>/src/asm/CODING_RULES

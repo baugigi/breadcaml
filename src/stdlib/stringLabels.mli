@@ -242,12 +242,19 @@ val exists : f:(char -> bool) -> string -> bool
     [p].
     @since 4.13.0 *)
 
+(*-- Moved to the Ascii module
 val trim : string -> string
 (** [trim s] is [s] without leading and trailing whitespace. Whitespace
     characters are: [' '], ['\x0C'] (form feed), ['\n'], ['\r'], and ['\t'].
-
     @since 4.00.0 *)
-
+--*)
+(*++ New implementation based on PETSCII whitespace characters *)
+val trim : string -> string
+(** [trim s] is [s] without leading and trailing whitespace.  Whitespace
+    characters are the PETSCII characters [' '] and ['\r'].  Use {!Ascii.trim}
+    to trim according to ASCII whitespace characters. *)
+(* ++*)
+(*-- Moved to the "Deprecated functions" section, copied to Ascii module
 val escaped : string -> string
 (** [escaped s] is [s] with special characters represented by escape
     sequences, following the lexical conventions of OCaml.
@@ -261,7 +268,7 @@ val escaped : string -> string
 
     @raise Invalid_argument if the result is longer than
     {!Sys.max_string_length} bytes. *)
-
+--*)
 val uppercase_ascii : string -> string
 (** [uppercase_ascii s] is [s] with all lowercase letters
     translated to uppercase, using the US-ASCII character set.

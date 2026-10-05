@@ -17,5 +17,5 @@ test:
 
 .PHONY: clean
 clean:
-	rm -f *.{cm?,prg}
-	rm -f */*.{cm?,prg}
+	find . -type f '(' -name '*.cm?' -o -name '*.db' -o -name '*.prg' ')' \
+	       -delete

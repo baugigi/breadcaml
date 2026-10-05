@@ -32,31 +32,31 @@ let ppx _argv =
 let () =
   match Sys.argv with
   | [| self; dbfile; infile; outfile |] ->
-     let fd = Unix.(openfile dbfile [O_RDWR; O_CREAT] 0o666) in
-     Unix.(lockf fd F_LOCK 0);
-     begin (* critical section *)
-       if Unix.((fstat fd).st_size) > 0 then
-         PolyvarPPX.db_load (Unix.in_channel_of_descr fd);
-       run_main (fun _ -> ppx [| self; infile; outfile |]);
-       ignore Unix.(lseek fd 0 SEEK_SET);
-       Unix.ftruncate fd 0;
-       PolyvarPPX.db_save (Unix.out_channel_of_descr fd);
-     end; (* critical section *)
-     Unix.(lockf fd F_ULOCK 0);
-     Unix.close fd
+    let fd = Unix.(openfile dbfile [O_RDWR; O_CREAT] 0o666) in
+    Unix.(lockf fd F_LOCK 0);
+    begin (* critical section *)
+      if Unix.((fstat fd).st_size) > 0 then
+        PolyvarPPX.db_load (Unix.in_channel_of_descr fd);
+      run_main (fun _ -> ppx [| self; infile; outfile |]);
+      ignore Unix.(lseek fd 0 SEEK_SET);
+      Unix.ftruncate fd 0;
+      PolyvarPPX.db_save (Unix.out_channel_of_descr fd);
+    end; (* critical section *)
+    Unix.(lockf fd F_ULOCK 0);
+    Unix.close fd
   | [| _; opt; dbfile |] when List.mem opt ["-d"; "--dump"] ->
-     Unix.handle_unix_error
-       (fun file -> 
+    Unix.handle_unix_error
+      (fun file -> 
          let fd = Unix.(openfile file [O_RDONLY; O_NONBLOCK] 0o666) in
          PolyvarPPX.db_dump (Unix.in_channel_of_descr fd) stdout;
          Unix.close fd)
-       dbfile
+      dbfile
   | [| _; opt |] when List.mem opt ["-h"; "-help"; "--help"] ->
-     usage ();
-     exit 0
+    usage ();
+    exit 0
   | _ ->
-     Printf.eprintf
-       "Illegal option or argument in command line:\n'%s'\n\n%!"
-       (String.concat " " (Array.to_list Sys.argv));
-     usage ();
-     exit 1
+    Printf.eprintf
+      "Illegal option or argument in command line:\n'%s'\n\n%!"
+      (String.concat " " (Array.to_list Sys.argv));
+    usage ();
+    exit 1

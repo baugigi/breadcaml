@@ -1,4 +1,4 @@
-SHELL = /bin/bash
+SHELL = /usr/bin/env bash
 CONF = ../../etc/Makefile.conf
 include $(if $(wildcard $(CONF)),$(CONF),$(error \
 	Please run «./configure [options...]» from the main source directory))
@@ -40,6 +40,9 @@ CPROTO := stdlib__nonstd.c
 # Add here other stuff to be archived into libcamlrun.a
 LIBRUN := $(CPROTO:.c=.o)
 
+# Preprocessor
+#PPX := -ppx "../../bin/bcamlppx stdlib.db"
+
 .PHONY: all
 all: lib man
 
@@ -59,51 +62,65 @@ libcamlrun.a: $(CMI) $(CMO) $(LIBRUN) stdlib.cma
 	ar rs $@ $^
 
 stdlib.cma: $(CMO)
-	$(OCAMLC) -nostdlib -a $^ -o $@
+	$(OCAMLC) $(PPX) -nostdlib -a $^ -o $@
 
 stdlib.cmo: stdlib.ml stdlib.cmi
-	$(OCAMLC) -absname -no-alias-deps -nostdlib -nopervasives -c -w -49 $<
+	$(OCAMLC) $(PPX) -absname -no-alias-deps -nostdlib -nopervasives -c -w -49 $<
 
-# REMOVED prerequisite: camlinternalFormatBasics.cmi
 stdlib.cmi: stdlib.mli #camlinternalFormatBasics.cmi
-	$(OCAMLC) -absname -no-alias-deps -nostdlib -nopervasives -c -w -49 $<
+	$(OCAMLC) $(PPX) -absname -no-alias-deps -nostdlib -nopervasives -c -w -49 $<
 
-# REMOVED targets: camlinternalFormatBasics.{cmo, cmi}
 #camlinternalFormatBasics.cmo: camlinternalFormatBasics.ml camlinternalFormatBasics.cmi
-# 	$(OCAMLC) -nostdlib -nopervasives -c $<
-#
+#	$(OCAMLC) -nostdlib -nopervasives -c $<
+
 #camlinternalFormatBasics.cmi: camlinternalFormatBasics.mli
-# 	$(OCAMLC) -nostdlib -nopervasives -c $<
+#	$(OCAMLC) -nostdlib -nopervasives -c $<
 
 camlinternal%.cmo: camlinternal%.ml camlinternal%.cmi
-	$(OCAMLC_UNSAFE) -absname -nostdlib -c $<
+	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $<
 
 camlinternal%.cmi: camlinternal%.mli
-	$(OCAMLC_UNSAFE) -absname -nostdlib -c $<
+	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $<
 
 std_exit.cmo: std_exit.ml std_exit.cmi
-	$(OCAMLC_UNSAFE) -absname -nostdlib -c $<
+	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $<
 
 std_exit.cmi: std_exit.mli
-	$(OCAMLC_UNSAFE) -absname -nostdlib -c $<
+	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $<
 
 $(PFX)%Labels.cmo: %Labels.ml $(PFX)%Labels.cmi
-	$(OCAMLC_UNSAFE) -nostdlib -nolabels -c -w -3 $< -o $@
+	$(OCAMLC_UNSAFE) $(PPX) -nostdlib -nolabels -c -w -3 $< -o $@
 
 $(PFX)%Labels.cmi: %Labels.mli
-	$(OCAMLC_UNSAFE) -nostdlib -nolabels -c $< -o $@
+	$(OCAMLC_UNSAFE) $(PPX) -nostdlib -nolabels -c $< -o $@
 
 $(PFX)float.cmo: float.ml $(PFX)float.cmi
-	$(OCAMLC_UNSAFE) -absname -nostdlib -nolabels -c $< -o $@
+	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -nolabels -c $< -o $@
 
 $(PFX)float.cmi: float.mli
-	$(OCAMLC_UNSAFE) -absname -nostdlib -nolabels -c $< -o $@
+	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -nolabels -c $< -o $@
 
 $(PFX)%.cmo: %.ml $(PFX)%.cmi
-	$(OCAMLC_UNSAFE) -absname -nostdlib -c $< -o $@
+	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $< -o $@
 
 $(PFX)%.cmi: %.mli
-	$(OCAMLC_UNSAFE) -absname -nostdlib -c $< -o $@
+	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $< -o $@
+
+
+# Automatic (re)generation of unlabeled modules and MoreLabels
+TPL  := templates
+SYNC := ../../tools/sync_stdlib_docs
+bytes.mli list.mli string.mli array.mli: %.mli: %Labels.mli
+	$(SYNC) $@
+hashtbl.mli map.mli set.mli: %.mli: $(TPL)/%.template.mli
+	$(SYNC) $@
+float.mli: $(TPL)/floatarraylabeled.template.mli $(TPL)/float.template.mli
+	$(SYNC) $@
+moreLabels.mli: $(TPL)/moreLabels.template.mli $(TPL)/hashtbl.template.mli \
+		$(TPL)/map.template.mli $(TPL)/set.template.mli \
+		$(TPL)/1.mli $(TPL)/2.mli $(TPL)/3.mli $(TPL)/4.mli
+	$(SYNC) $@
+
 
 %.$(MAN3EXT):
 	$(OCAMLDOC) -hide-warnings -man -man-mini -man-suffix $(MAN3EXT) \
@@ -111,4 +128,4 @@ $(PFX)%.cmi: %.mli
 
 .PHONY: clean
 clean:
-	rm -f *.{cmi,cmo,cma,o,$(MAN3EXT)} $(CPROTO) libcamlrun.a
+	rm -f *.{cmi,cmo,cma,o,$(MAN3EXT)} $(CPROTO) libcamlrun.a stdlib.db

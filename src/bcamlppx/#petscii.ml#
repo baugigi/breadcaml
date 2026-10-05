@@ -236,14 +236,16 @@ end
     letters are mapped to PETSCII codes 193 to 218, not to codes 97 to 122,
     which are duplicates of the previous ones but cannot be produced using the
     C64 keyboard);
-    - if [ch] is ['_'] or ['|'], it is mapped to the PETSCII character with code
-    164, 221, or 92, respectively;
+    - if [ch] is ['_'], ['|'], or ['\163'] (the ISO-8859-1 Latin1 Pound sign),
+    it is mapped to the PETSCII character with code 164, 221, or 92,
+    respectively;
     - otherwise, [ch] is mapped to the PETSCII character with the same code. *)
 let translate_char ch = match ch with
-  | 'A' .. 'Z' -> (Char.(chr (code ch + 0x80)))	(* 65..90 -> 193..218 *)
-  | 'a' .. 'z' -> (Char.(chr (code ch - 0x20)))	(* 97..122 -> 65..90 *)
+  | 'A' .. 'Z' -> (Char.(chr (code ch + 0x80)))
+  | 'a' .. 'z' -> (Char.(chr (code ch - 0x20)))
   | '_' -> CommonGlyph.under
   | '|' -> CommonGlyph.cvl
+  | '\163' -> CommonGlyph.pound
   | _ -> ch
 
 

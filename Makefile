@@ -41,5 +41,6 @@ fullinstall: install clean
 
 .PHONY: gitclean
 gitclean: clean
-	find . -path '*/.git' -prune -o -type f -name '*~' -exec rm {} '+'
+	find . -path '*/.git' -prune -o -type f '(' -name '*~' -o -name '*.html' ')' -exec rm {} '+'
+	rm -f src/stdlib/{bytes,list,string,hashtbl,map,set,array,float,moreLabels}.mli
 	rm -f etc/Makefile.conf

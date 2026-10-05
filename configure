@@ -1,9 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-[ "$(realpath /proc/$$/exe)" = "$(which bash)" ] || {
-    echo "This script requires the Bash shell." 1>&2
-    exit 1
-}
 [ "$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd -P)" = "$(pwd -P)" ] || {
     echo "Please run this script from its own directory." 1>&2
     exit 1
@@ -80,8 +76,8 @@ function message { # $1: message type; $2: message text
 function install_acme { # $1: [rename|retain] (optional)
     [[ -z $ACME_INSTALL ]] && {
         message cont "This script can install the BreadCaml-compatible release"
-	message cont "$ACME_REL in '$BINDIR'."
-	[[ $1 ]] && message cont "The existing release will be ${1%e}ed."
+        message cont "$ACME_REL in '$BINDIR'."
+        [[ $1 ]] && message cont "The existing release will be ${1%e}ed."
         message ask "Do you want to proceed? [Y/n] "
         read ACME_INSTALL
     }
@@ -215,9 +211,9 @@ if [[ -x $BINDIR/acme ]] || COMMANDS[acme]="$(which acme 2>/dev/null)"; then
     else
         message warn "incompatible version ${COMMANDS[acme]} $REL,$DATE"
 	if [[ ${COMMANDS[acme]} == $BINDIR/acme ]]; then
-            install_acme rename
+        install_acme rename
 	else
-	    install_acme retain
+        install_acme retain
 	fi
     fi
 else

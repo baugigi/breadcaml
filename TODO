@@ -14,28 +14,6 @@
 - caml_stack_ensure_capacity deve alzare Stack_overflow se stack
   insufficiente (ora non fa nulla)
 
-- un accesso allo stack ora si fa così:
-
-  LDA (SP),Y
-  STA lo_dest
-  INY
-  LDA (SP),Y
-  STA hi_dest
-  
-  si può velocizzare di 3 cicli spezzando lo stack in due porzioni di
-  stessa dimensione:
-  
-  LDA (SPl),Y
-  STA lo_dest
-  LDA (SPh),Y
-  STA hi_dest
-  
-  il test di overflow è banale (basta sostituire SP con SPh nel test
-  attuale); gli incrementi dei puntatori restano di pari costo (un
-  doppio incremento di SP diventa un singolo incremento di SPl e
-  SPh). VEDERE QUANTO CONVIENE (direi moltom visto l'utilizzo dello
-  stack).
-
 - si potrebbe introdure uno STACK CON ALLOCAZIONE DINAMICA nello heap!
   Sarebbe adatto anche per la concorrenza: nessun problema per il GC
   (nello stack ci sono values o ptr al codice out-of-heap).  QuandoSP
@@ -53,7 +31,9 @@
   primitives).
   
 * NATIVE CODE:
-  le routine brevi possono essere dichiarate come macro e se ne può fare l'inlining
+
+  le routine brevi possono essere dichiarate come macro e se ne può
+  fare l'inlining
   
 * TUTTE LE PRIMITIVE E CODICE DI Stdlib:
 

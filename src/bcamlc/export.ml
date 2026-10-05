@@ -18,7 +18,7 @@ module Includes = struct
   let verbatim ch ?(dir = Config.libdir ^ "/") incl_list =
     let rec copy in_ch = 
       try output_string ch (input_line in_ch ^ "\n");
-          copy in_ch
+        copy in_ch
       with End_of_file -> close_in in_ch in
     List.iter (fun file -> copy (open_in (dir ^ file))) incl_list
 end

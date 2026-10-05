@@ -3,7 +3,7 @@
    command -c [OCAMLC_OPTIONS] FILE...
    command (-where|-ocamlc|-acme|-version|-help|--help)
    OPTIONS:[-db dbfile][-mem address][-stack npages][-showmem][-verbose]
- *)
+*)
 
 (* Some useful operators *)
 let ( ^+ ) s1 s2 = s1 ^ " " ^ s2        (* "str1" ^+ "str2" is "str1 str2" *)
@@ -79,13 +79,13 @@ let usage =
       See also <https://github/baugigi/breadcaml> and the %s(1) man page.\n\
       \n\
       FILE type is determined by extension:\n\
-      \  .ml:  OCaml compilation unit, implementation source code\n\
-      \  .mli: OCaml compilation unit, interface source code\n\
-      \  .cmo: OCaml compiled bytecode\n\
-      \  .cma: OCaml bytecode library\n\
-      \  .c:   C source code\n\
-      \  .o:   C object code\n\
-      \  .asm: ACME assembly source code\n\n\
+     \  .ml:  OCaml compilation unit, implementation source code\n\
+     \  .mli: OCaml compilation unit, interface source code\n\
+     \  .cmo: OCaml compiled bytecode\n\
+     \  .cma: OCaml bytecode library\n\
+     \  .c:   C source code\n\
+     \  .o:   C object code\n\
+     \  .asm: ACME assembly source code\n\n\
       Options:")
     me me me comp_desc (Filename.basename me)
 
@@ -93,53 +93,53 @@ let usage =
 let speclist =
   let nl_tab s = "\n" ^ String.make 18 ' ' ^ s in
   Arg.[
-      "-o", Set_string o_arg,
-      "<outfile>"
-      ^ " Specify the name of the output file. If the -o option is not"
-      ^ nl_tab "present, <outfile> defaults to the last FILE specified,"
-      ^ nl_tab "without its extension (if present), and ‘.prg’ appended."
+    "-o", Set_string o_arg,
+    "<outfile>"
+    ^ " Specify the name of the output file. If the -o option is not"
+    ^ nl_tab "present, <outfile> defaults to the last FILE specified,"
+    ^ nl_tab "without its extension (if present), and ‘.prg’ appended."
     ; 
-      "-c", Set compile_only,
-      " Compile only: run ocamlc with [OCAMLC_OPTIONS] on given FILEs."
-      ^ nl_tab "The -c and -o options are incompatible."
+    "-c", Set compile_only,
+    " Compile only: run ocamlc with [OCAMLC_OPTIONS] on given FILEs."
+    ^ nl_tab "The -c and -o options are incompatible."
     ;
-      "-mem", Set_int mem_arg,
-      "<address>"
-      ^ " Set the maximum available memory address for the executable."
-      ^ nl_tab (Printf.sprintf "Default: %#4x (%5d)." !mem_arg !mem_arg)
+    "-mem", Set_int mem_arg,
+    "<address>"
+    ^ " Set the maximum available memory address for the executable."
+    ^ nl_tab (Printf.sprintf "Default: %#4x (%5d)." !mem_arg !mem_arg)
     ;
-      "-stack", Set_int stack_arg,
-      "<pages>"
-      ^ " Define the stack size, in 256-byte pages."
-      ^ nl_tab (Printf.sprintf "Default: %d pages." !stack_arg)
+    "-stack", Set_int stack_arg,
+    "<pages>"
+    ^ " Define the stack size, in 256-byte pages."
+    ^ nl_tab (Printf.sprintf "Default: %d pages." !stack_arg)
     ;
-      "-showmem", Set showmem,
-      " Show information on memory allocation."
+    "-showmem", Set showmem,
+    " Show information on memory allocation."
     ;
-      "-db", Set_string db_arg,
-      "<dbfile>"
-      ^ " Set the pathname for the BreadCaml preprocessor database. If the"
-      ^ nl_tab "-db option is not present, <dbfile> defaults to <outfile>,"
-      ^ nl_tab "without its extension (if present), and ‘.db’ appended."
+    "-db", Set_string db_arg,
+    "<dbfile>"
+    ^ " Set the pathname for the BreadCaml preprocessor database. If the"
+    ^ nl_tab "-db option is not present, <dbfile> defaults to <outfile>,"
+    ^ nl_tab "without its extension (if present), and ‘.db’ appended."
     ;
-      "-verbose", Set verbose,
-      " Verbose mode."
+    "-verbose", Set verbose,
+    " Verbose mode."
     ;
-      "-where", Unit (show Where),
-      " Show the location of the BreadCaml standard library and exit."
+    "-where", Unit (show Where),
+    " Show the location of the BreadCaml standard library and exit."
     ;
-      "-ocamlc", Unit (show Ocamlc),
-      " Show the location of the OCaml bytecode compiler and exit."
+    "-ocamlc", Unit (show Ocamlc),
+    " Show the location of the OCaml bytecode compiler and exit."
     ;
-      "-acme", Unit (show Acme),
-      " Show the location of the ACME cross-assembler and exit."
+    "-acme", Unit (show Acme),
+    " Show the location of the ACME cross-assembler and exit."
     ;
-      "-version", Unit (show Version),
-      " Show version and exit."
+    "-version", Unit (show Version),
+    " Show version and exit."
     ;
-      "--", Rest_all rest_all,
-      "ACME_OPTIONS Pass the options following ‘--’ to acme.\n"
-      ^ "  OCAMLC_OPTIONS  Pass any options not listed above to ocamlc."
+    "--", Rest_all rest_all,
+    "ACME_OPTIONS Pass the options following ‘--’ to acme.\n"
+    ^ "  OCAMLC_OPTIONS  Pass any options not listed above to ocamlc."
   ]
 
 (* Add to ocamlc_opts any options not listed above and not following '--' *)
@@ -150,11 +150,11 @@ let rec dyn_add_ocamlc_opts i accu =
     match Sys.argv.(i) with
     | "--" | "-help" | "--help" -> accu
     | opt when opt.[0] = '-'
-               && not (List.exists (fun (o, _, _) -> o = opt) speclist) ->
-       let add opt () = ocamlc_opts := opt :: !ocamlc_opts in
-       dyn_add_ocamlc_opts (succ i) ((opt, Arg.Unit(add opt), "") :: accu)
+            && not (List.exists (fun (o, _, _) -> o = opt) speclist) ->
+      let add opt () = ocamlc_opts := opt :: !ocamlc_opts in
+      dyn_add_ocamlc_opts (succ i) ((opt, Arg.Unit(add opt), "") :: accu)
     | _ ->
-       dyn_add_ocamlc_opts (succ i) accu
+      dyn_add_ocamlc_opts (succ i) accu
 
 (* Check all arguments according to a checklist *)
 let check_args () =
@@ -186,37 +186,37 @@ let parse () =
   match !show_opt with
   | Some info -> Show info
   | None ->
-     check_args ();    
-     let last_file =
-       Filename.remove_extension (List.hd !input_files (* cannot fail *) ) in
-     ocamlc_opts := List.rev !ocamlc_opts;
-     input_files := List.rev !input_files;
-     let dbfile = match !db_arg, !o_arg with
-       | "", "" -> last_file ^ ".db"
-       | "", o_arg -> (Filename.remove_extension o_arg) ^ ".db"
-       | _ , _  -> !db_arg in
-     let externs, ocamlc_files =
-       List.partition (fun f -> Filename.check_suffix f ".asm") !input_files in
-     let ocamlc_cmdline =
-       "CAMLLIB=" ^ Filename.quote Config.libdir
-       ^+ Filename.quote Config.ocamlc
-       ^+ "-custom"
-       ^+ (if !verbose then "-verbose" else "")
-       ^+ (if !compile_only then "-c" else "")
-       ^+ "-ppx"
-       ^+ Filename.quote (Config.bindir ^ "/bcamlppx" ^+ dbfile)
-       ^+ String.concat " "
-            (!ocamlc_opts @ List.map Filename.quote ocamlc_files) in
-     if !compile_only then Compileonly { ocamlc_cmdline; verbose = !verbose }
-     else
-       let prgfile = if !o_arg = "" then last_file ^ ".prg" else !o_arg in
-       let acme_cmdline =
-         Filename.quote Config.acme
-         ^+ (if !showmem then "-Dcaml_SHOWMEM=1" else "")
-         ^+ (if !verbose then "-v9" else "")
-         ^+ String.concat " " !acme_opts in
-       Fullprocess { ocamlc_cmdline; acme_cmdline; prgfile; externs;
-                     top_of_mem  = !mem_arg; stack_pages = !stack_arg;
-                     verbose = !verbose }
+    check_args ();    
+    let last_file =
+      Filename.remove_extension (List.hd !input_files (* cannot fail *) ) in
+    ocamlc_opts := List.rev !ocamlc_opts;
+    input_files := List.rev !input_files;
+    let dbfile = match !db_arg, !o_arg with
+      | "", "" -> last_file ^ ".db"
+      | "", o_arg -> (Filename.remove_extension o_arg) ^ ".db"
+      | _ , _  -> !db_arg in
+    let externs, ocamlc_files =
+      List.partition (fun f -> Filename.check_suffix f ".asm") !input_files in
+    let ocamlc_cmdline =
+      "CAMLLIB=" ^ Filename.quote Config.libdir
+      ^+ Filename.quote Config.ocamlc
+      ^+ "-custom"
+      ^+ (if !verbose then "-verbose" else "")
+      ^+ (if !compile_only then "-c" else "")
+      ^+ "-ppx"
+      ^+ Filename.quote (Config.bindir ^ "/bcamlppx" ^+ dbfile)
+      ^+ String.concat " "
+        (!ocamlc_opts @ List.map Filename.quote ocamlc_files) in
+    if !compile_only then Compileonly { ocamlc_cmdline; verbose = !verbose }
+    else
+      let prgfile = if !o_arg = "" then last_file ^ ".prg" else !o_arg in
+      let acme_cmdline =
+        Filename.quote Config.acme
+        ^+ (if !showmem then "-Dcaml_SHOWMEM=1" else "")
+        ^+ (if !verbose then "-v9" else "")
+        ^+ String.concat " " !acme_opts in
+      Fullprocess { ocamlc_cmdline; acme_cmdline; prgfile; externs;
+                    top_of_mem  = !mem_arg; stack_pages = !stack_arg;
+                    verbose = !verbose }
 
 

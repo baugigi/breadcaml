@@ -1,2 +1,6 @@
-bcamlc: the interpreter is bugged.
+- Bytecode files crash frequently, need to recheck opcode routines.
+
+- Some runtime and stdlib asm routines use gc-unprotected pointers; need to strictly enforce a policy to protect pointers which must be valid before and after a collection (e.g., pushing them onto the stack).
+
+- Many primitives to be implemented.
 

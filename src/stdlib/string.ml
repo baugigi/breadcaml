@@ -118,7 +118,8 @@ let escaped s =
     if i >= n then s else
       match unsafe_get s i with
       | '\"' | '\\' | '\000'..'\031' | '\127'.. '\255' ->
-          bts (B.escaped (bos s))
+(*--      bts (B.escaped (bos s)) --*)
+(*++ *)   bts (B.Ascii.escaped (bos s)) (* ++*)        
       | _ -> escape_if_needed s n (i+1)
   in
   escape_if_needed s (length s) 0
@@ -200,7 +201,7 @@ let rcontains_from s i c =
     invalid_arg "String.rcontains_from / Bytes.rcontains_from"
   else
     try ignore (rindex_rec s i c); true with Not_found -> false
-
+(*--  
 let uppercase_ascii s =
   B.uppercase_ascii (bos s) |> bts
 let lowercase_ascii s =
@@ -209,6 +210,17 @@ let capitalize_ascii s =
   B.capitalize_ascii (bos s) |> bts
 let uncapitalize_ascii s =
   B.uncapitalize_ascii (bos s) |> bts
+--*)
+(*++ *)
+let uppercase_petscii s = B.uppercase_petscii (bos s) |> bts
+let lowercase_petscii s = B.lowercase_petscii (bos s) |> bts
+let capitalize_petscii s = B.capitalize_petscii (bos s) |> bts
+let uncapitalize_petscii s = B.uncapitalize_petscii (bos s) |> bts
+let uppercase_ascii = uppercase_petscii
+let lowercase_ascii = lowercase_petscii
+let capitalize_ascii = capitalize_petscii
+let uncapitalize_ascii = uncapitalize_petscii
+(* ++*)
 
 (* duplicated in bytes.ml *)
 let starts_with ~prefix s =

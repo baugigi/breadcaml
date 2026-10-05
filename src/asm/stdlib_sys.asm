@@ -6,17 +6,16 @@
 caml_nonstd_mem_peek
         ;; Sys.mem_peek lo hi returns the content of memory location at address
         ;; 256*hi+lo as an integer; lo, hi are taken modulo 256.
-        LSR ACCU + 1
-        ROR ACCU
         INY
         LDA (SP),Y
         LSR
         DEY
         LDA (SP),Y
         ROR
+        ROR ACCU + 1
         STA ACCU + 1
+        ROR ACCU
         LDA (ACCU),Y
-        SEC
         ROL
         STA ACCU
         STY ACCU + 1

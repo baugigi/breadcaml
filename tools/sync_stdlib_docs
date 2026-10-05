@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+
+MLI=(
+  array.mli
+  bytes.mli
+  float.mli
+  hashtbl.mli
+  list.mli
+  map.mli
+  moreLabels.mli
+  set.mli
+  string.mli
+)
+
+[[ $1 = -h || $1 = --help ]] && {
+  cat >&2 <<-EOF
+	Usage: $0 [FILE...]
+
+	Synchronize the interface files for those standard library modules
+	that are available in both labelled and unlabelled versions, using
+	the labelled version and/or the templates in src/stdlib/templates.
+
+	FILE... can be one or more of the following:
+	$(printf '  %s\n' ${MLI[@]})
+	If no FILE is specified, all of them are generated.
+	EOF
+  exit 0
+}
+
+# If no args, set ARGV to generate all .mli files
+[[ $# -eq 0 ]] && set -- "${MLI[@]}"
+
+# Save the current workdir, then cd stdlib 
+PWD="$(pwd)"
+LIB="$(dirname $0)/../src/stdlib"
+TPL=templates
+[[ -d $LIB/$TPL ]] || { echo "I'm lost!" >&2; exit 1; }
+cd "$LIB"
+
+
+## sed scripts
+
+# Regexp
+LBL="[a-z_]+"          # label
+NXT="[A-Za-z(']"       # char following «label:» (should preserve comments)
+MOD="[A-Z][A-Za-z_]*"  # module identifier
+
+# Deletions
+UNMARK="/START-OF-TEMPLATE/d"                       # marker line
+DEL_LBL1="s/ $LBL:($NXT)/ \1/g"                     # "lbl:" after ' '
+DEL_LBL2="s/\($LBL:($NXT)/(\1/g"                    # "lbl:" after '('
+DEL_TILDE=":a;s/ ~($LBL)([] ])/ \1\2/;ta"           # "~" preceding label
+DEL_MOD1="s/($MOD)Labels\.(.*)~$LBL:/\1Labels.\2/g" # "Labels" in module ide and
+DEL_MOD2="s/($MOD)Labels\./\1./g"                   #  following "~lbl:", if any
+
+# Compound commands
+unlabel="$DEL_LBL1;$DEL_TILDE"
+dbl_unlabel="$DEL_LBL1;$DEL_LBL2;$DEL_TILDE;$UNMARK"
+mod_unlabel="$DEL_LBL1;$DEL_TILDE;$DEL_MOD1;$DEL_MOD2"
+indent='s/^(.+)$/  \1/'
+tailmark="0,$UNMARK"
+
+# Filter: replace a string (BRE) with the content of a file
+subst() { #$1:STRING; $2:FILE
+  local escaped="$(sed -e 's/[\\/&]/\\&/g;$!s/$/\\/' "$2")"
+  sed -e "s/$1/$escaped/"
+}
+
+
+## Generation of .mli files
+
+while [[ -n $1 ]]; do
+  case "$1" in
+    bytes.mli | list.mli | string.mli)
+      sed -E "$unlabel" "${1%.mli}Labels.mli" >"$1"
+      ;;
+    hashtbl.mli | map.mli | set.mli)
+      sed -E "$dbl_unlabel" "$TPL/${1%.mli}.template.mli" >"$1"
+      ;;
+    array.mli)
+      sed -E "$mod_unlabel" arrayLabels.mli >"$1"
+      ;;
+    float.mli)
+      fal="$TPL/floatarraylabeled.template.mli"
+      <"$TPL/float.template.mli" \
+      subst FLOATARRAYLAB <(sed -E "$tailmark;$indent" "$fal") |
+      subst FLOATARRAY    <(sed -E "$tailmark;$mod_unlabel;$indent" "$fal") \
+      >"$1"
+      ;;
+    moreLabels.mli)
+      mk='module Make'
+      wt='with type'
+      sd='Seeded'
+      <"$TPL/moreLabels.template.mli" \
+      subst HASHTBL <(sed -E "$tailmark;$indent" "$TPL/hashtbl.template.mli") |
+      subst MAP     <(sed -E "$tailmark;$indent" "$TPL/map.template.mli") |
+      subst SET     <(sed -E "$tailmark;$indent" "$TPL/set.template.mli") |
+      # patches
+      sed -e "s/type statistics =/& Hashtbl.statistics =/" \
+          -e "s/type (!'a, !'b) t/& = ('a, 'b) Hashtbl.t/" |
+      subst "$mk (H : HashedType) : S $wt key = H.t"              "$TPL/1.mli" |
+      subst "$mk$sd (H : ${sd}HashedType) : ${sd}S $wt key = H.t" "$TPL/2.mli" |
+      subst "$mk (Ord : OrderedType) : S $wt key = Ord.t"         "$TPL/3.mli" |
+      subst "$mk (Ord : OrderedType) : S $wt elt = Ord.t"         "$TPL/4.mli" \
+      >"$1"
+      ;;
+    *)
+      echo "Nothing to do with '$1'." >&2
+  esac
+  shift
+done
+cd "$PWD" # Restore the working directory

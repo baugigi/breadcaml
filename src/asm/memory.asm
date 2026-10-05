@@ -11,7 +11,7 @@ caml_memory
         ;; CONSTANTS
 .heap_start     = caml_glob_data                ;start of heap
 .heap_end       = caml_stack_start              ;end of heap + 1
-.halfsz = ((.heap_end - .heap_start) div 4) * 2 ;heap half-size; ensure it's even
+.halfsz = ((.heap_end - .heap_start) div 4) * 2 ;heap halfsize; ensure it's even
 
         ;; VARIABLES
 .CUR_START      !word .heap_start               ;current half
@@ -40,6 +40,7 @@ caml_heap_init
         LDA # >caml_glob_end
         STA HEAP + 1
         RTS
+
 caml_alloc
         ;; Allocate a block; params: A=tag, X=size>0 (no atoms!)
         ;; Return BLK=block's address, A=X=size, Y=0; or raise Out_of_memory.

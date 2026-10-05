@@ -180,10 +180,10 @@ caml_loader
 .fld    !word .str, .id                         ;exception block's fields
         !set caml_std_exn = caml_std_exn + [.fld]
 }
-!set .x=["Out\xa4of\xa4memory","Sys\xa4error","Failure","Invalid\xa4argument"]
-!set .x=.x+["End\xa4of\xa4file","Division\xa4by\xa4zero","Not\xa4found"]
-!set .x=.x+["Match\xa4failure","Stack\xa4overflow","Sys\xa4blocked\xa4io"]
-!set .x=.x+["Assert\xa4failure","Undef\xa4rec\xa4module"]
+!set .x=["Out\xA4of\xA4memory","Sys\xA4error","Failure","Invalid\xA4argument"]
+!set .x=.x+["End\xA4of\xA4file","Division\xA4by\xA4zero","Not\xA4found"]
+!set .x=.x+["Match\xA4failure","Stack\xA4overflow","Sys\xA4blocked\xA4io"]
+!set .x=.x+["Assert\xA4failure","Undef\xA4rec\xA4module"]
 !set    caml_std_exn    = []                    ;array of pointers
 !align  $01, $00
 !for .i, 0, caml_exn_no - 1 { +caml_alloc_exn .x[.i], .i }
