@@ -167,7 +167,8 @@ done
 message start "Checking system commands and active Opam switch..."
 declare -A COMMANDS
 unset -v MISSING ERRORS
-for CMD in ar bzip2 gcc make tar opam ocamlc.opt ocamlopt.opt ocamldoc.opt; do
+for CMD in ar bzip2 gcc make sed tar opam ocamlc.opt ocamlopt.opt ocamldoc.opt
+do
     KEY=${CMD%.opt}
     if COMMANDS[$KEY]="$(which "$CMD" 2>/dev/null)"; then
         message ok "$CMD is ${COMMANDS[$KEY]}"
@@ -181,6 +182,8 @@ for CMD in ar bzip2 gcc make tar opam ocamlc.opt ocamlopt.opt ocamldoc.opt; do
 done
 [[ $MISSING ]] && \
     failwith "command(s) $MISSING not installed or not in search PATH"
+sed 'v' </dev/null >/dev/null 2>&1 || \
+    failwith "found a non-GNU version of 'sed'."
 OPAM_SW="$(opam switch show 2>/dev/null)" || \
     failwith "cannot get the name of the active Opam switch"
 message ok "active Opam switch is '$OPAM_SW'"
