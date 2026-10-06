@@ -13,10 +13,10 @@ caml_int64_warn
   !warn "TODO: caml_int64_bits_of_float(value vd)"
   !warn "TODO: caml_int64_div(value v1, value v2)"
   !warn "TODO: caml_int64_mod(value v1, value v2)"
-  !warn "TODO: caml_int64_bswap(value v)"
+  !warn "TODO: caml_int64_bswap(value v) c'è ma rivedere"
   !warn "TODO: caml_int64_of_int(value v)"
   !warn "TODO: caml_int64_to_int(value v)"
-  !warn "TODO: caml_int64_of_float"
+  !warn "TODO: caml_int64_of_float c'p ma rivedere"
   !warn "TODO: caml_int64_of_int32(value v)"
   !warn "TODO: caml_int64_to_int32(value v)"
 }
@@ -25,6 +25,16 @@ caml_int64_warn
         LDA # Custom_tag
         LDX # 5
         JSR caml_alloc
+}
+
+;; Negate an 8-byte little-endian signed int in ZP
+!macro caml_i64_neg8 .p {
+        SEC
+  !for @i, 0, 7 {
+        LDA # 0
+	SBC .p + @i
+	STA .p + @i
+  }
 }
 
 !ifdef  caml_PRIM__caml_int64_custom    {
@@ -612,10 +622,115 @@ caml_int64_float_of_bits
 ; caml_int64_bits_of_float(value vd)
 ; caml_int64_div(value v1, value v2)
 ; caml_int64_mod(value v1, value v2)
-; caml_int64_bswap(value v)
+
+!ifdef caml_PRIM__caml_int64_bswap {
+caml_int64_bswap
+        +caml_int64_alloc
+        LDY # 2
+  !for @i, 0, 7 {
+        LDA (ACCU),Y
+	STA TMP + @i
+    !if @i < 7 {
+	INY
+    }
+  }
+        LDY # 2
+  !for @i, 0, 7 {
+        LDA TMP + 7 - @i
+	STA (BLK),Y
+    !if @i < 7 {
+	INY
+    }
+  }
+        LDY # 1
+        LDA # >caml_int64_custom
+	STA (BLK),Y
+        DEY
+        LDA # <caml_int64_custom
+	STA (BLK),Y
+        LDA BLK
+	STA ACCU
+        LDA BLK+1
+	STA ACCU + 1
+        LDY # 0
+        RTS
+}
+
 ; caml_int64_of_int(value v)
 ; caml_int64_to_int(value v)
-; caml_int64_of_float
+
+!ifdef caml_PRIM__caml_int64_of_float {
+caml_int64_of_float
+@M      = TMP             ;8 by (vedi nota sopra su TMP troppo piccolo!)
+@E      = TMP + 8
+        +caml_prep_loadFAC_ACCU
+        JSR caml_float_loadFAC
+        +caml_int64_alloc
+        LDA C64_FAC
+        BEQ @zero
+        SEC
+        SBC # 128
+        BMI @zero
+        CMP # 64
+        BCS @zero
+        STA @E
+        LDY # 7
+        LDA # 0
+-       STA @M,Y
+        DEY
+        BPL -
+        LDA C64_FAC + 1 : STA @M + 3
+        LDA C64_FAC + 2 : STA @M + 2
+        LDA C64_FAC + 3 : STA @M + 1
+        LDA C64_FAC + 4 : STA @M
+        LDA @E
+        CMP # 32
+        BCC @rshift
+        BEQ @noshift
+        SEC
+        SBC # 32
+        TAX
+-       ASL @M
+        ROL @M+1 : ROL @M+2 : ROL @M+3
+        ROL @M+4 : ROL @M+5 : ROL @M+6 : ROL @M+7
+        DEX
+        BNE -
+        JMP @noshift
+@rshift LDA # 32
+        SEC
+        SBC @E
+        TAX
+-       LSR @M+7
+        ROR @M+6 : ROR @M+5 : ROR @M+4 : ROR @M+3
+        ROR @M+2 : ROR @M+1 : ROR @M
+        DEX
+        BNE -
+@noshift
+        BIT C64_FAC + 5
+        BPL @store
+        +caml_i64_neg8 @M
+@store  LDY # 2
+  !for @i, 0, 7 {
+        LDA @M + @i : STA (BLK),Y
+    !if @i < 7 { INY }
+  }
+        JMP @tag
+@zero   LDY # 2
+        LDA # 0
+  !for @i, 0, 7 {
+        STA (BLK),Y
+    !if @i < 7 { INY }
+  }
+@tag    LDY # 1
+        LDA # > caml_int64_custom : STA (BLK),Y
+        DEY
+        LDA # < caml_int64_custom : STA (BLK),Y
+        LDA BLK   : STA ACCU
+        LDA BLK+1 : STA ACCU + 1
+        LDY # 0
+        RTS
+}
+
 ; caml_int64_of_int32(value v)
 ; caml_int64_to_int32(value v)
 

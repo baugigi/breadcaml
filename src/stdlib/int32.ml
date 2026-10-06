@@ -19,10 +19,8 @@ external neg : int32 -> int32 = "%int32_neg"
 external add : int32 -> int32 -> int32 = "%int32_add"
 external sub : int32 -> int32 -> int32 = "%int32_sub"
 external mul : int32 -> int32 -> int32 = "%int32_mul"
-(*--
 external div : int32 -> int32 -> int32 = "%int32_div"
 external rem : int32 -> int32 -> int32 = "%int32_mod"
---*)
 external logand : int32 -> int32 -> int32 = "%int32_and"
 external logor : int32 -> int32 -> int32 = "%int32_or"
 external logxor : int32 -> int32 -> int32 = "%int32_xor"
@@ -43,12 +41,6 @@ external bits_of_float : float -> int32
 external float_of_bits : int32 -> float
   = "caml_int32_float_of_bits" "caml_int32_float_of_bits_unboxed"
   [@@unboxed] [@@noalloc]
-
-(*++ *)
-let div n m = of_float (to_float n /. to_float m)
-let rem n m = sub n (mul (div n m) m)
-(* ++*)
-
 let zero = 0l
 let one = 1l
 let minus_one = -1l
@@ -74,16 +66,18 @@ let unsigned_to_int =
       fun n -> Some (to_int n land mask)
   | _ ->
       assert false
-
-external format : string -> int32 -> string = "caml_int32_format"
-let to_string n = format "%d" n
-external of_string : string -> int32 = "caml_int32_of_string"
 --*)
 (*++ *)
 let unsigned_to_int n =
   let n = to_int (logand n 0x7FFFl) in
   if n >= 0 then Some n else None
-
+(* ++*)
+(*--
+external format : string -> int32 -> string = "caml_int32_format"
+let to_string n = format "%d" n
+external of_string : string -> int32 = "caml_int32_of_string"
+--*)
+(*++ *)
 external unsafe_char_of_int : int -> char = "%identity"
 let to_string n =
   let str = Bytes.create 11 in

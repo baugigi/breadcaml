@@ -8,17 +8,20 @@
 
 !zone caml_INT32 {
 
-!ifndef caml_int32_warn {
-caml_int32_warn
-  !warn "TODO: caml_int32_div(value v1, value v2)"
-  !warn "TODO: caml_int32_mod(value v1, value v2)"
-  !warn "TODO: caml_int32_bswap(value v)"
-}
-
 !macro caml_int32_alloc {
         LDA # Custom_tag
         LDX # 3
         JSR caml_alloc
+}
+
+;; Negate a 4-byte little-endian signed int in ZP
+!macro caml_i32_neg4 .p {
+        SEC
+  !for @i,0,3 {
+        LDA # 0
+        SBC .p + @i
+        STA .p + @i
+  }
 }
 
 !ifdef  caml_PRIM__caml_int32_custom {
@@ -373,7 +376,7 @@ caml_int32_mul
         +caml_int32_alloc
         SEC
         LDA (SP),Y
-        SBC # $FF - 5                   :!warn "COS'E'? COMMENTARE!"
+        SBC # $FF - 5
         STA @NPTR
         INY
         LDA (SP),Y
@@ -392,20 +395,6 @@ caml_int32_mul
         STA @M + @i
         STX @P + @i
   }
-;;      ldx #32
-;; --   bcc +
-;;      clc
-;;      ldy #$FF - 3
-;; -    lda (@NPTR),Y
-;;      adc @P - $FF + 3,Y
-;;      sta @P - $FF + 3,Y
-;;      iny
-;;      bne -
-;; +    lsr @P + 3
-;;  !for @i, 2, 0 {ror @P + @i}
-;;  !for @i, 3, 0 {ror @M + @i}
-;;      dex
-;;      bne --
         LDX # 8
 --      BCC +
         CLC
@@ -497,27 +486,65 @@ caml_int32_mul
         RTS
 }
 
-!ifdef  caml_PRIM__caml_int32_of_float {
+!ifdef caml_PRIM__caml_int32_of_float {
 caml_int32_of_float
-        +caml_int32_alloc
+	@M      = TMP            ;4 by: magnitude
+	@E      = TMP + 4        ;1 by: unbiased exponent
         LDA ACCU
         STA caml_float_loadFAC__addr
         LDA ACCU + 1
         STA caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
-        +caml_JSR_BASROM C64_QINT
-        LDY # 2
-        LDX # 3
--       LDA C64_FAC + 1,X
-        STA (BLK),Y
-        INY
+        +caml_int32_alloc
+        LDA C64_FAC
+        BEQ @zero
+        SEC
+        SBC # 128
+        BMI @zero                ;exp-128 < 0  => |val| < 1 => 0
+        CMP # 33
+        BCS @zero                ;exp-128 > 32 => out-of-range, return 0
+        STA @E
+  !for @i,3,0 {
+        LDA C64_FAC + 4 - @i
+	STA @M + @i
+  }
+        LDA # 32
+        SEC
+        SBC @E                   ;A := shift count, 0..32
+        TAX
+        BEQ @noshift
+-       LSR @M + 3
+	ROR @M + 2
+	ROR @M + 1
+	ROR @M
         DEX
-        BPL -
-        LDY # 0
+        BNE -
+@noshift
+        BIT C64_FAC + 5
+        BPL @store
+        +caml_i32_neg4 @M
+@store  LDY # 5
+  !for @i,3,0 {
+        LDA @M + @i
+	STA (BLK),Y
+        DEY
+  }
+	BNE @tag			;Y=1, BNE=JMP
+@zero   LDA # 0
+	LDY # 5
+  !for @i,3,0 {
+        STA (BLK),Y
+	DEY
+  }
+@tag    LDA # >caml_int32_custom
+	STA (BLK),Y
+        DEY
+        LDA # <caml_int32_custom
+	STA (BLK),Y
         LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1
+	STA ACCU
+        LDA BLK+1
+	STA ACCU + 1
         RTS
 }
 
@@ -626,12 +653,10 @@ caml_int32_bits_of_float
         CLC                             ;flag: .C=1 if called from @exp2
 @round  BIT C64_FAC + 4                 ;round mantissa
         BPL +
-        INC C64_FAC + 3
+  !for @i,3,1 {
+        INC C64_FAC + @i
         BNE +
-        INC C64_FAC + 2
-        BNE +
-        INC C64_FAC + 1
-        BNE +
+  }
         INX                             ;increment exponent if needed
 +       BCS @exp2r                      ;return if called from @exp2
         ASL C64_FAC + 1                 ;remove leftmost 1 from mantissa
@@ -667,9 +692,9 @@ caml_int32_bits_of_float
         ;; c64_exp = 1: ieee_exp = 0, ieee_mant = lsr c64_mant (subnormal)
         ;; rounding doesn't affect exponent, as mantissa is 0.0mmm...
 @exp1   LSR C64_FAC + 1                 ;lsr mantissa
-        ROR C64_FAC + 2
-        ROR C64_FAC + 3
-        ROR C64_FAC + 4                 ;fallthrough @exp2
+  !for @i,2,4 {
+        ROR C64_FAC + @i
+  }
         ;; c64_exp = 2: ieee_exp = 0, ieee_mant = c64_mant (subnormal)
         ;; rounding may incr. exponent and cause a switch from
         ;; subnormal repr. (2^(-126) * 0.mantissa, 0 implicit)
@@ -746,8 +771,203 @@ caml_int32_float_of_bits
 @exn    +caml_raise Invalid_argument, "Int32.float_of_bits"
 }
 
-; caml_int32_div(value v1, value v2)
-; caml_int32_mod(value v1, value v2)
-; caml_int32_bswap(value v)
+!ifdef caml_PRIM__caml_int32_divmod {
+        ;; input: @DVD, @DVS (magnitude, @DVS<>0);
+	;; output: @DVD=quotient, @REM=remainder.
+	;; 32 iterations; A,X clobbered.
+caml_int32_divmod
+	@DVD    = TMP          		;4 by
+	@DVS    = TMP + 4      		;4 by
+	@REM    = TMP + 8       	;4 by
+        LDA # 0
+  !for @i,0,3 {
+        STA @REM + @i
+  }
+	LDX # 32
+-       ASL @DVD
+  !for @i,1,3 {
+        ROL @DVD + @i
+  }
+  !for @i,0,3 {
+        ROL @REM + @i
+  }
+	SEC
+  !for @i,0,3 {
+        LDA @REM + @i
+	SBC @DVS + @i
+    !if @i < 3 {
+	PHA
+    }
+  }
+        BCC +                    ;REM < DVS: skip, quotient bit is 0
+  !for @i,3,0 {
+        STA @REM + @i
+    !if @i > 0 {
+        PLA
+    }
+  }
+        INC @DVD
+        DEX
+        BNE -
+        RTS
++       PLA
+	PLA
+	PLA
+        DEX
+        BNE -
+        RTS
+}
+
+!ifdef caml_PRIM__caml_int32_div {
+caml_int32_div
+	@DVD    = TMP          		;4 by - shared with caml_int32_divmod
+	@DVS    = TMP + 4      		;4 by - shared with caml_int32_divmod
+	@REM    = TMP + 8       	;4 by - shared with caml_int32_divmod
+	@QSIGN  = TMP + 12		;1 by
+	@DVSPTR = TMP + 13      	;2 by
+        LDA (SP),Y
+	STA @DVSPTR
+        INY
+        LDA (SP),Y
+	STA @DVSPTR + 1
+  !for @i,0,3 {
+        INY
+        LDA (ACCU),Y
+	STA @DVD + @i
+  }
+  !for @i,3,0 {
+        LDA (@DVSPTR),Y
+	STA @DVS + @i
+    !if @i > 0 {
+	DEY
+    }
+  }
+  !for @i,1,3 {
+	ORA @DVS + @i
+  }
+        BNE +
+        +caml_raise Division_by_zero
++       LDA @DVD + 3
+	EOR @DVS + 3
+	AND # $80
+	STA @QSIGN
+        LDA @DVD + 3
+	BPL +
+	+caml_i32_neg4 @DVD
++       LDA @DVS + 3
+	BPL +
+	+caml_i32_neg4 @DVS
++       JSR caml_int32_divmod
+        BIT @QSIGN
+	BPL +
+        +caml_i32_neg4 @DVD
++       +caml_int32_alloc
+        LDY # 5
+  !for @i,3,0 {
+        LDA @DVD + @i
+	STA (BLK),Y
+        DEY
+  }
+        LDA # >caml_int32_custom
+	STA (BLK),Y
+        DEY
+        LDA # <caml_int32_custom
+	STA (BLK),Y
+        LDA BLK
+	STA ACCU
+        LDA BLK + 1
+	STA ACCU + 1
+        RTS
+}
+
+
+!ifdef caml_PRIM__caml_int32_mod {
+caml_int32_mod
+	@DVD    = TMP          		;4 by - shared with caml_int32_divmod
+	@DVS    = TMP + 4      		;4 by - shared with caml_int32_divmod
+	@REM    = TMP + 8       	;4 by - shared with caml_int32_divmod
+	@DVDSIGN= TMP + 12		;1 by
+	@DVSPTR = TMP + 13      	;2 by
+        LDA (SP),Y
+	STA @DVSPTR
+        INY
+        LDA (SP),Y
+	STA @DVSPTR + 1
+  !for @i,0,3 {
+        INY
+        LDA (ACCU),Y
+	STA @DVD
+  }
+  !for @i,3,0 {
+        LDA (@DVSPTR),Y
+	STA @DVS + @i
+    !if @i > 0 {
+	DEY
+    }
+  }
+  !for @i,1,3 {
+	ORA @DVS + @i
+  }
+	BNE +
+        +caml_raise Division_by_zero
++       LDA @DVD + 3
+	STA @DVDSIGN
+        BPL +
+	+caml_i32_neg4 @DVD
++       LDA @DVS + 3
+	BPL +
+	+caml_i32_neg4 @DVS
++       JSR caml_int32_divmod
+        BIT @DVDSIGN
+	BPL +
+        +caml_i32_neg4 @REM
++       +caml_int32_alloc
+        LDY # 5
+  !for @i,3,0 {
+        LDA @REM + @i
+	STA (BLK),Y
+        DEY
+  }
+        LDA # >caml_int32_custom
+	STA (BLK),Y
+        DEY
+        LDA # <caml_int32_custom
+	STA (BLK),Y
+        LDA BLK
+	STA ACCU
+        LDA BLK + 1
+	STA ACCU + 1
+        RTS
+}
+
+!ifdef caml_PRIM__caml_int32_bswap {
+caml_int32_bswap
+        +caml_int32_alloc
+        LDY # 5
+        LDA (ACCU),Y
+	LDY # 2
+	STA (BLK),Y			;5 -> 2
+	LDA (ACCU),Y
+	LDY # 5
+	STA (BLK),Y			;2 -> 5
+	DEY
+	LDA (ACCU),Y
+	DEY
+	STA (BLK),Y			;4 -> 3
+	LDA (ACCU),Y
+	INY
+	STA (BLK),Y			;3 -> 4
+        LDY # 1
+        LDA # >caml_int32_custom
+	STA (BLK),Y
+        DEY
+        LDA # <caml_int32_custom
+	STA (BLK),Y
+        LDA BLK
+	STA ACCU
+        LDA BLK + 1
+	STA ACCU + 1
+        RTS
+}
 
 }	;; zone caml_INT32

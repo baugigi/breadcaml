@@ -55,10 +55,7 @@ external sub : int32 -> int32 -> int32 = "%int32_sub"
 external mul : int32 -> int32 -> int32 = "%int32_mul"
 (** Multiplication. *)
 
-(*-- external div : int32 -> int32 -> int32 = "%int32_div" --*)
-(*++ *)
-val div : int32 -> int32 -> int32
-(* ++*)                                     
+external div : int32 -> int32 -> int32 = "%int32_div"
 (** Integer division. This division rounds the real quotient of
    its arguments towards zero, as specified for {!Stdlib.(/)}.
    @raise Division_by_zero if the second
@@ -70,10 +67,7 @@ val unsigned_div : int32 -> int32 -> int32
 
     @since 4.08.0 *)
 
-(*-- external rem : int32 -> int32 -> int32 = "%int32_mod" --*)
-(*++ *)
-val rem : int32 -> int32 -> int32
-(* ++*)
+external rem : int32 -> int32 -> int32 = "%int32_mod"
 (** Integer remainder.  If [y] is not zero, the result
    of [Int32.rem x y] satisfies the following property:
    [x = Int32.add (Int32.mul (Int32.div x y) y) (Int32.rem x y)].
