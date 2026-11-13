@@ -52,8 +52,7 @@ let export ~bytefile ~asmfile ~prgfile ~externs ~top_of_mem ~stack_pages =
   try
     let ch = open_out_bin asmfile in
     fprintf ch
-      ";; Created by BreadCaml - The OCaml Compiler for the Commodore 64\n\n\
-       !to \"%s\", cbm\n\
+      "!to \"%s\", cbm\n\
        caml_stack_start = $%04x\n\
        caml_stack_end = $%04x\n\n"
       prgfile stack_start stack_end;

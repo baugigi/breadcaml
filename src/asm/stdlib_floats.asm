@@ -1,127 +1,47 @@
-;;; ----------------------------------------------------------------------------
-;;; FLOATS
-;;; ----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
+;;                                   FLOATS
+;; -----------------------------------------------------------------------------
 
-;;; ZEROPAGE LOCATIONS
-;;; used by the C64's BASIC ROM floating point routines:
-;;;
-;;; $12         used by tan and (in preparation for tan) by sin & cos routines
-;;; $22-$23     used to move variables into the accumulators and back to memory
-;;; $24-$25     used during FP comparisons and when converting PETSCII into FP
-;;; $26-$2A     result of multiplication or division
-;;; $47         used by FOUT
-;;; $56         used in addition and subtraction, and also the exp function
-;;; $5C-$60     used by the PETSCII conversion routines
-;;; $61         FAC exponent
-;;; $62-$65     FAC mantissa
-;;; $66         FAC sign in bit 7
-;;; $67         used by trig, exp, log functions and PETSCII to FP conversion
-;;; $68         used during normalisation and FP to integer conversion
-;;; $69         ARG exponent
-;;; $6A-$6D     ARG mantissa
-;;; $6E         ARG sign in bit 7
-;;; $6F         sign result of arithmetic operations, set when ARG is loaded
-;;; $70         low order rounding byte for FAC, cleared when FAC is loaded
-;;; $71-$72     used during series eval. and when converting PETSCII into FP
-;;; $73-$8A     CHRGET routine, used when converting a PETSCII string into FP
+;; ZP locations used by the C64's BASIC ROM float routines and by Breadcaml:
+
+;; Breadcaml Address BASIC float routines
+;; --------- ------- ----------------------------------------------------------
+;; XARGS     $02      <UNUSED>
+;; <UNUSED>  $12     used by tan and, preparing tan, by sin/cos routines
+;; <UNUSED>  $22-$23 used to move variables into FAC/ARG and back to memory
+;; <UNUSED>  $24-$25 used during FP comparisons and PETSCII to FP conversion
+;; <UNUSED>  $26-$2A result of multiplication or division
+;; ENV       $2B-$2C  <UNUSED>
+;; TRAPSP    $2D-$2E  <UNUSED>
+;; Interpr.  $2F-$3D  <UNUSED>
+;; GC        $3E-$45  <UNUSED>
+;; <UNUSED>  $47     used by FOUT
+;; HEAP      $49-$4A  <UNUSED>
+;; BLK       $4B-$4C  <UNUSED>
+;; TMP+0,8   $4D-$55  <UNUSED>
+;; TMP+9     $56     used in addition, subtraction, and by the exp function
+;; TMP+10,14 $57-$5B  <UNUSED>
+;; TMP+15,19 $5C-$60 used by the PETSCII conversion routines
+;; TMP+20    $61     FAC exponent
+;; TMP+21,24 $62-$65 FAC mantissa
+;; TMP+25    $66     FAC sign in bit 7
+;; TMP+26    $67     used by trig, exp, log, and PETSCII to FP conversion
+;; TMP+27    $68     used during normalisation and FP to integer conversion
+;; TMP+28    $69     ARG exponent
+;; TMP+29,32 $6A-$6D ARG mantissa
+;; TMP+33    $6E     ARG sign in bit 7
+;; TMP+34    $6F     sign result of arithm. operations, set when ARG is loaded
+;; TMP+35    $70     FAC low order rounding byte, cleared when FAC is loaded
+;; TMP+36,37 $71-$72 used for series eval and PETSCII to FP conversion
+;; ACCU      $FB-$FC  <UNUSED>
+;; SP        $FD-$FE  <UNUSED>
+
 
 !zone caml_FLOATS {
 
 .dummy = $1234                          ;dummy operand for self-modifying code
                                         ;(SMC in comments)
 
-!ifndef caml_float_zp_check {
-caml_float_zp_check
-  !for .i in [[$12,$12],[$22,$2A],[$47,$47],[$56,$56],[$5C,$8A]] {
-    !if (caml_zp_start <= .i[1]) & (.i[0] < caml_zp_end) {
-      !warn "ZP storage overlaps FLPT workspace", .i
-    }
-  }
-}
-
-;; Some macros to shorten code. No JSRs here to let mkdepends work correctly.
-
-!macro  caml_prep_loadFAC_ACCU {
-        LDA ACCU
-        STA caml_float_loadFAC__addr
-        LDA ACCU + 1
-        STA caml_float_loadFAC__addr + 1
-}       
-!macro  caml_prep_loadARG_ACCU {
-        LDA ACCU
-        STA caml_float_loadARG__addr
-        LDA ACCU + 1
-        STA caml_float_loadARG__addr + 1
-}
-!macro  caml_prep_loadFAC_SP {
-        LDA (SP),Y
-        STA caml_float_loadFAC__addr
-        INY
-        LDA (SP),Y
-        STA caml_float_loadFAC__addr + 1        ;Caution: Y=1 here.
-}
-
-;; FAC/ARG loading routines -- how to use: 1) write float address in
-;; caml_float_loadFAC/ARG__addr; 2) JSR caml_float_loadFAC/ARG
-
-!ifdef caml_PRIM__caml_float_loadFAC {
-caml_float_loadFAC
-        LDX # 4
-caml_float_loadFAC__addr = * + 1
--       LDA .dummy,X                    ;SMC: replaced with real address
-        STA C64_FAC,X
-        DEX
-        BPL -
-        LDA C64_FAC + 1                 ;copy 1st byte of mantissa
-        STA C64_FAC + 5                 ;to FAC sign byte
-        ORA # $80
-        STA C64_FAC + 1                 ;set 1st bit of mantissa = 1
-        INX
-        STX C64_FACRND                  ;FAC round byte := 0
-        RTS
-}
-
-!ifdef caml_PRIM__caml_float_loadARG {
-caml_float_loadARG
-        LDX # 4
-caml_float_loadARG__addr = * + 1
--       LDA .dummy,X                    ;SMC: replaced with real address
-        STA C64_ARG,X
-        DEX
-        BPL -
-        LDX C64_ARG + 1                 ;copy 1st byte of mantissa
-        STX C64_ARG + 5                 ;to ARG sign byte
-        TXA
-        EOR C64_FAC + 5                 ;compare with FAC sign byte
-        STA C64_ARISGN                  ;store result of comparison
-        TXA
-        ORA # $80
-        STA C64_ARG + 1                 ;set 1st bit of mantissa = 1
-        LDA C64_FAC                     ;.A := FAC exponent
-        RTS
-}
-
-;; Copy FAC (operation result) to a new allocated float
-
-!ifdef caml_PRIM__caml_float_alloc_result {
-caml_float_alloc_result
-        LDA # Double_tag
-        LDX # Double_wosize
-        LDY # 0
-        JSR caml_alloc
-        LDX BLK
-        LDY BLK + 1
-        +caml_JSR_BASROM C64_MOVMF
-        LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1
-        LDY # 0
-        RTS
-}
-
-;; Float primitives follow
-        
 !ifdef caml_PRIM__caml_nonstd_sign_float {
 caml_nonstd_sign_float
         ;; Stdlib.sign_float
@@ -146,32 +66,28 @@ caml_nonstd_sign_float
 
 !ifdef caml_PRIM__caml_neg_float {
 caml_neg_float
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        JSR caml_float_unop
         +caml_JSR_BASROM C64_NEGOP
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_abs_float {
 caml_abs_float
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        JSR caml_float_unop
         +caml_JSR_BASROM C64_ABS
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_exp_float {
 caml_exp_float
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        JSR caml_float_unop
         +caml_JSR_BASROM C64_EXP
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_expm1_float {
 caml_expm1_float
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        JSR caml_float_unop
         +caml_JSR_BASROM C64_EXP
         LDA # <C64_M1
         LDY # >C64_M1
@@ -181,16 +97,14 @@ caml_expm1_float
 
 !ifdef caml_PRIM__caml_log_float {
 caml_log_float
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        JSR caml_float_unop
         +caml_JSR_BASROM C64_LOG
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_log1p_float {
 caml_log1p_float
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        JSR caml_float_unop
         LDA # <C64_ONE
         LDY # >C64_ONE
         +caml_JSR_BASROM C64_FADD
@@ -199,80 +113,75 @@ caml_log1p_float
 }
 
 !ifdef caml_PRIM__caml_log10_float {
+.ln10m1 !h 7f 5e 5b d8 a9       ;(ln 10)^-1
 caml_log10_float
         ;; log10 x = ln x / ln 10
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        JSR caml_float_unop
         +caml_JSR_BASROM C64_LOG
-        LDA # <@rln10
-        LDY # >@rln10
-        BNE +
-@rln10  !h 7f 5e 5b d8 a9       ;1/(ln 10)
-+       +caml_JSR_BASROM C64_FMUL
+  !if caml_log10_float <= C64_BASROM {
+        LDA # <.ln10m1
+        LDY # >.ln10m1
+  } else {
+        LDY # 5
+-       LDA .ln10m1 - 1,Y
+        STA TMP - 1,Y
+        DEY
+        BNE -
+        LDA # TMP
+  }
+        +caml_JSR_BASROM C64_FMUL
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_sin_float {
 caml_sin_float
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        JSR caml_float_unop
         +caml_JSR_BASROM C64_SIN
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_cos_float {
 caml_cos_float
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        JSR caml_float_unop
         +caml_JSR_BASROM C64_COS
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_tan_float {
 caml_tan_float
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        JSR caml_float_unop
         +caml_JSR_BASROM C64_TAN
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_sqrt_float {
 caml_sqrt_float
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        JSR caml_float_unop
         +caml_JSR_BASROM C64_SQR
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_atan_float {
 caml_atan_float
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        JSR caml_float_unop
         +caml_JSR_BASROM C64_ATN
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_floor_float {
 caml_floor_float
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        JSR caml_float_unop
         +caml_JSR_BASROM C64_INT
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_ceil_float {
 caml_ceil_float
-        ;; let fl = floor x in if fl = x then fl else fl +. 1.
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        ;; let ceil x = -.(floor (-. x))
+        JSR caml_float_unop
+        +caml_JSR_BASROM C64_NEGOP
         +caml_JSR_BASROM C64_INT
-        LDA # ACCU
-        LDY # ACCU + 1
-        +caml_JSR_BASROM C64_FCOMP
-        BEQ +
-        LDA # <C64_ONE
-        LDY # >C64_ONE
-        +caml_JSR_BASROM C64_FADD
+        +caml_JSR_BASROM C64_NEGOP
 +       JMP caml_float_alloc_result
 }
 
@@ -296,14 +205,26 @@ caml_classify_float
 
 !ifdef caml_PRIM__caml_int_of_float {
 caml_int_of_float
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
-        +caml_JSR_BASROM C64_FACINX     ;result in Y(lo), A(hi)
+        JSR caml_float_unop
+        LDA C64_FAC + 5                 ;FAC sign byte
+        PHA                             ;save sign
+        LDA # 0
+        STA C64_FAC + 5                 ;FAC := |FAC| (FACINX floors, OCaml
+        +caml_JSR_BASROM C64_FACINX     ; truncates) => result in Y(lo), A(hi)
         STY ACCU
-        SEC
-        ROL ACCU                        ;OCaml int repr
-        ROL
         STA ACCU + 1
+        PLA
+        BPL +                           ;negative argument:
+        SEC                             ; negate the (truncated) magnitude
+        LDA # 0
+        SBC ACCU
+        STA ACCU
+        LDA # 0
+        SBC ACCU + 1
+        STA ACCU + 1
++       SEC
+        ROL ACCU                        ;OCaml int repr
+        ROL ACCU + 1
         LDY # 0
         RTS
 }
@@ -323,8 +244,7 @@ caml_float_of_int
 
 !ifdef caml_PRIM__caml_copysign_float {
 caml_copysign_float
-        +caml_prep_loadFAC_ACCU
-        JSR caml_float_loadFAC
+        JSR caml_float_unop
         LDA (SP),Y
         STA ACCU
         INY
@@ -350,49 +270,49 @@ caml_float_of_string
         LDA TMP
         STA C64_CHRPTR
         LDA TMP + 1
-        STA C64_CHRPTR
+        STA C64_CHRPTR + 1
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_ldexp_float {
         ;; compute ACCU * 2 ^ N, -255 < N < 255.
-        ;; To be called with SP[0] = Val_int(N)     if N >= 0
-        ;;                   SP[0] = Val_int(256-N) if N < 0
+        ;; SP[0] = Val_int(N) (usual tagged int, two's complement if N < 0)
 caml_ldexp_float
         LDA # Double_tag
         LDX # Double_wosize
-        JSR caml_alloc
+        JSR caml_alloc                  ;{Y = 0}
+        LDA (ACCU),Y                    ;(biased) exponent of the source
+        BEQ @save                       ;0.0 * 2^N = 0.0: don't add N to exp 0
+        STA TMP
         INY
-        LDA (SP),Y
+        LDA (SP),Y                      ;hi byte of Val_int(N)
+        TAX                             ;X: bit 7 = sign of N
+        LSR                             ;C := bit 0 of hi byte
         DEY
-        LSR                             ;.A := Int_val(>SP[0])
-        BEQ @add                        ;N >= 0 ?
-        LDA (SP),Y                      ;no:
-        ROR                             ; A := Int_val(SP[0])
-        SEC
-        EOR # $FF                       ; subtract A from exponent
-        ADC (ACCU),Y                    ; (eor/adc = inverse sbc)
+        LDA (SP),Y
+        ROR                             ;A := low byte of N (two's complement)
+        STA TMP + 1
+        TXA
+        BMI @neg                        ;N < 0 ?
+        LDA TMP + 1                     ;no: exp := exp + N
+        CLC
+        ADC TMP
+        BCC @save
+        LDX # C64_ERR_OVF               ; manage overflow (error)
+        JMP (C64_IERROR)
+@neg    LDA TMP + 1                     ;yes: exp := exp - |N| = exp + (256-|N|)
+        CLC
+        ADC TMP
         BCS @save                       ; if underflow,
         LDA # 0                         ;  set exp = 0 (result = 0.0)
-@save   STA (BLK),Y                     ;save exp byte
-        BEQ +                           ;skip copy of mantissa if underflow
+@save   STA (BLK),Y                     ;save exp byte (Y = 0)
+        BEQ +                           ;skip copy of mantissa if zero
         LDY # 4
 -       LDA (ACCU),Y                    ;copy mantissa
         STA (BLK),Y
         DEY
         BNE -
-+       LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1                    ;ACCU := BLK
-        RTS
-@add    LDA (SP),Y                      ;yes:
-        ROR                             ; A := Int_val(SP[0])
-        CLC
-        ADC (ACCU),Y                    ; add A to exponent
-        BCC @save                       ; go to @save
-        LDX # C64_ERR_OVERFLOW          ; manage overflow (error)
-        JMP (C64_IERROR)
++       JMP caml_load_newblk
 }
 
 !ifdef caml_PRIM__caml_frexp_float {
@@ -413,11 +333,8 @@ caml_frexp_float
         STA (BLK),Y
         DEY
         BNE -
+@pair   JSR caml_load_newblk            ;ACCU = new float
         ;; allocate a new pair (float * int)
-@pair   LDA BLK                         ;save new float ptr in ACCU so it'll
-        STA ACCU                        ; be updated in case a GC will occur
-        LDA BLK + 1
-        STA ACCU + 1
         LDA # 0                         ;tag of new pair
         LDX # 2                         ;size of new pair
         JSR caml_alloc                  ;alloc new pair
@@ -446,62 +363,127 @@ caml_frexp_float
         ROL                             ; compute >Val_int(exponent)
 @fld1h  INY
         STA (BLK),Y                     ;field1,hi := >Val_int(exponent)
-        LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1                    ;ACCU := new pair
         LDY # 0
-        RTS
+        JMP caml_load_newblk   
 }
 
 !ifdef caml_PRIM__caml_add_float {
 caml_add_float
-        +caml_prep_loadFAC_SP
-        JSR caml_float_loadFAC
-        +caml_prep_loadARG_ACCU
-        JSR caml_float_loadARG
+        JSR caml_float_binop
         +caml_JSR_BASROM C64_FADDT
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_sub_float {
 caml_sub_float
-        +caml_prep_loadFAC_SP
-        JSR caml_float_loadFAC
-        +caml_prep_loadARG_ACCU
-        JSR caml_float_loadARG
+        JSR caml_float_binop
         +caml_JSR_BASROM C64_FSUBT
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_mul_float {
 caml_mul_float
-        +caml_prep_loadFAC_SP
-        JSR caml_float_loadFAC
-        +caml_prep_loadARG_ACCU
-        JSR caml_float_loadARG
+        JSR caml_float_binop
         +caml_JSR_BASROM C64_FMULT
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_div_float {
 caml_div_float
-        +caml_prep_loadFAC_SP
-        JSR caml_float_loadFAC
-        +caml_prep_loadARG_ACCU
-        JSR caml_float_loadARG
+        JSR caml_float_binop
         +caml_JSR_BASROM C64_FDIVT
         JMP caml_float_alloc_result
 }
 
 !ifdef caml_PRIM__caml_power_float {
 caml_power_float
-        +caml_prep_loadFAC_SP
-        JSR caml_float_loadFAC
-        +caml_prep_loadARG_ACCU
-        JSR caml_float_loadARG
+        JSR caml_float_binop
         +caml_JSR_BASROM C64_FPWRT
         JMP caml_float_alloc_result
+}
+
+
+;; Auxiliary routines
+
+;; copy ACCU to FAC
+!ifdef caml_AUX__caml_float_unop {
+caml_float_unop
+        LDA ACCU
+        STA caml_float_loadFAC__addr
+        LDA ACCU + 1
+        STA caml_float_loadFAC__addr + 1
+        JMP caml_float_loadFAC
+}
+
+;; copy SP[0] to FAC and ACCU to ARG
+!ifdef caml_AUX__caml_float_binop {
+caml_float_binop
+        LDA (SP),Y
+        STA caml_float_loadFAC__addr
+        INY
+        LDA (SP),Y
+        STA caml_float_loadFAC__addr + 1
+       ;DEY                             ;caml_float_alloc_result will set Y=0
+        JSR caml_float_loadFAC
+        LDA ACCU
+        STA caml_float_loadARG__addr
+        LDA ACCU + 1
+        STA caml_float_loadARG__addr + 1
+        JMP caml_float_loadARG
+}
+
+;; Copy FAC (operation result) to a new allocated float
+!ifdef caml_AUX__caml_float_alloc_result {
+caml_float_alloc_result
+        LDA # Double_tag
+        LDX # Double_wosize
+        LDY # 0
+        JSR caml_alloc
+        LDX BLK
+        LDY BLK + 1
+        +caml_JSR_BASROM C64_MOVMF
+        LDY # 0
+        JMP caml_load_newblk   
+}
+
+;; FAC/ARG loading routines -- how to use: 1) write float address in
+;; caml_float_loadFAC/ARG__addr; 2) JSR caml_float_loadFAC/ARG
+
+!ifdef caml_AUX__caml_float_loadFAC {
+caml_float_loadFAC
+        LDX # 4
+caml_float_loadFAC__addr = * + 1
+-       LDA .dummy,X                    ;SMC: replaced with real address
+        STA C64_FAC,X
+        DEX
+        BPL -
+        LDA C64_FAC + 1                 ;copy 1st byte of mantissa
+        STA C64_FAC + 5                 ;to FAC sign byte
+        ORA # $80
+        STA C64_FAC + 1                 ;set 1st bit of mantissa = 1
+        INX
+        STX C64_FACRND                  ;FAC round byte := 0
+        RTS
+}
+
+!ifdef caml_AUX__caml_float_loadARG {
+caml_float_loadARG
+        LDX # 4
+caml_float_loadARG__addr = * + 1
+-       LDA .dummy,X                    ;SMC: replaced with real address
+        STA C64_ARG,X
+        DEX
+        BPL -
+        LDX C64_ARG + 1                 ;copy 1st byte of mantissa
+        STX C64_ARG + 5                 ;to ARG sign byte
+        TXA
+        EOR C64_FAC + 5                 ;compare with FAC sign byte
+        STA C64_ARISGN                  ;store result of comparison
+        TXA
+        ORA # $80
+        STA C64_ARG + 1                 ;set 1st bit of mantissa = 1
+        LDA C64_FAC                     ;.A := FAC exponent
+        RTS
 }
 
 }      ;; !zone caml_FLOATS

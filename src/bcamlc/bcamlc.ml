@@ -54,6 +54,7 @@ let () = match Cmdline.parse () with
       ocamlc ~bytefile ~verbose ocamlc_cmdline;
       Export.export
         ~bytefile ~asmfile ~stack_pages ~top_of_mem ~prgfile ~externs;
+      if verbose then sys_command ~verbose ~command:("cat '" ^ asmfile ^ "'");
       acme ~asmfile ~verbose acme_cmdline;
       rm [asmfile; bytefile]
     with

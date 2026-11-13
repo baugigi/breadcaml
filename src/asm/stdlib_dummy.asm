@@ -1,6 +1,6 @@
-;;; -----------------------------------------------------------
-:;; ALLOC DUMMY (ocaml-4.04.1/byterun/alloc.c)
-;;; -----------------------------------------------------------
+;; -----------------------------------------------------------------------------
+;;                                ALLOC DUMMY
+;; -----------------------------------------------------------------------------
 
 !zone caml_DUMMY {
 
@@ -14,22 +14,14 @@ caml_alloc_dummy
         LSR ACCU + 1
         LDA ACCU
         ROR
-        BEQ +                           ; size = 0
+        BNE +                           ; size = 0
+        JMP caml_mkatom0
         ;; allocate block
-        TAX
++       TAX
         TYA
         JSR caml_alloc
-        LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1
-        RTS
-        ;; Atom(0)
-+       LDA # < caml_atom0
-        STA ACCU
-        LDA # > caml_atom0
-        STA ACCU + 1
-        RTS
+        JSR caml_block_fill0            ;fill fields with Val_zero
+        JMP caml_load_newblk   
 }
 
 !ifdef caml_PRIM__caml_alloc_dummy_float {
@@ -39,26 +31,17 @@ caml_alloc_dummy_float
         ;; ignore ACCU + 1, as 0 <= no. of floats <= 85
         LDA ACCU
         LSR
-        BEQ +                           ; Atom(0)
+        BNE +                           ; Atom(0)
+        JMP caml_mkatom0
         ;; X <- no. of floats * Double_wosize
-        CLC
++       CLC
         ADC ACCU
         TAX
         DEX
         ;; allocate block
         TYA                             ; A = Y = 0
         JSR caml_alloc
-        LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1
-        RTS
-        ;; Atom(0)
-+       LDA # < caml_atom0
-        STA ACCU
-        LDA # > caml_atom0
-        STA ACCU + 1
-        RTS
+        JMP caml_load_newblk   
 }
 
 !ifdef caml_PRIM__caml_update_dummy {

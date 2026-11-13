@@ -1,218 +1,210 @@
-;; ----------------------------------------------------------------------
-;; ARRAYS (ocaml-4.14.4/runtime/array.c)
-;; ----------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
+;;                                   ARRAYS
+;; -----------------------------------------------------------------------------
+
 !zone caml_ARRAYS {
 
 !ifndef caml_arrays_warn {
 caml_arrays_warn
   !warn "TODO: caml_array_fill"
   !warn "TODO: caml_floatarray_blit"
-  !warn "TODO: check for GC-invalidated pointers"
+  !warn "BUG: GC-invalidated pointers in caml_array_concat"
 }
-	
+        
 !ifdef caml_PRIM__caml_make_vect {
 caml_make_vect
         ;; allocate and initialize an array
         ;; ACCU = length
         ;; SP[0] = init
-@NFLO2  = TMP
-@INIT   = TMP + 2
-        INY				;@INIT = SP[0]
-        LDA (SP),Y			
-        STA @INIT + 1
-        DEY
+@NFLO2  = TMP                           ;set by caml_floatarray_create
+@INIT   = TMP + 1
+        ;; check init type
         LDA (SP),Y
         STA @INIT
-        BIT caml_is_block               ;If @INIT is a block
-        BNE @no_float_array
-        LDY # -2			;and tag(@INIT) = Double_tag
+        INY
+        LDA (SP),Y
+        STA @INIT + 1                   ;hi byte needed also if init is an int
+        LDY # 0
+        LDA @INIT
+        LSR
+        BCS @chklen
+        ;; block: check if float
+        LDY # -2
         DEC @INIT + 1
         LDA (@INIT),Y
         INC @INIT + 1
         LDY # 0
         CMP # Double_tag
-        BNE @no_float_array
-        JSR caml_floatarray_create	;then allocate a floatarray.
-        BCC +
-        INY				;Reload @INIT if a GC occurred
-        LDA (SP),Y
-        STA @INIT + 1
-        DEY
-        LDA (SP),Y
-        STA @INIT
-        ;; init floats
-+       LDA @NFLO2                      ;See caml_floatarray_create
+        BEQ @float
+        ;; check array length
+@chklen LDA ACCU + 1
         LSR
-        TAX                             ;X = no. of floats
-;       CLC
--       +caml_move_float @INIT, BLK
-        LDA # < (2 * Double_wosize)
-        ADC BLK
-        STA BLK
-        LDA # > (2 * Double_wosize)
-        ADC BLK + 1
-        STA BLK + 1
-        DEX
-        BNE -
-        RTS
-@no_float_array
-        ;; check length
-        LSR ACCU + 1
         BNE @error
         LDA ACCU
         ROR
-        BNE +
-        ;; length = 0, empty array
-        LDA # < caml_atom0
-        STA ACCU
-        LDA # > caml_atom0
-        STA ACCU + 1
-        RTS
-        ;; length > 0, allocate array
-+       TAX                             ; size
-        TYA                             ; tag = 0
-        JSR caml_alloc                  ;if C set, must reload @INIT here
+        BNE @noflo
+        JMP caml_mkatom0
+@error  +caml_raise Invalid_argument, "Array.make"
+        ;; init is a float
+@float  JSR caml_floatarray_create      ;allocate a floatarray, set @NFLO2
         BCC +
+        ;; GC occurred, reload SP[0]
+        LDA (SP),Y
+        STA @INIT
+        INY
+        LDA (SP),Y
+        STA @INIT + 1
++       LSR @NFLO2
+        BEQ +                           ;exit if empty array
+        LDX @NFLO2                      ;X = no. of array elements
+        ;; initialize the floatarray
+-       +caml_move_float @INIT, BLK
+        DEX
+        BEQ +
+        LDA BLK
+        CLC
+        ADC # 2 * Double_wosize        ;next float = 6 bytes ahead
+        STA BLK
+        BCC -
+        INC BLK + 1
+        BCS -
++       LDY # 0
+        RTS
+        ;; init is int or non-float block
+@noflo  TAX                             ;X = Int_val(lenght)
+        TYA                             ;A = tag = 0
+        JSR caml_alloc                  ;allocate a non-float array
+        JSR caml_load_newblk   
+        LDA (SP),Y
+        BCC +                           ;branch if no GC occurred
+        BIT caml_is_block
+        BNE +                           ;branch if init is int
+        ;; GC occurred and init is a block, reload SP[0]
+        STA @INIT
         INY
         LDA (SP),Y
         STA @INIT + 1
         DEY
-        LDA (SP),Y
-        STA @INIT
-+       LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1
-        ;; init fields
+        ;; initialize the array
 -       LDA @INIT
-        STA (BLK),Y
++       STA (BLK),Y
         INY
         LDA @INIT + 1
         STA (BLK),Y
+        DEX
+        BEQ +
         INY
-        BNE +
-        INC BLK + 1
-+       DEX
         BNE -
-        LDY # 0
+        INC BLK + 1
+        BNE -
++       LDY # 0
         RTS
-@error  +caml_raise Invalid_argument, "Array.make"
 }
 
 !ifdef caml_PRIM__caml_floatarray_create {
         ;; allocate an array of floats
         ;; ACCU = length
 caml_floatarray_create
-@NFLO2  = TMP                   ; see caml_make_vect
-        LDA ACCU + 1
+@NFLO2 = TMP                            ;shared with caml_make_vect
+        LDA ACCU + 1                    ;load and check length
         BNE @error
         LDA ACCU
-        ;; exn if 3 * index > 255
         AND # $FE
+        STA @NFLO2                      ;@NFLO2 = 2 * no. of array elements
         BNE +
-        ;; length = 0, empty array
-        LDA # < caml_atom0
-        STA ACCU
-        LDA # > caml_atom0
-        STA ACCU + 1
-        RTS
-        ;; length > 0, size is length * 3
-+       STA @NFLO2
-        LSR
-;       CLC                             ;implicit
+        CLC                             ;atom0 => no GC, tell caml_make_vect
+        JMP caml_mkatom0
++       LSR
+       ;CLC
         ADC @NFLO2
         BCS @error
-        ;; allocate array of floats
-        TAX                             ; size
-        LDA # Double_array_tag          ; tag
+        TAX                             ;X = size = length * 3
+        LDA # Double_array_tag          ;Allocate a floatarray
         JSR caml_alloc
-        LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1
-        RTS
+        JMP caml_load_newblk   
 @error  +caml_raise Invalid_argument, "Float.Array.create"
 }
 
 !ifdef caml_PRIM__caml_make_array {
-        ;; if init is a block of floats, unbox all elements
-        ;; ACCU = init
+        ;; If ACCU is a block of floats, unbox all elements, else do nothing
 caml_make_array
-@FIELD0 = TMP
-@NFLOATS= TMP + 2
-        ;; exit if size(init) = 0
-        LDA # >caml_atom0
-        CMP ACCU + 1
+@FLD = TMP
+@NFL = TMP + 2
+@OFS = TMP + 3
+@RES = TMP + 4
+        LDA ACCU
+        BIT caml_is_block
+        BNE @exit                       ;exit if !is_block(ACCU)
+        CMP # <caml_atom0
         BNE +
-        LDA # <caml_atom0
-        CMP ACCU
-        BEQ @exit
-        ;; exit if Field(init,0) is not a block
-+       INY
-        LDA (ACCU),Y
-        BIT caml_is_block                       ; test @FIELD0
-        BNE @exit
-        STA @FIELD0
+        LDA ACCU + 1
+        CMP # >caml_atom0
+        BEQ @exit                       ;exit if size(ACCU)=0
++       LDA (ACCU),Y
+        BIT caml_is_block
+        BNE @exit                       ;exit if !is_block(Field0)
+        STA @FLD
+        SEC
+        SBC # < caml_heap_start
         INY
         LDA (ACCU),Y
-        STA @FIELD0 + 1
-;;      ;; exit if Field(init,0) is out of heap
-;;      SEC
-;;      LDA @FIELD0
-;;      SBC # < caml_heap_start
-;;      STA TMP
-;;      LDA @FIELD0 + 1
-;;      SBC # > caml_heap_start
-;;      STA TMP + 1
-;;      LDA TMP
-;;      CMP # < caml_heap_sz
-;;      LDA TMP + 1
-;;      SBC # > caml_heap_sz
-;;      BCS @exit
-        ;; exit if tag(Field(init,0)) <> Double_tag
+        CMP # > caml_heap_start
+        BCC @exit0                      ;exit if out_of_heap(Field0)
+        STA @FLD + 1
         LDY # -2
-        DEC @FIELD0 + 1
-        LDA (@FIELD0),Y
+        DEC @FLD + 1
+        LDA (@FLD),Y
         CMP # Double_tag
-        BEQ +
-        LDY # 0
+        BEQ +                           ;exit if tag(Field0)<>Double_tag
+@exit0  LDY # 0
 @exit   RTS
-        ;; check length
-+       INY
++       INY                             ;Y = -1
         DEC ACCU + 1
-        LDA (ACCU),Y
+        LDA (ACCU),Y                    ;size of the source array
         INC ACCU + 1
-        INY
-        CMP # 255 DIV Double_wosize + 1
+        INY                             ;Y = 0
+        CMP # 255 DIV Double_wosize + 1  ;check length
         BCC +
         +caml_raise Out_of_memory
         ;; size is lenght * 3
-+       STA @NFLOATS
++       STA @NFL
         ASL
-;       clc
-        ADC @NFLOATS
-        ;; allocate array of floats
-        TAX
-        LDA # Double_array_tag
-        JSR caml_alloc
+        ;CLC
+        ADC @NFL
+        TAX                              ;X = @NFL * 3 = @NFL * Double_wosize 
+        LDA # Double_array_tag           ;A = tag
+        JSR caml_alloc                   ;allocate array of floats; ACCU (the
+                                         ; source array) is a GC root, so it
+                                         ; stays valid. {Y = 0}
         LDA BLK
-        STA ACCU
+        STA @RES
         LDA BLK + 1
-        STA ACCU + 1
-        ;; init fields           BUG! FIELD0 may be an invalid ptr after GC
-        INC @FIELD0 + 1                 ; previously dec'ed
--       +caml_move_float @FIELD0, BLK
-        DEX
-        BEQ @exit
-        INC @FIELD0
-        INC @FIELD0
-        BNE +
-        INC @FIELD0 + 1
-+       INC BLK
-        INC BLK
-        BNE -
+        STA @RES + 1                     ;save result address
+        STY @OFS                         ;offset of the source field (Y = 0)
+        ;; for each element: unbox Field(ACCU,i) into the new block
+@loop   LDY @OFS
+        LDA (ACCU),Y
+        STA @FLD
+        INY
+        LDA (ACCU),Y
+        STA @FLD + 1
+        INY
+        STY @OFS
+        +caml_move_float @FLD, BLK       ;{Y = 0}
+        DEC @NFL
+        BEQ @end
+        LDA BLK
+        CLC
+        ADC # Double_wosize * 2
+        STA BLK
+        BCC @loop
         INC BLK + 1
-        JMP -
+        BCS @loop                        ;C is still set
+@end    LDA @RES                         ;ACCU := new array
+        STA ACCU
+        LDA @RES + 1
+        STA ACCU + 1
+        RTS                              ;{Y = 0}
 }
 
 !ifdef caml_PRIM__caml_array_get {
@@ -220,16 +212,13 @@ caml_array_get
         ;; return an array element
         ;; ACCU = array
         ;; SP[0] = index
-
-        ;; load tag
         LDY # -2
         DEC ACCU + 1
         LDA (ACCU),Y
         INY
-        ;; check if float
         CMP # Double_array_tag
         BNE caml_array_get_addr__loadsize
-        JMP caml_floatarray_get__loadsize
+        JMP caml_floatarray_get__loadsize   ;{Y=-1, ACCU+1 already decremented}
 }
 
 !ifdef caml_PRIM__caml_array_get_addr {
@@ -240,30 +229,32 @@ caml_array_get_addr
         DEY
         DEC ACCU + 1
 caml_array_get_addr__loadsize
+@SZ     = TMP
+        ;; load size
         LDA (ACCU),Y
-        STA TMP                                 ; TMP := size
-        INC ACCU + 1                            ; restore ptr to Field(0)
+        STA @SZ
+        INC ACCU + 1                    ;restore ACCU+1
         LDY # 1
-        LDA (SP),Y                              ; load index, hi
+        LDA (SP),Y                      ;load index, hi
         LSR
-        BNE @error                              ; exn if index>255 or index<0
+        BNE @error                      ;exn if index>255 or index<0
         BCC +
-        INC ACCU + 1                            ; inc ACCU if index > 127
+        INC ACCU + 1                    ;inc ACCU if index > 127
 +       DEY
-        LDA (SP),Y                              ; load index, lo
-        TAY                                     ; now ACCU+Y points to elt, hi
+        LDA (SP),Y                      ;load index, lo
+        TAY                             ;now ACCU+Y points to elt, hi
         ROR
-        CMP TMP
-        BCS @error                              ; exn if index >= size
-        LDA (ACCU),Y                            ; get array elt, hi
+        CMP @SZ
+        BCS @error                      ;exn if index >= size
+        LDA (ACCU),Y                    ;get array elt, hi
         TAX
         DEY
-        LDA (ACCU),Y                            ; get array elt, lo
-        STA ACCU                                ; ACCU <- array[index]
+        LDA (ACCU),Y                    ;get array elt, lo
+        STA ACCU                        ;ACCU <- array[index]
         STX ACCU + 1
         LDY # 0
         RTS
-@error  +caml_raise Invalid_argument, "index out of bounds"
+@error  JMP caml_err_index_oob
 }
 
 !ifdef caml_PRIM__caml_floatarray_get {
@@ -271,56 +262,39 @@ caml_array_get_addr__loadsize
         ;; ACCU = array
         ;; SP[0] = index
 caml_floatarray_get
-        ;; load size
         DEY
         DEC ACCU + 1
 caml_floatarray_get__loadsize
 @SZ     = TMP
 @IDX    = TMP + 1
+        ;; load size
         LDA (ACCU),Y
         STA @SZ
-        INC ACCU + 1
+        INC ACCU + 1                    ;restore ACCU+1
+        ;; allocate float
+        LDA # Double_tag
+        LDX # Double_wosize
+        JSR caml_alloc
         ;; load index, hi
         LDY # 1
         LDA (SP),Y
-        BEQ +
-        ;; exn if hi > 0
-        JMP @error
+        BNE @error                      ;exn if hi > 0
         ;; load index, lo
-+       DEY
+        DEY
         LDA (SP),Y
         ;; exn if 3 * index >= size
-        AND # $FE
-        BEQ +
-        STA @IDX
-        LSR
-        ;CLC
-        ADC @IDX
+        JSR caml_IntValx3
         BCS @error
         CMP @SZ
         BCS @error
         ;; ACCU <- &array[index]
-+       ASL
-        BCC +
-        INC ACCU + 1
-        CLC
-+       ADC ACCU
-        STA ACCU
-        BCC +
-        INC ACCU + 1
-        ;; allocate float
-+       LDA # Double_tag
-        LDX # Double_wosize
-        JSR caml_alloc            ;BUG: ACCU INTERNAL PTR!
+        LDX # ACCU
+        JSR caml_ptr_add2A
         ;; copy float
         +caml_move_float ACCU, BLK
         ;; return float
-        LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1
-        RTS
-@error  +caml_raise Invalid_argument, "index out of bounds"
+        JMP caml_load_newblk
+@error  JMP caml_err_index_oob
 }
 
 !ifdef caml_PRIM__caml_array_unsafe_get {
@@ -330,23 +304,23 @@ caml_array_unsafe_get
         ;; SP[0] = index
         LDY # -2
         DEC ACCU + 1
-        LDA (ACCU),Y                            ; load tag
-        INC ACCU + 1                            ; restore ptr
+        LDA (ACCU),Y                    ;load tag
+        INC ACCU + 1                    ;restore ptr
         LDY # 0
-        CMP # Double_array_tag                  ; check if float
-        BEQ caml_floatarray_unsafe_get         ; yes: special case
-        LDA (SP),Y                              ; Val_int(index), lo
+        CMP # Double_array_tag          ;check if float
+        BEQ caml_floatarray_unsafe_get  ;yes: special case
+        LDA (SP),Y                      ;Val_int(index), lo
         STA TMP
         INY
-        LDA (SP),Y                              ; Val_int(index), hi
+        LDA (SP),Y                      ;Val_int(index), hi
         BEQ +
         INC ACCU + 1
 +       LDY TMP
         ;; get array element
-        LDA (ACCU),Y                            ; array[index], hi
+        LDA (ACCU),Y                    ;array[index], hi
         TAX
         DEY
-        LDA (ACCU),Y                            ; array[index], lo
+        LDA (ACCU),Y                    ;array[index], lo
         STA ACCU
         STX ACCU + 1
         LDY # 0
@@ -358,35 +332,21 @@ caml_array_unsafe_get
         ;; ACCU = array
         ;; SP[0] = index
 caml_floatarray_unsafe_get
-        ;; load index, lo (ignore hi byte)
-        LDA (SP),Y                      ; 2*i+1
-        ;; calc 3 * i
-        AND # $FE
-        STA TMP
-        LSR
-        CLC
-        ADC TMP
-        ;; ACCU <- &array[index]
-        ASL
-        BCC +
-        INC ACCU + 1
-        CLC
-+       ADC ACCU
-        STA ACCU
-        BCC +
-        INC ACCU + 1
         ;; allocate float
-+       LDA # Double_tag
+        LDA # Double_tag
         LDX # Double_wosize
-        JSR caml_alloc        ;BUG: ACCU INTERNAL PTR!
+        JSR caml_alloc
+        ;; load index, lo (ignore hi byte)
+        LDA (SP),Y                      ;2*i+1
+        ;; calc 3 * i
+        JSR caml_IntValx3
+        ;; ACCU <- &array[index]
+        LDX # ACCU
+        JSR caml_ptr_add2A
         ;; copy float
         +caml_move_float ACCU, BLK
         ;; return float
-        LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1
-        RTS
+        JMP caml_load_newblk   
 }
 
 !ifdef caml_PRIM__caml_array_set {
@@ -404,7 +364,7 @@ caml_array_set
         ;; check if float
         CMP # Double_array_tag
         BNE caml_array_set_addr__loadsize
-        JMP caml_floatarray_set__loadsize
+        JMP caml_floatarray_set__loadsize   ;{Y=-1, ACCU+1 already decremented}
 }
 
 !ifdef caml_PRIM__caml_array_set_addr {
@@ -453,12 +413,12 @@ caml_array_set_addr__loadsize
         LDA @NEW + 1
         STA (ACCU),Y
         ;; ACCU <- ()
-        LDY # <Val_unit                 ;.Y := 1
+        LDY # <Val_unit                 ;Y := 1
         STY ACCU
         DEY
         STY ACCU + 1
         RTS
-@error  +caml_raise Invalid_argument, "index out of bounds"
+@error  JMP caml_err_index_oob
 }
 
 !ifdef caml_PRIM__caml_floatarray_set {
@@ -493,32 +453,22 @@ caml_floatarray_set__loadsize
         DEY
         LDA (SP),Y
         ;; exn if 3 * index >= size
-        AND # $FE
-        STA @IDX
-        LSR
-        CLC
-        ADC @IDX
+        JSR caml_IntValx3
         BCS @error
         CMP @SZ
         BCS @error
         ;; ACCU <- &array[index]
-+       ASL
-        BCC +
-        INC ACCU + 1
-        CLC
-+       ADC ACCU
-        STA ACCU
-        BCC +
-        INC ACCU + 1
+        LDX # ACCU
+        JSR caml_ptr_add2A
         ;; copy float
-+       +caml_move_float @NEW, ACCU
+        +caml_move_float @NEW, ACCU
         ;; ACCU <- ()
         STY ACCU + 1
         INY
         STY ACCU
         DEY
         RTS
-@error  +caml_raise Invalid_argument, "index out of bounds"
+@error  JMP caml_err_index_oob
 }
 
 !ifdef caml_PRIM__caml_array_unsafe_set {
@@ -547,10 +497,10 @@ caml_array_unsafe_set
         ;; SP[1] = newval
 caml_array_unsafe_set_addr
         ;; load index
-        LDA (SP),Y                      ; Val_int(index), lo
+        LDA (SP),Y                      ;Val_int(index), lo
         STA TMP
         INY
-        LDA (SP),Y                      ; Val_int(index), hi
+        LDA (SP),Y                      ;Val_int(index), hi
         BEQ +
         INC ACCU + 1
         ;; load newval
@@ -566,7 +516,7 @@ caml_array_unsafe_set_addr
         TXA
         STA (ACCU),Y
         ;; ACCU <- ()
-        LDY # <Val_unit                 ;.Y := 1
+        LDY # <Val_unit                 ;Y := 1
         STY ACCU
         DEY
         STY ACCU + 1
@@ -580,24 +530,14 @@ caml_array_unsafe_set_addr
         ;; SP[1] = newval
 caml_floatarray_unsafe_set
         ;; load index, lo (ignore hi byte)
-        LDA (SP),Y                      ; 2*i+1
+        LDA (SP),Y                      ;2*i+1
         ;; calc 3 * i
-        AND # $FE
-        STA TMP
-        LSR
-        CLC
-        ADC TMP
+        JSR caml_IntValx3
         ;; ACCU <- &array[index]
-        ASL
-        BCC +
-        INC ACCU + 1
-        CLC
-+       ADC ACCU
-        STA ACCU
-        BCC +
-        INC ACCU + 1
+        LDX # ACCU
+        JSR caml_ptr_add2A
         ;; load newval
-+       LDY # 2
+        LDY # 2
         LDA (SP),Y
         STA TMP
         INY
@@ -608,7 +548,7 @@ caml_floatarray_unsafe_set
         ;; ACCU <- ()
         LDA # <Val_unit
         STA ACCU
-        STY ACCU + 1                    ; Y = 0
+        STY ACCU + 1                    ;Y = 0
         RTS
 }
 
@@ -632,37 +572,24 @@ caml_array_blit
         ;; array of floats, compute source start address
         LDY # 0
         STY @NBY + 1
-        LDA (SP),Y                      ; ofs1, ignore hi byte
-        AND # $FE
-        STA TMP
-        LSR
-        CLC
-        ADC TMP
+        LDA (SP),Y                      ;ofs1, ignore hi byte
+        JSR caml_IntValx3
         ;; ACCU <- &arr1[ofs1]
-        ASL                             ; A = 6 * ofs1
-        BCC +
-        INC ACCU + 1
-        CLC
-+       ADC ACCU
-        STA ACCU
-        BCC +
-        INC ACCU + 1
+        LDX # ACCU                      ;A = 6 * ofs1
+        JSR caml_ptr_add2A
         ;; compute destination start address
-+       LDY # 4
-        LDA (SP),Y                      ; ofs2, ignore hi byte
+        LDY # 4
+        LDA (SP),Y                      ;ofs2, ignore hi byte
         ;; calc 3 * index
-        AND # $FE
+        JSR caml_IntValx3
         STA TMP
-        LSR
-        CLC
-        ADC TMP
         ;; TMP <- &arr2[ofs2]
-        TAX                             ; X = 3 * ofs2
+        TAX                             ;X = 3 * ofs2
         DEY
         LDA (SP),Y
         STA TMP + 1
         TXA
-        ASL                             ; A = 6 * ofs2
+        ASL                             ;A = 6 * ofs2
         BCC +
         INC TMP + 1
         CLC
@@ -673,12 +600,9 @@ caml_array_blit
         INC TMP + 1
         ;; @NBY = 6 * n (no. of bytes to be moved)
 +       LDY # 6
-        LDA (SP),Y                      ; ignore hi byte
-        AND # $FE
-        STA @NBY
-        LSR
-        CLC
-        ADC @NBY
+        LDA (SP),Y                      ;ignore hi byte
+        JSR caml_IntValx3
+        ASL
         STA @NBY
         BCC +
         INC @NBY + 1
@@ -718,53 +642,79 @@ caml_array_blit
         BNE +
         DEC TMP + 1
 +       DEC TMP
-        ;; compute no. of bytes to be copied
+        ;; compute no. of bytes to be copied: @NBY = 2n (n = SP[3] = 2n+1 - 1)
         INY
-        LDA @NBY
-        ADC (SP),Y
+        LDA (SP),Y
         STA @NBY
         INY
-        LDA @NBY + 1
-        ADC (SP),Y
+        LDA (SP),Y
         STA @NBY + 1
         LDA @NBY
         BNE +
         DEC @NBY + 1
 +       DEC @NBY
-        ;; copy bytes from source to destination
-@copy   LDA ACCU
+        ;; ACCU = source, TMP = destination, @NBY = no. of bytes (exact)
+@copy   LDA @NBY
+        ORA @NBY + 1
+        BEQ @done0                      ;nothing to copy
+        LDA ACCU
         CMP TMP
         LDA ACCU + 1
         SBC TMP + 1
         BCS @cpydn
-        ;; ACCU < TMP, copy memory up (arr1[0] last)
-        LSR @NBY + 1
+        ;; source < dest: copy from the end (safe if the ranges overlap).
+        ;; (blkcpy is not used: it copies to BLK, not to TMP)
+        CLC
+        LDA ACCU + 1
+        ADC @NBY + 1
+        STA ACCU + 1
+        CLC
+        LDA TMP + 1
+        ADC @NBY + 1
+        STA TMP + 1
         LDY @NBY
-        JSR caml_blkcpy
-        ;; ACCU <- ()
-@done   STY ACCU + 1                    ; Y = 0
+        BEQ @uppg
+-       DEY
+        LDA (ACCU),Y
+        STA (TMP),Y
+        CPY # 0
+        BNE -
+@uppg   LDX @NBY + 1                    ;Y = 0 here
+        BEQ @done0
+--      DEC ACCU + 1
+        DEC TMP + 1
+-       DEY                             ;Y: 0 -> 255 -> ... -> 0
+        LDA (ACCU),Y
+        STA (TMP),Y
+        CPY # 0
+        BNE -
+        DEX
+        BNE --
+@done0  LDY # 0
+@done   STY ACCU + 1                    ;Y = 0
         LDA # <Val_unit
         STA ACCU
-        RTS
-        ;; ACCU >= TMP, copy memory down (arr1[0] first)
-@cpydn  LDX @NBY + 1                    ; 0 or 1
-        BEQ +
-        LDY # 0
--       LDA (ACCU),Y                    ; >255 bytes: copy a whole page
+        RTS                             ;Exit.
+        ;; source >= dest: copy from the start
+@cpydn  LDY # 0
+        LDX @NBY + 1
+        BEQ @dnlo
+-       LDA (ACCU),Y                    ;a whole page
         STA (TMP),Y
         INY
         BNE -
         INC ACCU + 1
         INC TMP + 1
-+       LDX @NBY
-        BEQ +
--       LDA (ACCU),Y                    ; copy the remaining bytes
+        DEX
+        BNE -
+@dnlo   LDX @NBY
+        BEQ @done0
+-       LDA (ACCU),Y                    ;the remaining bytes
         STA (TMP),Y
         INY
         DEX
         BNE -
-+       LDY # 0
-        JMP @done
+        BEQ @done0
 }
 
 !ifdef caml_PRIM__caml_array_sub {
@@ -773,56 +723,57 @@ caml_array_sub
         ;; ACCU = a
         ;; SP[0] = ofs
         ;; SP[1] = n
-@NBY    = TMP
+        ;; GC-safe: while caml_alloc may run a GC, ACCU is kept equal to the
+        ;; array's start (a root) and the source address is computed after it.
+@NB     = TMP                           ;no. of bytes to be copied
+@TG     = TMP + 2                       ;tag of the new array
         ;; load tag
         LDY # -2
         DEC ACCU + 1
         LDA (ACCU),Y
         INC ACCU + 1
-        ;; check if float
+        STA @TG
         CMP # Double_array_tag
-        BNE @no_floats
-        ;; array of floats, compute source start address
-        LDY # 0                         ; ignore hi byte
-        STY @NBY + 1
+        BNE @ordinary
+        ;; array of floats: @NB = 6 * n
+        LDY # 2
+        LDA (SP),Y                      ;ignore hi byte
+        JSR caml_IntValx3
+        ASL
+        STA @NB
+        LDA # 0
+        ROL
+        STA @NB + 1
+        JMP @alloc
+@ordinary
+        LDA # 0
+        STA @TG
+        LDY # 2
         LDA (SP),Y
-        AND # $FE
-        STA TMP
+        STA @NB
+        INY
+        LDA (SP),Y
+        STA @NB + 1
+        LDA @NB
+        BNE +
+        DEC @NB + 1
++       DEC @NB                         ;@NB = 2 * n
+        ;; allocate subarray (an empty one is the atom 0)
+@alloc  LDA @NB + 1
         LSR
-        CLC
-        ADC TMP
-        ;; ACCU <- &arr1[ofs1]
-        ASL                             ; A = 6 * ofs1
-        BCC +
-        INC ACCU + 1
-        CLC
-+       ADC ACCU
-        STA ACCU
-        BCC +
-        INC ACCU + 1
-        ;; @NBY = 6 * n (no. of bytes to be moved)
-+       LDY # 2
-        LDA (SP),Y                      ; ignore hi byte
-        AND # $FE
-        STA @NBY
-        LSR
-        CLC
-        ADC @NBY
-        STA @NBY
-        BCC +
-        INC @NBY + 1
-        ;; allocate subarray
-+       LDA @NBY + 1
-        LSR
-        LDA @NBY
+        LDA @NB
         ROR
         TAX
-        LDA # Double_array_tag
-        JSR caml_alloc                  ;BUG: ACCU INTERNAL PTR!
-        JMP @copy
-@no_floats
-        ;; ordinary array, compute source start address
+        BNE +
         LDY # 0
+        JMP caml_mkatom0
++       LDA @TG
+        JSR caml_alloc                  ;ACCU = a is still a valid root
+        ;; compute source address (ACCU may have been moved by the GC)
+        LDY # 0
+        LDA @TG
+        CMP # Double_array_tag
+        BEQ @floats
         CLC
         LDA ACCU
         ADC (SP),Y
@@ -834,36 +785,18 @@ caml_array_sub
         LDA ACCU
         BNE +
         DEC ACCU + 1
-+       DEC ACCU
-        ;; compute no. of bytes to be copied
-        INY
-        LDA (SP),Y
-        STA @NBY
-        INY
-        LDA (SP),Y
-        STA @NBY + 1
-        LDA @NBY
-        BNE +
-        DEC @NBY + 1
-+       DEC @NBY
-        ;; allocate subarray
-        LDA @NBY + 1
-        LSR
-        LDA @NBY
-        ROR
-        TAX
-        LDA # 0
-        JSR caml_alloc        ;BUG: ACCU INTERNAL PTR!
++       DEC ACCU                        ;ACCU := a + 2 * ofs
+        JMP @copy
+@floats LDA (SP),Y                      ;ofs, ignore hi byte
+        JSR caml_IntValx3
+        LDX # ACCU
+        JSR caml_ptr_add2A              ;ACCU := &a[ofs] (6 * ofs bytes)
         ;; copy bytes from source to destination
-@copy   LSR @NBY + 1
-        LDY @NBY
+@copy   LSR @NB + 1
+        LDY @NB
         JSR caml_blkcpy
         ;; ACCU <- subarray
-@done   LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1
-        RTS
+        JMP caml_load_newblk
 }
 
 !ifdef caml_PRIM__caml_array_append {
@@ -871,11 +804,13 @@ caml_array_append
         ;; append two arrays
         ;; ACCU = arr1
         ;; SP[0] = arr2
+        ;; GC-safe: ACCU and SP[0] are roots; arr2 is reloaded from the stack
+        ;; after caml_alloc, and no cached/internal pointer lives across it.
 @AUX    = TMP
 @SIZE1  = TMP + 2
 @SIZE2  = TMP + 4
-        ;; load sizes
-        LDA (SP),Y
+        ;; load sizes and tag
+        LDA (SP),Y                      ;{Y = 0}
         STA @AUX
         INY
         LDA (SP),Y
@@ -887,49 +822,54 @@ caml_array_append
         STA @SIZE1
         LDA (@AUX),Y
         STA @SIZE2
+        DEY
+        LDA (ACCU),Y                    ;tag
+        INC ACCU + 1                    ;ACCU = arr1 again (valid pointer)
+        PHA
+        LDA @SIZE2
         CLC
         ADC @SIZE1
         BCC +
         ;; exception if total size > 255
-        INY                             ; Y = 0
+        PLA
+        LDY # 0
         JMP @error
-        ;; load tag and allocate
-+       DEY
-        TAX                             ; size
-        LDA (ACCU),Y                    ; tag
-        JSR caml_alloc            ;BUG: @AUX INVALID PTR!
-        ;; copy arr1 to dest
-        INC ACCU + 1
-        LDA @SIZE1
-        ASL
-        TAY
-        JSR caml_blkcpy
-        ;; ACCU <- arr2
-        LDA @AUX
-        STA ACCU
-        LDA @AUX + 1
-        STA ACCU + 1
-        ;; save ptr to result
++       TAX                             ;size
+        BNE +
+        PLA
+        LDY # 0
+        JMP caml_mkatom0                ;both arrays empty
++       PLA                             ;tag
+        JSR caml_alloc                  ;ACCU and SP[0] updated if GC
         LDA BLK
-        STA @AUX
+        STA @AUX                        ;save ptr to result
         LDA BLK + 1
         STA @AUX + 1
-        ;; TMP <- &TMP[SIZE1]
-+       LDA @SIZE1
+        ;; copy arr1 to dest
+        LDA @SIZE1
+        BEQ +
         ASL
-        BCC +
-        INC BLK + 1
-        CLC
-+       ADC BLK
-        STA BLK
-        BCC +
-        INC BLK + 1
+        TAY
+        JSR caml_blkcpy                 ;{BLK unchanged, Y = 0}
+        ;; BLK <- &BLK[SIZE1]
++       LDA @SIZE1
+        LDX # BLK
+        JSR caml_ptr_add2A
+        ;; ACCU <- arr2 (reloaded from the stack)
+        LDY # 0
+        LDA (SP),Y
+        STA ACCU
+        INY
+        LDA (SP),Y
+        STA ACCU + 1
         ;; copy arr2 to dest
-+       LDA @SIZE2
+        LDA @SIZE2
+        BEQ +
         ASL
         TAY
         JSR caml_blkcpy
-        ;; ACCU <- AUX
+        ;; ACCU <- result
++       LDY # 0
         LDA @AUX
         STA ACCU
         LDA @AUX + 1
@@ -948,15 +888,16 @@ caml_array_concat
 @TAIL   = TMP + 4
 @RESULT = TMP + 2
         DEY
-        STY @TAG                        ; @TAG = -1
+        STY @TAG                        ;@TAG = -1
         INY
         STY @SIZE
         ;; return caml_atom0 if list = []
         LDA ACCU
         BIT caml_is_block
-        BNE @atom0
+        BEQ +
+        JMP caml_mkatom0
         ;; scan list and sum all arrays sizes
-        LDA (ACCU),Y
++       LDA (ACCU),Y
         STA @HEAD
         INY
         LDA (ACCU),Y
@@ -974,10 +915,11 @@ caml_array_concat
         BEQ +
         CLC
         ADC @SIZE
-        BCS @error                      ; raise exn if > 255
-        STA @SIZE
+        BCC ++
+        +caml_raise Invalid_argument, "Array.concat"
+++      STA @SIZE
         ;; only once: set @TAG from first non-empty array
-        CPY @TAG                        ; test if @TAG = -1
+        CPY @TAG                        ;test if @TAG = -1
         BNE +
         DEY
         LDA (@HEAD),Y
@@ -986,9 +928,9 @@ caml_array_concat
         ;; set @HEAD to next list element, @TAIL to rest
 +       INY
         LDA @TAIL
-        BIT caml_is_block                       ; end of list?
-        BEQ @alloc                      ; yes:  exit loop
-        LDA (@TAIL),Y                   ; no:   continue
+        BIT caml_is_block               ;end of list?
+        BEQ @alloc                      ;yes:  exit loop
+        LDA (@TAIL),Y                   ;no:   continue
         STA @HEAD
         INY
         LDA (@TAIL),Y
@@ -1003,13 +945,14 @@ caml_array_concat
         JMP -
         ;; allocate destination array
 @alloc  LDX @SIZE
-        BEQ @atom0
-        LDA @TAG
-        JSR caml_alloc          ;BUG: @TAIL INVALID PTR
+        BNE +
+        JMP caml_mkatom0
++       LDA @TAG
+        JSR caml_alloc                  ;OK: ACCU (list) is a root, @TAIL reloaded below
         LDA BLK
         STA @RESULT
         LDA BLK + 1
-        STA @RESULT + 1                 ; save dest address
+        STA @RESULT + 1                 ;save dest address
         ;; scan list again and append all arrays
         LDY # 3
         LDA (ACCU),Y
@@ -1028,7 +971,7 @@ caml_array_concat
 -       LDY # -1
         DEC ACCU + 1
         LDA (ACCU),Y
-        BEQ ++                          ; skip if zero
+        BEQ +                           ;skip if zero
         INC ACCU + 1
         TAX
         ASL
@@ -1037,20 +980,14 @@ caml_array_concat
         JSR caml_blkcpy
         TXA
         ;; set BLK pointer to first element to be copied next
-        ASL
-        BCC +
-        CLC
-        INC BLK + 1
-+       ADC BLK
-        STA BLK
-        BCC ++
-        INC BLK + 1
+        LDX # BLK
+        JSR caml_ptr_add2A
         ;; set ACCU to next list element, @TAIL to rest
-++      LDY # 0
++       LDY # 0
         LDA @TAIL
-        BIT caml_is_block               ; end of list?
-        BEQ @eol                        ; yes:  exit
-        LDA (@TAIL),Y                   ; no:   continue
+        BIT caml_is_block               ;end of list?
+        BEQ @eol                        ;yes:  exit
+        LDA (@TAIL),Y                   ;no:   continue
         STA ACCU
         INY
         LDA (@TAIL),Y
@@ -1062,20 +999,13 @@ caml_array_concat
         LDA (@TAIL),Y
         STX @TAIL
         STA @TAIL + 1
-        JMP -                           ; loop
+        JMP -
         ;; set ACCU = destination array and return
 @eol    LDA @RESULT
         STA ACCU
         LDA @RESULT + 1
         STA ACCU + 1
         RTS
-@atom0  LDA # < caml_atom0
-        STA ACCU
-        LDA # > caml_atom0
-        STA ACCU + 1
-        RTS
-@error  +caml_raise Invalid_argument, "Array.concat"
 }
 
 }      ;; !zone caml_ARRAYS
-

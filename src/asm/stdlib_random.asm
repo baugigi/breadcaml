@@ -1,12 +1,12 @@
-;;; --------------------
-;;;        RANDOM
-;;; --------------------
+;; -----------------------------------------------------------------------------
+;;                                   RANDOM
+;; -----------------------------------------------------------------------------
 
 ;; X ABC Algorithm Pseudo-Random Number Generator for 8-Bit Devices.
 ;; Quite fast, but not good for cryptographic/security purposes.
 ;; From EternityForest (1), with modifications by Stix (2).
 ;; (1) https://www.electro-tech-online.com/threads/ultra-fast-pseudorandom-
-;; 					      number-generator-for-8-bit.124249/
+;;                                            number-generator-for-8-bit.124249/
 ;; (2) https://www.stix.id.au/wiki/Fast_8-bit_pseudorandom_number_generator
 ;; Links are also on archive.org
 
@@ -58,28 +58,28 @@
 caml_nonstd_random_int
         INC caml_nonstd_random_int__x
 caml_nonstd_random_int__x = * + 1
-        LDA # $00                               ;SMC: LDA x
+        LDA # $00                       ;SMC: LDA x
         EOR caml_nonstd_random_int__c
 caml_nonstd_random_int__a = * + 1
-        EOR # $00                               ;SMC: EOR a
+        EOR # $00                       ;SMC: EOR a
         STA caml_nonstd_random_int__a
         CLC
 caml_nonstd_random_int__b = * + 1
-        ADC # $00                               ;SMC: ADC b
+        ADC # $00                       ;SMC: ADC b
         STA caml_nonstd_random_int__b
         LSR
-        BCC +                                   ;Stix's mod: LSR changed with
-        ORA # $80                               ;8-bit right rotate
+        BCC +                           ;Stix's mod: LSR changed with
+        ORA # $80                       ;8-bit right rotate
 +       EOR caml_nonstd_random_int__a
 caml_nonstd_random_int__c = * + 1
-        ADC # $00                               ;SMC: ADC c
+        ADC # $00                       ;SMC: ADC c
         STA caml_nonstd_random_int__c
-        LDA caml_nonstd_random_int__a		;a is the 8-bit random number
+        LDA caml_nonstd_random_int__a   ;a is the 8-bit random number
         ;; Original PRNG algo ends here.
         SEC
-        ROL                                     ;Return a 15-bit OCaml integer
-        STA ACCU                                ;from a and b, discarding
-        LDA caml_nonstd_random_int__b		;bit #7 of b.
+        ROL                             ;Return a 15-bit OCaml integer
+        STA ACCU                        ;from a and b, discarding
+        LDA caml_nonstd_random_int__b   ;bit #7 of b.
         ROL
         STA ACCU + 1
         RTS
@@ -88,16 +88,16 @@ caml_nonstd_random_int__c = * + 1
 !ifdef caml_PRIM__caml_nonstd_random_self_init {
 caml_nonstd_random_self_init
         ;; ARG0 is (), returned as is
-        LDA C64_TIME + 2                        ;Use the jiffy clock and the
-        STA caml_nonstd_random_int__x		;current raster line no. to
-        EOR C64_VIC_RASTER                      ;generate a "random" seed
+        LDA C64_TIME + 2                ;Use the jiffy clock and the
+        STA caml_nonstd_random_int__x   ;current raster line no. to
+        EOR C64_VIC_RASTER              ;generate a "random" seed
         STA caml_nonstd_random_int__a
--       ASL                                     ;"random" delay
+-       ASL                             ;"random" delay
         BNE -
         LDA caml_nonstd_random_int__x
         EOR C64_VIC_RASTER
         STA caml_nonstd_random_int__b
--       LSR                                     ;"random" delay
+-       LSR                             ;"random" delay
         BNE -
         LDA C64_VIC_RASTER
         STA caml_nonstd_random_int__c
@@ -132,10 +132,10 @@ caml_nonstd_random_get_state
         LDA # String_tag
         JSR caml_alloc
         LDY # 5
-        LDA # 1                                 ;OCaml string padding \001
+        LDA # 1                         ;OCaml string padding \001
         STA (BLK),Y
         DEY
-        LDA # 0                                 ;OCaml string padding \000
+        LDA # 0                         ;OCaml string padding \000
         STA (BLK),Y
         DEY
         LDA caml_nonstd_random_int__c
@@ -149,10 +149,6 @@ caml_nonstd_random_get_state
         DEY
         LDA caml_nonstd_random_int__x
         STA (BLK),Y
-        LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1
-        RTS
+        JMP caml_load_newblk   
 }
 }       ;; !zone caml_RANDOM

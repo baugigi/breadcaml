@@ -1,10 +1,13 @@
-!zone caml_CODEGEN {
+;; Snake test ok!
+
 ;; ----------------------------------------------------------------------------
 ;;      CODE GENERATION
 ;; ----------------------------------------------------------------------------
 
 ;; caml_INTERP = <undef>:  generate native code
 ;; caml_INTERP = 1:        generate bytecode for interpretation
+
+!zone caml_CODEGEN {
 
 ;; Check for out-of-range argument
 !macro caml_range .min, .arg, .max, .txt {
@@ -195,19 +198,19 @@
 }
 !macro  i29 {                                   ;RESTART
         !set    caml_gen_RESTART = 1
-        !set    caml_restart_len = @end - *     ;needed by GRAB routine
+        !set    caml_restart_len = .end - *     ;needed by GRAB routine
         JSR caml_RESTART
-@end
+.end
 }
 !macro  i2a .n {                                ;GRAB n
         +caml_range 0, .n, $7C, "GRAB n: n"
         +Val_Int ~.v, .n
         !set    caml_gen_GRAB = 1
         !set    caml_gen_GORETURN = 1
-        !set    caml_grab_len = @end - *        ;needed by GRAB routine
+        !set    caml_grab_len = .end - *        ;needed by GRAB routine
         LDA # .v
         JSR caml_GRAB
-@end
+.end
 }
 !macro  i2b .n, .ptr {                          ;CLOSURE n ptr
         +caml_range 0, .n, $7F, "CLOSURE n p: n"
@@ -240,7 +243,7 @@
         .n2h = >(2 * .n)
         .n2l = <(2 * .n)
   !if .n2h > 0 {
-        LDX # .n2h
+        LDY # .n2h
     }
   !if .n = 0 {
         !set    caml_gen_OFSCL0 = 1
@@ -306,10 +309,7 @@
 
 !macro  i3b .n {                                ;ATOM n
         +caml_range 0, .n, 0, "ATOM n: n"       ;only ATOM(0) allowed
-        LDA # <caml_atom0
-        STA ACCU
-        LDA # >caml_atom0
-        STA ACCU + 1
+        JSR caml_mkatom0
 }
 !macro  i3a     {+i3b 0}                        ;ATOM0 -> ATOM 0
 !macro  i3c     {+i09 : +i3b 0}                 ;PUSHATOM0 -> PUSH; ATOM 0
@@ -317,17 +317,17 @@
 
 ;; i3f-i41 depend on i3e
 
-!macro  i3e .size, .tag {                       ;MAKEBLOCK s t
-        +caml_range 1, .size, $FF, "MAKEBLOCK s t: s"
-        +caml_range 0, .tag, $FF, "MAKEBLOCK s t: t"
+!macro  i3e .t, .s {                            ;MAKEBLOCK t s
+        +caml_range 0, .t, $FF, "MAKEBLOCK t s: t"
+        +caml_range 1, .s, $FF, "MAKEBLOCK t s: s"
         !set    caml_gen_MKBLK = 1
-        LDX # .size
-        LDA # .tag
+        LDX # .s
+        LDA # .t
         JSR caml_MKBLK
 }
-!macro  i3f .t  {+i3e 1,.t}                     ;MAKEBLOCK1 t -> MAKEBLOCK 1 t
-!macro  i40 .t  {+i3e 2,.t}                     ;MAKEBLOCK2 t -> MAKEBLOCK 2 t
-!macro  i41 .t  {+i3e 3,.t}                     ;MAKEBLOCK3 t -> MAKEBLOCK 3 t
+!macro  i3f .t  {+i3e .t, 1}                     ;MAKEBLOCK1 t -> MAKEBLOCK t 1
+!macro  i40 .t  {+i3e .t, 2}                     ;MAKEBLOCK2 t -> MAKEBLOCK t 2
+!macro  i41 .t  {+i3e .t, 3}                     ;MAKEBLOCK3 t -> MAKEBLOCK t 3
 !macro  i42 .s {                                ;MAKEFLOATBLOCK s
         +caml_range 1, .s, $FF div Double_wosize, "MAKEFLOATBLOCK s: s"
         !set    caml_gen_MKFBLK = 1
@@ -345,7 +345,7 @@
         LDA # .n * Double_wosize
         JSR caml_GETFFLDN
   } else {
-        JSR caml_GETFFLDN__0
+        JSR caml_GETFFLDN__zero
   }
 }
 
@@ -999,22 +999,26 @@
                 .ofs = 2 * (.n - caml_exn_no)
                 !set    caml_gen_SETGLB=1
                 !by $39 : !wo caml_glob_table + .ofs }
-!macro i3a {    !by $3a }
+!macro i3a {    !set    caml_gen_ATOM0=1
+                !by $3a }
 !macro i3b .n { +caml_range 0, .n, 0, "ATOM n: n"
                 !set    caml_gen_ATOM0=1
                 !by $3a }                       ;*** ATOM t -> ATOM0 ***
-!macro i3c {    !by $3c }
+!macro i3c {    !set    caml_gen_PHATOM0=1
+                !set    caml_gen_PUSH=1
+                !set    caml_gen_ATOM0=1
+                !by $3c }
 !macro i3d .n { +caml_range 0, .n, 0, "PUSHATOM n: n"
                 !set    caml_gen_PHATOM0=1
                 !set    caml_gen_PUSH=1
                 !set    caml_gen_ATOM0=1
                 !by $3c }                       ;*** PUSHATOM t -> PUSHATOM0 ***
-!macro i3e .s, .t {
-                +caml_range 1, .s, $FF, "MAKEBLOCK s t: s"
-                +caml_range 0, .t, $FF, "MAKEBLOCK s t: t"
+!macro i3e .t, .s {
+                +caml_range 0, .t, $FF, "MAKEBLOCK t s: t"
+                +caml_range 1, .s, $FF, "MAKEBLOCK t s: s"
                 !set    caml_gen_MKBLKN=1
                 !set    caml_gen_MKBLK=1
-                !by $3e, .s, .t }
+                !by $3e, .s, .t }               ;note: swap args
 !macro i3f .t { +caml_range 0, .t, $FF, "MAKEBLOCK1 t: t"
                 !set    caml_gen_MKBLK13=1
                 !set    caml_gen_MKBLK=1
@@ -1254,7 +1258,8 @@
 !macro i91 { }                                  ;BREAK = NOP
 !macro i92 {    !by $5b }                       ;RERAISE -> RAISE
 !macro i93 {    !by $5b }                       ;RAISENOTRACE -> RAISE
-!macro i94 {    !by $52 }                       ;GETSTRINGCHAR -> GETBYTESCHAR
+!macro i94 {    !set    caml_gen_GETCHR=1       ;GETSTRINGCHAR -> GETBYTESCHAR
+                !by $52 }
 
 } ;ifndef caml_INTERP... else
 } ;zone caml_CODEGEN

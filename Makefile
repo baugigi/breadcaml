@@ -1,7 +1,24 @@
-SHELL = /bin/bash
-CONF  = etc/Makefile.conf
+SHELL := /bin/bash
+CONF  := etc/Makefile.conf
 include $(if $(wildcard $(CONF)),$(CONF),$(error \
-	Please run «./configure [options...]» from the main source directory))
+	Please run './configure [options...]' from the main source directory))
+
+# Path for uninstaller script
+UNINST := etc/uninstall.sh
+
+# Install file $(1) in dir $(2) with permissions $(3) and record it into the
+# uninstaller script
+define	inst_and_rec
+	[ -d "$(2)" ] || mkdir -p "$(2)"; \
+	echo "DIR:$(2)" >> "$(UNINST)"; \
+	for f in $(1); do \
+	  [ -f "$$f" ] && { \
+	    cp -f "$$f" "$(2)/"; \
+	    chmod $(3) "$(2)/$$(basename "$$f")"; \
+	    echo "FILE:$(2)/$$(basename "$$f")" >> "$(UNINST)"; \
+	  }; \
+	done
+endef
 
 .PHONY: all
 all:
@@ -12,21 +29,47 @@ all:
 
 .PHONY: install
 install: all
-	mkdir -p $(LIBDIR) $(BINDIR) $(MAN1DIR) $(MAN3DIR)
-	cp src/asm/*.asm $(LIBDIR)
+	@echo '$(call message,GENERATE:,Uninstaller script)'
+	{ echo '#!/bin/bash'; \
+	  echo '# AUTO-GENERATED FILE - DO NOT EDIT'; \
+	  echo 'sed -nE "s/^FILE:(.+)$$/\1/p" "$$0"|while read -r f; do'; \
+	  echo '  rm -f "$$f"'; \
+	  echo 'done'; \
+	  echo 'sed -nE "s/^DIR:(.+)$$/\1/p" "$$0"|tac|while read -r d; do'; \
+	  echo '  rmdir "$$d" 2>/dev/null'; \
+	  echo 'done'; \
+	  echo 'rm -f "$$0"'; \
+	  echo 'exit 0'; \
+	  echo '# --- MANIFEST ---'; \
+	} > $(UNINST)
+	chmod +x "$(UNINST)"
+	@echo '$(call message,INSTALL: ,Binaries)'
+	$(call inst_and_rec,bin/bcamlc,$(BINDIR),755)
+	$(call inst_and_rec,bin/bcamlppx,$(BINDIR),755)
 	strip bin/bcaml{c,ppx}
-	cp bin/bcaml{c,ppx} $(BINDIR)
-	ln -f -s -T $(BINDIR)/bcaml{c,opt}
-	cp man/* $(MAN1DIR)
-	cp src/stdlib/{stdlib.cma,libcamlrun.a,*.{ml,mli,cmo,cmi}} $(LIBDIR)
-	cp src/stdlib/*.$(MAN3EXT) $(MAN3DIR)
+	ln -fsT $(BINDIR)/bcamlc $(BINDIR)/bcamlopt
+	echo "FILE:$(BINDIR)/bcamlopt" >> "$(UNINST)"
+	@echo '$(call message,INSTALL: ,Assembly routines)'
+	$(call inst_and_rec,src/asm/*.asm,$(LIBDIR),755)
+	@echo '$(call message,INSTALL: ,Standard Library)'
+	$(call inst_and_rec,src/stdlib/stdlib.cma,$(LIBDIR),755)
+	$(call inst_and_rec,src/stdlib/libcamlrun.a,$(LIBDIR),755)
+	$(call inst_and_rec,src/stdlib/*.ml,$(LIBDIR),755)
+	$(call inst_and_rec,src/stdlib/*.mli,$(LIBDIR),755)
+	$(call inst_and_rec,src/stdlib/*.cmo,$(LIBDIR),755)
+	$(call inst_and_rec,src/stdlib/*.cmi,$(LIBDIR),755)
+	@echo '$(call message,INSTALL: ,Man pages)'
+	$(call inst_and_rec,man/*,$(MAN1DIR),644)
+	$(call inst_and_rec,src/stdlib/*.$(MAN3EXT),$(MAN3DIR),644)
+	@echo '$(call message,INSTALL: ,HTML documentation)'
+	$(call inst_and_rec,src/stdlib/*.html,$(DOCDIR),644)
+	$(call inst_and_rec,src/stdlib/*.css,$(DOCDIR),644)
 
 .PHONY: uninstall
 uninstall:
-	rm -f $(BINDIR)/{acme,bcaml{c,opt,ppx}}
-	rm -f $(MAN1DIR)/bcaml{c,opt,ppx}.1.gz
-	rm -f $(MAN3DIR)/*.$(MAN3EXT)
-	rm -fr $(LIBDIR)
+	@if [ -f "$(UNINST)" ]; then "$(UNINST)"; else \
+	  echo "Cannot uninstall BreadCaml: '$(UNINST)' not found." 1>&2; \
+	fi
 
 .PHONY: clean
 clean:
@@ -41,6 +84,4 @@ fullinstall: install clean
 
 .PHONY: gitclean
 gitclean: clean
-	find . -path '*/.git' -prune -o -type f '(' -name '*~' -o -name '*.html' ')' -exec rm {} '+'
-	rm -f src/stdlib/{bytes,list,string,hashtbl,map,set,array,float,moreLabels}.mli
-	rm -f etc/Makefile.conf
+	rm -f etc/Makefile.conf etc/$(UNINST)

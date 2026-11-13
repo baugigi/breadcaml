@@ -1,6 +1,6 @@
-;;; ---------------------------------------------------------------------------
-;;; STRINGS (ocaml-4.14.4/runtime/str.c)
-;;; ---------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
+;;                                  STRINGS
+;; -----------------------------------------------------------------------------
 
 !zone caml_STRINGS {
 
@@ -9,7 +9,18 @@ caml_string_of_bytes = caml_bytes_of_string
 }
 !ifdef caml_PRIM__caml_bytes_of_string {
 caml_bytes_of_string
-        RTS
+        DEY
+        DEC ACCU + 1
+        LDA (ACCU),Y
+        TAX
+        INC ACCU + 1
+        LDA # String_tag
+        JSR caml_alloc
+        TXA
+        ASL
+        TAY
+        JSR caml_blkcpy
+        JMP caml_load_newblk
 }
 
 !ifdef caml_PRIM__caml_create_bytes {
@@ -19,35 +30,33 @@ caml_create_bytes = caml_create_string
 caml_create_string
         ;; ACCU = length
         ;; alloc a new block for a string of given length (max 509)
-
-        LDA ACCU + 1                            ;load >length
-        LSR                                     ;
-        ROR ACCU                                ;ACCUl,A := Int_val(lenght)
+        LDA ACCU
+        STA TMP
+        LDA ACCU + 1                    ;load >length
+        LSR                             ;
+        ROR TMP                         ;A:TMP := Int_val(lenght)
         LSR
-        BNE +++                                 ;A>0 => len > max, raise exn.
-        ROR ACCU                                ;ACCUl :=  Int_val(lenght) / 2
-        PHP                                     ;save carry (remainder)
-        LDX ACCU                                ;X := block size, in words
-        INX                                     ;take into account Ocaml padding
-        BEQ ++                                  ;Exception if size > 255
-        LDA # String_tag                        ;load tag
-        JSR caml_alloc                          ;allocate block BUG: ACCU NOT A VALUE!
-        LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1                            ;ACCU := address of new block
-        DEX                                     ;Compute the padding bytes:
-        TXA                                     ;A := size - 1
-        ASL                                     ;A := 2 * size - 2
+        BNE +++                         ;A>0 => len > max, raise exn.
+        ROR TMP                         ;TMP :=  Int_val(lenght) / 2
+        PHP                             ;save carry (remainder)
+        LDX TMP                         ;X := block size, in words
+        INX                             ;take into account Ocaml padding
+        BEQ ++                          ;Exception if size > 255
+        LDA # String_tag                ;load tag
+        JSR caml_alloc                  ;allocate block
+        JSR caml_load_newblk            ;ACCU := address of new block
+        DEX                             ;Compute the padding bytes:
+        TXA                             ;A := size - 1
+        ASL                             ;A := 2 * size - 2
         BCC +
         INC BLK + 1
-+       TAY                                     ;BLK+.Y = address of last word
++       TAY                             ;BLK+.Y = address of last word
         LDA # 0
-        PLP                                     ;reload .C flag
-        BCS +                                   ;string length is odd?
-        STA (BLK),Y                             ;no: padding = "\000\001"
+        PLP                             ;reload .C flag
+        BCS +                           ;string length is odd?
+        STA (BLK),Y                     ;no: padding = "\000\001"
         LDA # 1
-+       INY                                     ;yes: padding = "\000"
++       INY                             ;yes: padding = "\000"
         STA (BLK),Y
         LDY # 0
         RTS
@@ -62,15 +71,14 @@ caml_ml_bytes_length = caml_ml_string_length
 caml_ml_string_length
         ;; ACCU = string
         ;; return the string length (0 to 509)
-
-        JSR caml_string_length_yx               ;TMP, TMP + 1 := len
+        JSR caml_string_length_yx       ;TMP, TMP + 1 := len
         TYA
         SEC
         ROL
         STA ACCU
         TXA
         ROL
-        STA ACCU + 1                            ;ACCU := Val_int(len)
+        STA ACCU + 1                    ;ACCU := Val_int(len)
         LDY # 0
         RTS
 }
@@ -82,16 +90,15 @@ caml_bytes_get = caml_string_get
 caml_string_get
         ;; ACCU=string, SP[0]=index
         ;; return string[index]
-
         JSR caml_string_index_y
-        LDA (ACCU),Y                            ;get char
+        LDA (ACCU),Y                    ;get char
         SEC
         ROL
         STA ACCU
         LDA # 0
-        TAY                                     ;.Y := 0
+        TAY                             ;.Y := 0
         ROL
-        STA ACCU + 1                            ;ACCU := Val_char(char)
+        STA ACCU + 1                    ;ACCU := Val_char(char)
         RTS
 }
 
@@ -102,23 +109,23 @@ caml_bytes_set = caml_string_set
 caml_string_set
         ;; ACCU=string, SP[0]=index, SP[1]=newval
         ;; string.[index]<-newval; return: ()
-;       TMP                                     ; used by caml_string_index_y
-;       TMP + 1                                 ; used by caml_string_index_y
+;       TMP                             ; used by caml_string_index_y
+;       TMP + 1                         ; used by caml_string_index_y
 @CHAR   = TMP + 2
         LDY # 3
-        LDA (SP),Y                              ; get newval, hi
+        LDA (SP),Y                      ; get newval, hi
         DEY
         LSR
-        LDA (SP),Y                              ; get newval, lo
+        LDA (SP),Y                      ; get newval, lo
         ROR
-        STA @CHAR                               ; save char_val(newval)
-        JSR caml_string_index_y                 ; Y := index
+        STA @CHAR                       ; save char_val(newval)
+        JSR caml_string_index_y         ; Y := index
         LDA @CHAR
-        STA (ACCU),Y                            ; modify string in place
+        STA (ACCU),Y                    ; modify string in place
         LDY # <Val_unit
         STY ACCU
         DEY
-        STY ACCU + 1                            ; return ()
+        STY ACCU + 1                    ; return ()
         RTS
 }
 
@@ -167,7 +174,7 @@ caml_fill_string
         ;; start substitution
         LDY # 0
         LDX TMP
---      STA (ACCU),Y                            ;modify string in place
+--      STA (ACCU),Y                    ;modify string in place
         DEX
         BEQ +
 -       INY
@@ -181,7 +188,7 @@ caml_fill_string
 ++      LDY # <Val_unit
         STY ACCU
         DEY
-        STY ACCU + 1                            ;return ()
+        STY ACCU + 1                    ;return ()
         RTS
 }
 
@@ -198,47 +205,47 @@ caml_blit_string
 @TO     = TMP + 2
 @SIZE   = TMP + 4
         LDY # 7
-        LDA (SP),Y                              ; >len
+        LDA (SP),Y                      ; >len
         LSR
-        STA @SIZE + 1                           ; SIZE + 1 := >int_val(len)
+        STA @SIZE + 1                   ; SIZE + 1 := >int_val(len)
         DEY
-        LDA (SP),Y                              ; <len
+        LDA (SP),Y                      ; <len
         ROR
-        STA @SIZE                               ; SIZE := <int_val(len)
+        STA @SIZE                       ; SIZE := <int_val(len)
         DEY
-        LDA (SP),Y                              ; >dofs
+        LDA (SP),Y                      ; >dofs
         LSR
-        STA @TO + 1                             ; TO := >int_val(dofs)
+        STA @TO + 1                     ; TO := >int_val(dofs)
         DEY
-        LDA (SP),Y                              ; <dofs
+        LDA (SP),Y                      ; <dofs
         ROR
-        STA @TO                                 ; TO := <int_val(dofs)
+        STA @TO                         ; TO := <int_val(dofs)
         DEY
-        LDA (SP),Y                              ; >dst
+        LDA (SP),Y                      ; >dst
         TAX
         DEY
-        LDA (SP),Y                              ; <dst
+        LDA (SP),Y                      ; <dst
         CLC
         ADC @TO
-        STA @TO                                 ; TO := <(dst + int_val(dofs))
+        STA @TO                         ; TO := <(dst + int_val(dofs))
         TXA
         ADC @TO + 1
-        STA @TO + 1                             ; TO + 1:= >(dst+int_val(dofs))
+        STA @TO + 1                     ; TO + 1:= >(dst+int_val(dofs))
         DEY
-        LDA (SP),Y                              ; >sofs
+        LDA (SP),Y                      ; >sofs
         LSR
         TAX
         DEY
-        LDA (SP),Y                              ; <soft
+        LDA (SP),Y                      ; <soft
         ROR
         CLC
         ADC ACCU
-        STA @FROM                               ; FROM := <(src + int_val(sofs))
+        STA @FROM                       ; FROM := <(src + int_val(sofs))
         TAY
         TXA
         ADC ACCU + 1
-        STA @FROM + 1                           ; FROM+1 := >(src+int_val(sofs))
-        JSR caml_memcpy                         ; ok, even if src & dest overlap
+        STA @FROM + 1                   ; FROM+1 := >(src+int_val(sofs))
+        JSR caml_memcpy                 ; ok, even if src & dest overlap
         LDY # <Val_unit
         STY ACCU
         DEY
@@ -254,34 +261,31 @@ caml_nonstd_string_of_float
         STA caml_float_loadFAC__addr
         STX caml_float_loadFAC__addr + 1
         JSR caml_float_loadFAC
-        LDA $47                                 ;WARNING: FOUT OVERWRITES $47
-        PHA                                     ;save it
-        +caml_JSR_BASROM C64_FOUT               ;0-terminated string in $0100
-        PLA                                     ;restore $47 value
+        LDA $47                         ;WARNING: FOUT OVERWRITES $47
+        PHA                             ;save it
+        +caml_JSR_BASROM C64_FOUT       ;0-terminated string in $0100
+        PLA                             ;restore $47 value
         STA $47
         LDX # $FF
--       INX                                     ;count string length (except 0)
+-       INX                             ;count string length (except 0)
         LDA $0100,X
-        BNE -                                   ;(X = length when loop ends)
-        LDA # 1                                 ;add a final 1 for padding; it
-        STA $0101,X                             ;won't be copied if len is odd
-        TXA                                     ;A := length
+        BNE -                           ;(X = length when loop ends)
+        LDA # 1                         ;add a final 1 for padding; it
+        STA $0101,X                     ;won't be copied if len is odd
+        TXA                             ;A := length
         LSR
-        TAX                                     ;X := length / 2
-        INX                                     ;X := length/2+1=blk size (wo.)
+        TAX                             ;X := length / 2
+        INX                             ;X := length/2+1=blk size (wo.)
         LDA # String_tag
         LDY # 0
-        JSR caml_alloc                          ;allocate the new block
-        LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1                            ;ACCU := new string
+        JSR caml_alloc                  ;allocate the new block
+        JSR caml_load_newblk            ;ACCU := new string
         TXA
         ASL
-        TAY                                     ;Y := 2 * size
+        TAY                             ;Y := 2 * size
         DEY
--       LDA $0100,Y                             ;copy string and 0/01 padding
-        STA (BLK),Y                             ;to the new block
+-       LDA $0100,Y                     ;copy string and 0/01 padding
+        STA (BLK),Y                     ;to the new block
         DEY
         BNE -
         LDA $0100
@@ -297,70 +301,66 @@ caml_nonstd_string_of_int
         ;; no non-significative zeroes.
 @DGT    = TMP
 @SKIPZ  = TMP + 1
-        LDA # String_tag                        ;Max len is 4 words:
-        LDX # 4                                 ;|'-','1'|'6','3'|'8','3'|\0,\1|
-        JSR caml_alloc                          ;Allocate string, addr in BLK
-        LDA # ' '                               ;Positive numbers start with ' '
+        LDA # String_tag                ;Max len is 4 words:
+        LDX # 4                         ;|'-','1'|'6','3'|'8','3'|\0,\1|
+        JSR caml_alloc                  ;Allocate string, addr in BLK
+        LDA # ' '                       ;Positive numbers start with ' '
         BIT ACCU + 1
         BPL +
-        SEC                                     ;If value is negative,
-        LDA # 2                                 ; negate it
+        SEC                             ;If value is negative,
+        LDA # 2                         ; negate it
         SBC ACCU
         STA ACCU
         TYA
         SBC ACCU + 1
         STA ACCU + 1
-        LDA # '-'                               ; and put a '-' into the string
+        LDA # '-'                       ; and put a '-' into the string
 +       STA (BLK),Y
         INY
-        LSR ACCU + 1                            ;Get rid of trailing 1
+        LSR ACCU + 1                    ;Get rid of trailing 1
         ROR ACCU
-        LDA # '0'                               ;Set SKIPZ flag to '0' (=ignore
-        STA @SKIPZ                              ; all initial zeroes)
-        LDX # 3                                 ;For X := 3 downto 0
---      STA @DGT                                ; Init DGT to '0'
-        LDA ACCU                                ; Loop for calculating DGT:
+        LDA # '0'                       ;Set SKIPZ flag to '0' (=ignore
+        STA @SKIPZ                      ; all initial zeroes)
+        LDX # 3                         ;For X := 3 downto 0
+--      STA @DGT                        ; Init DGT to '0'
+        LDA ACCU                        ; Loop for calculating DGT:
         SEC
--       SBC @lo10,X                             ;  Subtract 10^(X+1) from ACCU
+-       SBC @lo10,X                     ;  Subtract 10^(X+1) from ACCU
         PHA
         LDA ACCU + 1
         SBC @hi10,X
-        BCC +                                   ; Exit loop on negative result
-        STA ACCU + 1                            ;  Store result in ACCU
+        BCC +                           ; Exit loop on negative result
+        STA ACCU + 1                    ;  Store result in ACCU
         PLA
         STA ACCU
-        INC @DGT                                ;  Set DGT to next char digit
-        BCS -                                   ; BCS=JMP, Continue loop
+        INC @DGT                        ;  Set DGT to next char digit
+        BCS -                           ; BCS=JMP, Continue loop
 +       PLA
         LDA @DGT
-        CMP @SKIPZ                              ; If DGT='0' & SKIPZ='0'
-        BEQ +                                   ; then ignore current digit
-        DEC @SKIPZ                              ; else stop skipping zeroes,
-        STA (BLK),Y                             ;  put DGT into the string,
+        CMP @SKIPZ                      ; If DGT='0' & SKIPZ='0'
+        BEQ +                           ; then ignore current digit
+        DEC @SKIPZ                      ; else stop skipping zeroes,
+        STA (BLK),Y                     ;  put DGT into the string,
         INY
-        LDA # '0'                               ;  set A='0' for next iteration.
-+       DEX                                     ; Decrement counter
-        BPL --                                  ;End_For
-        ORA ACCU                                ;A := '0'|ACCU  (last digit)
+        LDA # '0'                       ;  set A='0' for next iteration.
++       DEX                             ; Decrement counter
+        BPL --                          ;End_For
+        ORA ACCU                        ;A := '0'|ACCU  (last digit)
         STA (BLK),Y
         INY
-        LDA # 0                                 ;Pad string with \0
+        LDA # 0                         ;Pad string with \0
         STA (BLK),Y
         INY
         TYA
-        LSR                                     ;Compute block size (in wo.)
+        LSR                             ;Compute block size (in wo.)
         TAX
         BCC +
-        LDA # 1                                 ;Add \1 pad if necessary
+        LDA # 1                         ;Add \1 pad if necessary
         STA (BLK),Y
-        INX                                     ;size +1 for \0\1
-+       LDA BLK
-        STA ACCU
-        LDA BLK + 1
-        STA ACCU + 1
-        LDY # 0
-        JSR caml_shrink_latest_alloc            ;Shrink block to computed size
-        RTS
+        INX                             ;size +1 for \0\1
++       LDY # 0
+        JSR caml_shrink_latest_alloc    ;Shrink block to computed size
+        JMP caml_load_newblk   
 @lo10   !byte <10, <100, <1000, <10000
 @hi10   !byte >10, >100, >1000, >10000
 }
@@ -369,66 +369,66 @@ caml_nonstd_string_of_int
         ;; AUX
         ;;
 
-!ifdef caml_PRIM__caml_string_index_y {
+!ifdef caml_AUX__caml_string_index_y {
 caml_string_index_y
         ;; given a string in ACCU, read index from SP[0], then
         ;; set Y and ACCU+1 so that ACCU+Y = &string[index];
         ;; raise Invalid_argument if not 0<=index<length(string).
         LDY # 1
-        LDA (SP),Y                              ;get ARGh
-        LSR                                     ;Int_val(ARGh)
-        STA TMP + 1                             ;save
+        LDA (SP),Y                      ;get ARGh
+        LSR                             ;Int_val(ARGh)
+        STA TMP + 1                     ;save
         DEY
-        LDA (SP),Y                              ;get ARGl
-        ROR                                     ;Int_val(ARGl)
-        STA TMP                                 ;save
-        JSR caml_string_length_yx               ;get string length in .Y.X
-        CPX TMP + 1                             ;compare hi bytes
-        BCC ++                                  ;.X < ARGh: error
-        BNE +                                   ;.X > ARGh: ok
-        CPY TMP                                 ;.X = ARGh: compare lo byte
-        BCC ++                                  ;.Y < ARGl: error
-        BEQ ++                                  ;.Y = ARGl: error
-+       LDY TMP                                 ;reload index, lo
+        LDA (SP),Y                      ;get ARGl
+        ROR                             ;Int_val(ARGl)
+        STA TMP                         ;save
+        JSR caml_string_length_yx       ;get string length in .Y.X
+        CPX TMP + 1                     ;compare hi bytes
+        BCC ++                          ;.X < ARGh: error
+        BNE +                           ;.X > ARGh: ok
+        CPY TMP                         ;.X = ARGh: compare lo byte
+        BCC ++                          ;.Y < ARGl: error
+        BEQ ++                          ;.Y = ARGl: error
++       LDY TMP                         ;reload index, lo
         LDA TMP + 1
         BEQ +
-        INC ACCU + 1                            ;inc ACCUh if needed
+        INC ACCU + 1                    ;inc ACCUh if needed
 +       RTS
-++      +caml_raise Invalid_argument, "index out of bounds"
+++      JMP caml_err_index_oob
 }
 
-!ifdef caml_PRIM__caml_string_length_yx {
+!ifdef caml_AUX__caml_string_length_yx {
 caml_string_length_yx
         ;; ACCU = string
         ;; return the string length in .Y,.X (int16, lo-hi)
         LDA ACCU + 1
-        PHA                                     ;save ACCU + 1
-        DEY                                     ;LDY # -1
+        PHA                             ;save ACCU + 1
+        DEY                             ;LDY # -1
         DEC ACCU + 1
-        LDA (ACCU),Y                            ;.A := size
+        LDA (ACCU),Y                    ;.A := size
         INC ACCU + 1
         LDX # 0
         ASL
-        TAY                                     ;.Y := <(2 * size)
+        TAY                             ;.Y := <(2 * size)
         BCC @minus1
         BNE +
-        DEY                                     ;shortcut when .Y=256
-        BNE @pad                                ;bne=jmp
+        DEY                             ;shortcut when .Y=256
+        BNE @pad                        ;bne=jmp
 +       INC ACCU + 1
-        INX                                     ;.X := >(2 * size)
-@minus1 DEY                                     ;.Y := <(2 * size - 1)
+        INX                             ;.X := >(2 * size)
+@minus1 DEY                             ;.Y := <(2 * size - 1)
         CPY # $FF
         BNE @pad
         DEC ACCU + 1
-        DEX                                     ;.X := >(2 * size - 1)
-@pad    LDA (ACCU),Y                            ;.A := padding byte
+        DEX                             ;.X := >(2 * size - 1)
+@pad    LDA (ACCU),Y                    ;.A := padding byte
         BEQ +
-        DEY                                     ;.Y := <(2 * size -1 -pad)
+        DEY                             ;.Y := <(2 * size -1 -pad)
         CPY # $FF
         BNE +
-        DEX                                     ;.X := >(2 * size -1 -pad)
+        DEX                             ;.X := >(2 * size -1 -pad)
 +       PLA
-        STA ACCU + 1                            ;restore ACCU+1
+        STA ACCU + 1                    ;restore ACCU+1
         RTS
 }
 

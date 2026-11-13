@@ -1,5 +1,6 @@
-SHELL = /usr/bin/env bash
-CONF = ../../etc/Makefile.conf
+SHELL := /usr/bin/env bash
+CONF  := ../../etc/Makefile.conf
+TOOLS := ../../tools
 include $(if $(wildcard $(CONF)),$(CONF),$(error \
 	Please run «./configure [options...]» from the main source directory))
 
@@ -8,28 +9,26 @@ ucase = $(shell echo $(1)|sed -Ee "s/([a-z])(.*)/\u\1\2/")
 
 # Original list of module basenames for the OCaml standard library
 # (SORTED BY DEPENDENCIES)
-STDLIB_MODULE_BASENAMES = camlinternalFormatBasics camlinternalAtomic	\
-  stdlib pervasives either sys obj camlinternalLazy lazy seq option	\
-  result bool char uchar list int bytes string unit marshal array	\
-  float int32 int64 nativeint lexing parsing set map stack queue	\
-  stream buffer camlinternalFormat printf arg atomic printexc fun gc	\
-  digest random hashtbl weak format scanf callback camlinternalOO oo	\
-  camlinternalMod genlex ephemeron filename complex arrayLabels		\
-  listLabels bytesLabels stringLabels moreLabels stdLabels bigarray	\
-  in_channel out_channel std_exit
+STDLIB_MODULE_BASENAMES := camlinternalFormatBasics camlinternalAtomic stdlib \
+  pervasives either sys obj camlinternalLazy lazy seq option result bool char \
+  uchar list int bytes string unit marshal array float int32 int64 nativeint  \
+  lexing parsing set map stack queue stream buffer camlinternalFormat printf  \
+  arg atomic printexc fun gc digest random hashtbl weak format scanf callback \
+  camlinternalOO oo camlinternalMod genlex ephemeron filename complex         \
+  arrayLabels listLabels bytesLabels stringLabels moreLabels stdLabels        \
+  bigarray in_channel out_channel std_exit
 
 # Modules removed in BreadCaml
-REMOVED = camlinternalFormatBasics camlinternalAtomic pervasives	\
-  uchar marshal nativeint lexing parsing stream camlinternalFormat	\
-  printf arg atomic printexc fun gc digest weak format scanf callback	\
-  camlinternalOO oo genlex ephemeron filename bigarray in_channel	\
-  out_channel
+REMOVED := arg atomic bigarray callback camlinternalAtomic camlinternalFormat \
+  camlinternalFormatBasics camlinternalOO digest ephemeron filename format    \
+  fun gc genlex in_channel lexing marshal nativeint oo out_channel parsing    \
+  pervasives printexc printf scanf stream uchar weak
 
-BASENAMES = $(filter-out $(REMOVED),$(STDLIB_MODULE_BASENAMES))
+BASENAMES := $(filter-out $(REMOVED),$(STDLIB_MODULE_BASENAMES))
 
-PFX = stdlib__
-NOPFX = camlinternal% stdlib std_exit
-LIB = $(foreach F,$(BASENAMES),$(if $(filter $(NOPFX),$(F)),,$(PFX))$(F))
+PFX := stdlib__
+NOPFX := camlinternal% stdlib std_exit
+LIB := $(foreach F,$(BASENAMES),$(if $(filter $(NOPFX),$(F)),,$(PFX))$(F))
 
 CMI := $(LIB:=.cmi)
 CMO := $(LIB:=.cmo)
@@ -40,35 +39,28 @@ CPROTO := stdlib__nonstd.c
 # Add here other stuff to be archived into libcamlrun.a
 LIBRUN := $(CPROTO:.c=.o)
 
-# Preprocessor
-#PPX := -ppx "../../bin/bcamlppx stdlib.db"
-
 .PHONY: all
-all: lib man
+all: lib man doc
 
 .PHONY: lib
-lib: $(CMI) $(CMO) stdlib.cma libcamlrun.a
+lib_tgt := $(CMI) $(CMO) stdlib.cma libcamlrun.a 
+lib:
+	@$(MAKE) -q $(lib_tgt) 2> /dev/null || \
+	  echo '$(call message,COMPILE: ,Standard library)'
+	$(MAKE) $(lib_tgt)
 
-.PHONY: man
-man: $(foreach l,$(BASENAMES),$(call ucase,$(l)).$(MAN3EXT)) Stdlib.$(MAN3EXT)
+stdlib.cma: $(CMO)
+	$(OCAMLC) -nostdlib -a $^ -o $@
 
-$(CPROTO): ../asm/stdlib_*.asm
-	sed -nE \
-	's/^[^;]*[ \t]+caml_PRIM__(caml_nonstd_[a-zA-Z0-9_]+).*/void \1(){}/p' \
-	$^ > $@
+stdlib.cmo: stdlib.ml stdlib.cmi
+	$(OCAMLC) -absname -no-alias-deps -nostdlib -nopervasives -c -w -49 $<
+
+stdlib.cmi: stdlib.mli #camlinternalFormatBasics.cmi
+	$(OCAMLC) -absname -no-alias-deps -nostdlib -nopervasives -c -w -49 $<
 
 libcamlrun.a: $(CMI) $(CMO) $(LIBRUN) stdlib.cma
 	cp $(OCAMLSTDLIB)/$@ .
 	ar rs $@ $^
-
-stdlib.cma: $(CMO)
-	$(OCAMLC) $(PPX) -nostdlib -a $^ -o $@
-
-stdlib.cmo: stdlib.ml stdlib.cmi
-	$(OCAMLC) $(PPX) -absname -no-alias-deps -nostdlib -nopervasives -c -w -49 $<
-
-stdlib.cmi: stdlib.mli #camlinternalFormatBasics.cmi
-	$(OCAMLC) $(PPX) -absname -no-alias-deps -nostdlib -nopervasives -c -w -49 $<
 
 #camlinternalFormatBasics.cmo: camlinternalFormatBasics.ml camlinternalFormatBasics.cmi
 #	$(OCAMLC) -nostdlib -nopervasives -c $<
@@ -77,55 +69,79 @@ stdlib.cmi: stdlib.mli #camlinternalFormatBasics.cmi
 #	$(OCAMLC) -nostdlib -nopervasives -c $<
 
 camlinternal%.cmo: camlinternal%.ml camlinternal%.cmi
-	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $<
+	$(OCAMLC_UNSAFE) -absname -nostdlib -c $<
 
 camlinternal%.cmi: camlinternal%.mli
-	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $<
+	$(OCAMLC_UNSAFE) -absname -nostdlib -c $<
 
 std_exit.cmo: std_exit.ml std_exit.cmi
-	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $<
+	$(OCAMLC_UNSAFE) -absname -nostdlib -c $<
 
 std_exit.cmi: std_exit.mli
-	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $<
+	$(OCAMLC_UNSAFE) -absname -nostdlib -c $<
 
 $(PFX)%Labels.cmo: %Labels.ml $(PFX)%Labels.cmi
-	$(OCAMLC_UNSAFE) $(PPX) -nostdlib -nolabels -c -w -3 $< -o $@
+	$(OCAMLC_UNSAFE) -nostdlib -nolabels -c -w -3 $< -o $@
 
 $(PFX)%Labels.cmi: %Labels.mli
-	$(OCAMLC_UNSAFE) $(PPX) -nostdlib -nolabels -c $< -o $@
+	$(OCAMLC_UNSAFE) -nostdlib -nolabels -c $< -o $@
 
 $(PFX)float.cmo: float.ml $(PFX)float.cmi
-	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -nolabels -c $< -o $@
+	$(OCAMLC_UNSAFE) -absname -nostdlib -nolabels -c $< -o $@
 
 $(PFX)float.cmi: float.mli
-	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -nolabels -c $< -o $@
+	$(OCAMLC_UNSAFE) -absname -nostdlib -nolabels -c $< -o $@
 
 $(PFX)%.cmo: %.ml $(PFX)%.cmi
-	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $< -o $@
+	$(OCAMLC_UNSAFE) -absname -nostdlib -c $< -o $@
 
 $(PFX)%.cmi: %.mli
-	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $< -o $@
+	$(OCAMLC_UNSAFE) -absname -nostdlib -c $< -o $@
 
+# C prototypes for non-standard primitives
+$(CPROTO): ../asm/stdlib_*.asm
+	{ echo '// AUTO GENERATED FILE - DO NOT EDIT'; \
+	  echo '// Generated $(shell date) by $(TOOLS)/mkproto'; \
+	  for f in $^; do $(TOOLS)/mkproto -p caml_nonstd_ "$$f"; done; \
+	} > $@
+# Interface generation for unlabeled modules and MoreLabels
+TPL     := templates
+SIMPLE  := bytes.mli list.mli string.mli array.mli
+FUNCTOR := hashtbl.mli map.mli set.mli
 
-# Automatic (re)generation of unlabeled modules and MoreLabels
-TPL  := templates
-SYNC := ../../tools/sync_stdlib_docs
-bytes.mli list.mli string.mli array.mli: %.mli: %Labels.mli
-	$(SYNC) $@
-hashtbl.mli map.mli set.mli: %.mli: $(TPL)/%.template.mli
-	$(SYNC) $@
+#.INTERMEDIATE: $(SIMPLE) $(FUNCTOR) float.mli moreLabels.mli
+$(SIMPLE): %.mli: %Labels.mli
+	$(TOOLS)/sync_stdlib_docs $@
+
+$(FUNCTOR): %.mli: $(TPL)/%.template.mli
+	$(TOOLS)/sync_stdlib_docs $@
+
 float.mli: $(TPL)/floatarraylabeled.template.mli $(TPL)/float.template.mli
-	$(SYNC) $@
-moreLabels.mli: $(TPL)/moreLabels.template.mli $(TPL)/hashtbl.template.mli \
-		$(TPL)/map.template.mli $(TPL)/set.template.mli \
-		$(TPL)/1.mli $(TPL)/2.mli $(TPL)/3.mli $(TPL)/4.mli
-	$(SYNC) $@
+	$(TOOLS)/sync_stdlib_docs $@
 
+moreLabels.mli: $(patsubst %.mli,$(TPL)/%.template.mli,$@ $(FUNCTOR)) \
+		$(patsubst %,$(TPL)/%.mli,1 2 3 4)
+	$(TOOLS)/sync_stdlib_docs $@
 
-%.$(MAN3EXT):
-	$(OCAMLDOC) -hide-warnings -man -man-mini -man-suffix $(MAN3EXT) \
-	-man-section $(MAN3EXT) -t "The BreadCaml Project" $(call lcase,$*).mli
+.PHONY: man
+man: .man_timestamp
+
+.man_timestamp: $(BASENAMES:=.mli)
+	@echo '$(call message,GENERATE:,Man pages)'
+	$(OCAMLDOC) -hide-warnings -t "The BreadCaml Project" \
+	  -man -man-mini -man-suffix $(MAN3EXT) -man-section $(MAN3EXT) $^
+	touch $@
+
+.PHONY: doc
+doc: .doc_timestamp
+
+.doc_timestamp: $(BASENAMES:=.mli)
+	@echo '$(call message,GENERATE:,HTML documentation)'
+	$(OCAMLDOC) -hide-warnings -html -charset utf-8 -colorize-code \
+	  -sort -t "The BreadCaml Project" $^
+	touch $@
 
 .PHONY: clean
 clean:
-	rm -f *.{cmi,cmo,cma,o,$(MAN3EXT)} $(CPROTO) libcamlrun.a stdlib.db
+	rm -f *.{cm{i,o,a},html,$(MAN3EXT),o} $(CPROTO) libcamlrun.a stdlib.db
+	rm -f .{man,doc}_timestamp

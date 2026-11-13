@@ -2,7 +2,6 @@
 (** The Snake game *)
 
 open IOtools
-;;
 
 (** Game parameters *)
 type game_params = {
@@ -12,8 +11,7 @@ type game_params = {
   food_at_wall  : int; (** Score beyond which food can be next to a wall *)
   bricks_score  : int; (** Score beyond which bricks can appear *)
   bricks_period : int  (** Points ( > 0 ) between two brick apparitions *) 
-}
-;;
+  }
 
 let params = {
   snake_len     =  10;
@@ -22,23 +20,23 @@ let params = {
   food_at_wall  =  50;
   bricks_score  =  20;
   bricks_period =   3
-}
-;;
+  }
 
 (** Game status *)
 type status = {
   head : snake_end; (** Snake's head data *)
   tail : snake_end; (** Snake's tail data *)
   score : int       (** Gamer's current score *)
-}
+  }
+
 (** Snake's extremities *)
 and snake_end = {
   pos : coord;      (** Position *)
   dir : direction   (** Direction the end is facing *)
-}
+  }
+
 (** Directions *)
 and direction = Up | Down | Left | Right
-;;
 
 (** [opposite_dir dir] returns the opposite direction of [dir] *)
 let opposite_dir = function
@@ -46,11 +44,9 @@ let opposite_dir = function
   | Down  -> Up
   | Left  -> Right
   | Right -> Left
-;;
 
 (** [dist pos0 pos1] returns the "Manhattan distance" between two positions *)
 let dist (x, y) (x', y') = abs (x - x') + abs (y - y')
-;;
 
 (** [next_to coord dir] returns the coordinates of the location next to [coord]
     in the direction [dir] *)
@@ -59,7 +55,6 @@ let next_to (x, y) = function
   | Down  -> (x, pred y)
   | Left  -> (pred x, y)
   | Right -> (succ x, y)
-;;
 
 (*****)
 
@@ -71,7 +66,6 @@ type player_action =
   | Answer_yes
   | Answer_no
   | Unknown
-;;
 
 (** [action_of_key keypress] returns the action corresponding to a [keypress] *)
 let action_of_key = function
@@ -84,7 +78,6 @@ let action_of_key = function
   | 'n'    -> Answer_no
   | '\000' -> No_action
   | _      -> Unknown
-;;
 
 (*****)
 
@@ -95,7 +88,6 @@ type cell =
   | Food
   | Snake_head
   | Snake_tail of direction * direction
-;;
 
 (** [get_cell pos] returns the cell at position [pos] *) 
 let get_cell pos = match get_char pos with
@@ -109,7 +101,6 @@ let get_cell pos = match get_char pos with
   | 0x55 -> Snake_tail(Down, Right)
   | 0x43 -> Snake_tail(Left, Right)
   | _ -> Wall
-;;
 
 (** [near_wall cell] is [true] if [cell] shares a border or a corner with
     a wall *)
@@ -121,12 +112,10 @@ let near_wall (x, y) =
   f_aux [(px, sy);   (x, sy);   (sx, sy);
          (px,  y); (*(x,  y);*) (sx,  y);
          (px, py);   (x, py);   (sx, py)]
-;;
 
 (** [rnd min max] returns a random integer from [min] to [max];
     [min] should be >= 0 (not checked) *)
 let rnd min max = min + Random.int (succ max - min)
-;;
 
 (** [put_cell pos cell] draws a [cell] at position [pos] *)
 let put_cell pos cell = put_char pos (match cell with
@@ -141,22 +130,18 @@ let put_cell pos cell = put_char pos (match cell with
     | Snake_tail(Down, Right) | Snake_tail(Right, Down) -> 0x55 
     | Snake_tail(Left, Right) | Snake_tail(Right, Left) -> 0x43
     | _ -> failwith "put_cell")
-;;
 
 (** [delay n] does an idle loop [n] times to slow down the snake's run *)
 let rec delay n = if n > 0 then delay (pred n)
-;;
 
 (** [print_center y str] prints [str] centered on the line of coordinate [y] *)
 let print_center y str = print_at ((40 - String.length str) / 2, y) str
-;;
 
 (** [print_score st] gets the player's score from [st] and print it *)
 let print_score st =
   let score = string_of_int st.score in
   let score = String.(sub score 1 (pred (length score))) in
   print_at (2, 24) ("score:" ^ score)
-;;
 
 (*****)
 
@@ -169,7 +154,6 @@ let move_head new_dir st =
   put_cell new_pos Snake_head;
   put_cell current_pos (Snake_tail(new_dir, opposite_dir st.head.dir));
   { pos = new_pos; dir = new_dir }
-;;
 
 (** [move_tail st] deletes the snake's tail end from [st.tail.pos] and returns
     the new value for the [st.tail] field *)
@@ -182,7 +166,6 @@ let move_tail st =
     put_cell pos Space;
     { pos = next_to pos towards_body; dir = opposite_dir towards_body }
   | _ -> failwith "move_tail"
-;;
 
 (** [feed_snake st] put a piece of food in a random empty place; if
     [st.score] is greater than [params.food_at_wall], the food may be placed
@@ -194,7 +177,6 @@ let rec feed_snake st =
   match get_cell pos with
   | Space when ok_walls || not (near_wall pos) -> put_cell pos Food
   | _ -> feed_snake st
-;;
 
 (** [put_brick st] chooses a random place and puts a wall brick in it when
     [st.score] is greater than [params.bricks_score] and a multiple of
@@ -209,7 +191,6 @@ let put_brick =
                && not (near_wall pos) then
               (put_cell pos Wall;
                cnt := params.bricks_period))
-;;
            
 (** [get_new_dir current_dir] returns the new snake direction entered by the
     player, if any, or [current_dir]; if the player requests a [Pause], it waits
@@ -219,7 +200,6 @@ let rec get_new_dir ?(pause=false) cur_dir = match action_of_key(get_key()) with
   | Pause when not pause -> get_new_dir ~pause:true cur_dir
   | No_action when pause -> get_new_dir ~pause cur_dir
   | _ -> cur_dir
-;;
 
 (*****)
 
@@ -247,7 +227,6 @@ let init () =
   Random.self_init ();
   feed_snake st;
   st
-;;
 
 (** [game_loop st] performs the game loop, starting from [st] status *)
 let rec game_loop st =
@@ -269,7 +248,7 @@ let rec game_loop st =
     print_center 12 " *** you lost! *** ";
     print_center 11 " play again (y/n)? ";
     if get_answer () then game_loop (init ())
+
 ;;
 
-(* main *)
 game_loop (init ())

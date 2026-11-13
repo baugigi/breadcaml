@@ -4,12 +4,12 @@ SHELL := /bin/bash
 TARGET := snake.prg
 SOURCE := iOtools snake
 EXTLIB := iOtools
-#COMP = bcamlopt
-COMP = bcamlc
-FLAGS = -db snake.db
+COMP = bcamlopt
+#COMP = bcamlc
+FLAGS = -verbose -db snake.db
 
 $(TARGET): $(EXTLIB:=.asm) $(EXTLIB:=.c) $(SOURCE:=.cmo)
-	$(COMP) $(FLAGS) -o $@ $^ -- -r snake.rep
+	$(COMP) $(FLAGS) -o $@ $^ -- -r snake.rep -Dcaml_globals_on_heap=1
 
 %.cmo: %.ml $(SOURCE:=.cmi)
 	$(COMP) $(FLAGS) -c $<

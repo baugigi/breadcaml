@@ -69,8 +69,10 @@ let unsigned_to_int =
 --*)
 (*++ *)
 let unsigned_to_int n =
-  let n = to_int (logand n 0x7FFFl) in
-  if n >= 0 then Some n else None
+  if compare zero (logand n 0xFFFF8000l) = 0 then
+    Some (to_int n)
+  else
+    None
 (* ++*)
 (*--
 external format : string -> int32 -> string = "caml_int32_format"

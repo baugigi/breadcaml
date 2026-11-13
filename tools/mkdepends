@@ -1,90 +1,101 @@
 #!/usr/bin/env bash
 
-# depends.asm generator for stdlib_*.asm routines.
+# dependency file generator for stdlib_*.asm routines.
 # See <project_root>/src/asm/CODING_RULES
 
 # Input and output files
+[[ $# -ge 2 ]] || { echo "usage: $0 outfile infile..." >&2; exit 1; }
 OUTFILE="$1"
 shift
-INFILE="$@"
+INFILE=("$@")
 
-# sed program to extract deps
-NAME='[a-zA-Z](_?[a-zA-Z0-9])*'
-ROUT="caml_$NAME"
-IFDEF='^[ \t]*!ifdef[ \t]+caml_PRIM__'
-FALLTH='^[^;]*;+[ \t]*fallthrough[ \t]+'
+
+# sed program to extract deps. Sample output:
+# PRIM:caml_primitive_aaa "
+# caml_aux_routine_one
+# caml_aux_routine_two
+# "
+# AUX:caml_aux_routine_one "
+# caml_aux_routine_three
+# "
+
+IDE='[a-zA-Z](_?[a-zA-Z0-9])*'               # identifier
+ROUT="caml_$IDE"                             # routine name
+IFDEF='^[ \t]*!ifdef[ \t]+caml_(PRIM|AUX)__' # conditional command
+FALLTH='^[^;]*;+[ \t]*fallthrough[ \t]+'     # fallthrough comment
 SEDPROGRAM="
-  /$IFDEF/, /^}/ {
-  /$IFDEF/ {                   # First line:
-    s/$IFDEF($ROUT).*$/\1 \"/  #  isolate the routine name, add quote
-    h                          #  copy the line to the hold space
-    d                          #  delete it and start next cycle
-  }
-  /^}/ {                       # Last line:
-    g                          #  get the whole held text; add quote
-    a \"
-    p                          #  print routine name followed by deps
-    d                          #  delete all and start next cycle
-  }
-                               # Lines in between:
-  s/$FALLTH($ROUT).*$/ \1/i    #  extract dep from fallthrough comment
-  s/;.*$//g                    #  remove other ACME comments
-  s/.*($ROUT)(__$NAME)?/§\1/g  #  prepend § to each dep
-  /§/! d                       #  if no deps, delete and start next cycle
-  s/[^§]*§($ROUT)[^§]*/\1 /g   #  remove § and text between deps
-  H                            #  append deps to the hold space
+/$IFDEF/, /^}/ {               # INTERVAL: from 'ifdef... {' to the ending '}'
+ /$IFDEF/ {                    # FIRST LINE:
+  s/$IFDEF($ROUT).*$/\1:\2 \"/ #  generate: PRIM/AUX ':' rout.name space quote
+  h                            #  copy the line to the hold space
+  d                            #  delete it and start next cycle.
+ }
+ /^}/ {                        # LAST LINE:
+  g                            #  get held text, then add a line with a quote
+  a \"
+  p                            #  print routine name followed by quoted deplist
+  d                            #  delete all and start next cycle.
+ }                             # LINES IN BETWEEN:
+ s/$FALLTH($ROUT).*$/ \1/i     #  extract dep from fallthrough comment
+ s/;.*$//g                     #  remove other ACME comments
+ s/($ROUT)(__$IDE)?/~\1~/g      #  mark EVERY dep occurrence: ~dep~
+ /~$ROUT~/! d                  #  if no deps, delete line and start next cycle
+ s/[^~]*~($ROUT)~[^~]*/\1 /g   #  leave only the deps, each followed by a space
+ H                             #  append the deplist to the hold space.
 }"
 
-# Init DEPS array
-declare -A DEPS="($(sed -s -n -E "$SEDPROGRAM" $INFILE))"
+# Init DEPS and TYPE associative arrays
+OUT="$(sed -snE "$SEDPROGRAM" "${INFILE[@]}")"
+declare -A DEPS="($(sed -E 's/^[^:]+:(.+)/\1/' <<< "$OUT"))"
+declare -A TYPE="($(sed -nE 's/^([^:]+):([^ ]+).*/\2 \1/p' <<< "$OUT"))"
 
 # Remove self deps and fake deps (any caml_xyz which is not a routine)
-for ROUTINE in ${!DEPS[@]}; do
+for ROUT in ${!DEPS[@]}; do
     DEPLIST=''
-    for DEP in ${DEPS["$ROUTINE"]}; do
-	# ${VAR+string} expands to string if VAR is set, to '' if unset
-	[[ $DEP != $ROUTINE && ${DEPS[$DEP]+x} ]] && DEPLIST+="$DEP "
+    for DEP in ${DEPS["$ROUT"]}; do
+        # ${VAR+string} expands to string if VAR is set, to '' if unset
+        [[ $DEP != $ROUT && ${DEPS[$DEP]+x} ]] && DEPLIST+="$DEP "
     done
-    DEPS["$ROUTINE"]="$DEPLIST"
+    DEPS["$ROUT"]="$DEPLIST"
 done
 
 # Calculate the transitive closure of all deps (breadth-first visit)
 declare -A TRCLOS
 declare -Ai VISITED
 declare -a QUEUE
-for ROUTINE in ${!DEPS[@]}; do
+for ROUT in ${!DEPS[@]}; do
     VISITED=()
     QUEUE=()
     QHEAD=0
-    for DEP in ${DEPS["$ROUTINE"]}; do
-	VISITED["$DEP"]=1
-	QUEUE+=("$DEP")
+    for DEP in ${DEPS["$ROUT"]}; do
+        VISITED["$DEP"]=1
+        QUEUE+=("$DEP")
     done
     while (( QHEAD < ${#QUEUE[@]} )); do
-	NODE="${QUEUE[$QHEAD]}"
-	(( QHEAD++ ))
-	for DEP in ${DEPS["$NODE"]}; do
-	    if ! (( ${VISITED[$DEP]} )); then
-		VISITED["$DEP"]=1
-		QUEUE+=("$DEP")
-	    fi
-	done
+        NODE="${QUEUE[$QHEAD]}"
+        (( QHEAD++ ))
+        for DEP in ${DEPS["$NODE"]}; do
+            if ! (( ${VISITED[$DEP]} )); then
+                VISITED["$DEP"]=1
+                QUEUE+=("$DEP")
+            fi
+        done
     done
-    TRCLOS["$ROUTINE"]=$(printf "%s\n" ${!VISITED[@]})
+    TRCLOS["$ROUT"]=$(printf "%s\n" ${!VISITED[@]})
 done
 
 # Generate the output file
 {   echo ";; AUTO-GENERATED FILE - DO NOT EDIT"
-    echo ";; Generated $(date -Iseconds) by $0"
-    echo ""
-    for ROUTINE in $(printf "%s\n" ${!DEPS[@]}|sort); do
-	[[ ${TRCLOS[$ROUTINE]} ]] && {
-            echo "!ifdef caml_PRIM__$ROUTINE {"
-            for DEP in $(printf "%s\n" ${TRCLOS[$ROUTINE]}|sort); do
-		echo "  !set caml_PRIM__$DEP=1"
+    echo ";; Generated $(date) by $0"
+    echo
+    for ROUT in $(printf "%s\n" ${!DEPS[@]}|sort); do
+        [[ ${TRCLOS[$ROUT]} ]] && {
+            echo "!ifdef caml_${TYPE[$ROUT]}__$ROUT {"
+            for DEP in $(printf "%s\n" ${TRCLOS[$ROUT]}|sort); do
+                echo "  !set caml_${TYPE[$DEP]}__$DEP=1"
             done
             echo "}"
             echo ""
-	}
+        }
     done
 } > "$OUTFILE"

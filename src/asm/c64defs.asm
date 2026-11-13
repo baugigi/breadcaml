@@ -1,6 +1,6 @@
-;;; ----------------------------------------------------------------------------
-;;;   ZP ADDRESSES, BASIC V2 & KERNAL REL.3 ROUTINES, VECTORS, POINTERS, ETC.
-;;; ----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
+;;    ZP ADDRESSES, BASIC V2 & KERNAL REL.3 ROUTINES, VECTORS, POINTERS, ETC.
+;; -----------------------------------------------------------------------------
 
 !address {
         ;; Default address space
@@ -12,7 +12,7 @@ C64_IOROM       = $D000 ;Start address of I/O ROM
 C64_KERROM      = $E000 ;Start address of Kernal ROM
                 
         ;; Zeropage
-	;; Free locations: C64_UNUSZP (1 by.), C64_FREKZP (4 by.)
+        ;; Free locations: C64_UNUSZP (1 by.), C64_FREKZP (4 by.)
 C64_D6510       = $00   ;Data Direction register
 C64_R6510       = $01   ;Data buffer
 C64_UNUSZP      = $02   ;UNUSED
@@ -53,12 +53,12 @@ C64_DATLIN      = $3F   ;-$40 Current DATA Line Number
 C64_DATPTR      = $41   ;-$42 Pointer: Current DATA Item Address
 C64_INPPTR      = $43   ;-$44 Vector: INPUT Routine 
 C64_VARNAM      = $45   ;-$46 Current BASIC Variable Name
-C64_VARPNT      = $47   ;-$48 Pointer: Current BASIC Variable Data(FOUT uses it)
+C64_VARPNT      = $47   ;-$48 Pointer: Curr. BASIC Variable Data (FOUT uses it!)
 C64_FORPNT      = $49   ;-$4A Pointer: Index Variable for FOR/NEXT
 C64_VARTXT      = $4B   ;-$4C Temp storage for TXTPTR during READ, INPUT, GET.
 C64_OPMASK      = $4D   ;Mask used during FRMEVL.
 C64_TEMPF3      = $4E   ;-$52 Temporary storage for FLPT value.
-C64_FOUR6       = $53   ;Length of String Variable during Garbege collection.
+C64_FOUR6       = $53   ;Length of String Variable during Garbage collection.
 C64_JMPER       = $54   ;-$56 JMP used in fun Eval - followed by fun address
 C64_TEMPF0      = $56   ;used by FLPT addition, subtraction and exp routines.
 C64_TEMPF1      = $57   ;-$5B Temporary storage for FLPT value.
@@ -221,60 +221,63 @@ C64_ISAVE       = $0332 ;Vector: Kernal SAVE Routine (default $F5DD)
 C64_TBUFFR      = $033C ;Tape I/O Buffer 
 
         ;; BASIC Floating point routines
-	;; BEWARE: MULTIPLY BUG! See https://www.c64-wiki.com/wiki/Multiply_bug
+	;; Note: A:Y stands for a 16-bit value, A=hi byte, Y=lo byte
+	
+        ;; BEWARE: All routines affected by the well-known MULTIPLY BUG
+        ;; (https://www.c64-wiki.com/wiki/Multiply_bug) are marked with [!]
 
         ;; Movement
-C64_MOVFM       = $BBA2 ;Load FAC from MEM (A/Y). Returns Y=0,A=exp,fl=exp.
-C64_CONUPK      = $BA8C ;Load ARG from MEM (A/Y), set ARISIGN and A:=FAC exp.
+C64_MOVFM       = $BBA2 ;Load FAC from MEM (Y:A). Returns Y=0,A=exp,fl=exp.
+C64_CONUPK      = $BA8C ;Load ARG from MEM (Y:A), set ARISIGN and A:=FAC exp.
 C64_MOVAF       = $BC0C ;Copy (rounded) FAC to ARG.
-C64_MOVMF       = $BBD4 ;Copy (rounded) FAC to MEM (X/Y). Returns A=FAC exp.
+C64_MOVMF       = $BBD4 ;Copy (rounded) FAC to MEM (Y:X). Returns A=FAC exp.
 C64_MOVEF       = $BC0F ;Copy FAC to ARG without rounding. 
 C64_MOVFA       = $BBFC ;Copy ARG to FAC
         ;; Basic Arithmetic
-C64_FADD        = $B867 ;FAC := MEM (A/Y) + FAC 
+C64_FADD        = $B867 ;FAC := MEM (Y:A) + FAC 
 C64_FADDT       = $B86A ;FAC := ARG + FAC
-C64_FSUB        = $B850 ;FAC := MEM (A/Y) - FAC 
+C64_FSUB        = $B850 ;FAC := MEM (Y:A) - FAC 
 C64_FSUBT       = $B853 ;FAC := ARG - FAC
-C64_FMUL        = $BA28 ;FAC := MEM (A/Y) * FAC 
-C64_FMULT       = $BA2B ;FAC := ARG * FAC
+C64_FMUL        = $BA28 ;[!] FAC := MEM (Y:A) * FAC 
+C64_FMULT       = $BA2B ;[!] FAC := ARG * FAC
 C64_MUL10       = $BAE2 ;Quickly multiply the float held in FAC by 10.
-C64_FDIV        = $BB0F ;FAC := MEM (A/Y) / FAC, ARG := remainder.
+C64_FDIV        = $BB0F ;FAC := MEM (Y:A) / FAC, ARG := remainder.
 C64_FDIVT       = $BB12 ;FAC := ARG / FAC, ARG := remainder
 C64_DIV10       = $BAFE ;FAC := ABS(FAC / 10).
 C64_NEGOP       = $BFB4 ;Switch sign on the float in FAC, if non-zero
         ;; Trigonometry
-C64_SIN         = $E26B ;Perform the SIN function on the float in FAC
-C64_COS         = $E264 ;Perform the COS function on the float in FAC
-C64_TAN         = $E2B4 ;Perform the TAN function on the float in FAC
-C64_ATN         = $E30E ;Perform the ATN function on the float in FAC
+C64_SIN         = $E26B ;[!] Perform the SIN function on the float in FAC
+C64_COS         = $E264 ;[!] Perform the COS function on the float in FAC
+C64_TAN         = $E2B4 ;[!] Perform the TAN function on the float in FAC
+C64_ATN         = $E30E ;[!] Perform the ATN function on the float in FAC
         ;; Logarithms
-C64_LOG         = $B9EA ;FAC := ln FAC
-C64_EXP         = $BFED ;FAC := e ^ FAC
-C64_FPWR        = $BF78 ;FAC := MEM (A/Y) ^ FAC.
-C64_FPWRT       = $BF7B ;FAC := ARG ^ FAC.
-C64_SQR         = $BF71 ;FAC := FAC ^ 0.5
-C64_SQRARG      = $BF74 ;FAC := ARG ^ 0.5
+C64_LOG         = $B9EA ;[!] FAC := ln FAC
+C64_EXP         = $BFED ;[!] FAC := e ^ FAC
+C64_FPWR        = $BF78 ;[!] FAC := MEM (Y:A) ^ FAC.
+C64_FPWRT       = $BF7B ;[!] FAC := ARG ^ FAC.
+C64_SQR         = $BF71 ;[!] FAC := FAC ^ 0.5
+C64_SQRARG      = $BF74 ;[!] FAC := ARG ^ 0.5
         ;; Other functions
 C64_FADDH       = $B849 ;Add .5 to FAC
 C64_SIGN        = $BC2B ;Sets flags N,Z depending on whether FAC is 0, + or -.
 C64_ABS         = $BC58 ;Perform the ABS function on the float in FAC
 C64_INT         = $BCCC ;Perform the INT function on the float in FAC
-C64_FCOMP       = $BC5B ;Compare FAC and MEM (A/Y). A = 0 (=), 1 (>), -1 (<).
+C64_FCOMP       = $BC5B ;Compare FAC and MEM (Y:A). A = 0 (=), 1 (>), -1 (<).
         ;; Type Conversion
-C64_FOUT        = $BDDD ;Convert float in FAC to a string at $100 (also in A/Y)
+C64_FOUT        = $BDDD ;Convert float in FAC to a string at $100 (also in Y:A)
 C64_STRVAL      = $B7B5 ;Convert a string ($22/$23, A=length) to float in FAC.  
 C64_FIN         = $BCF3 ;Convert a 0-terminated string $7A/$7B to float in FAC
                         ;(CHRGOT needed before, or LDA# 1st chr and CLC.)
 C64_FLOATS      = $BC44 ;Conv. 16bit signed int $62 BIG-ENDIAN to float in FAC.
 C64_GIVAYF      = $B391 ;Convert 16bit signed int (Y=lo/A=hi) to float in FAC.
-C64_FLOAT       = $BC3C ;Convert 8bit unsigned int in A to float in FAC.
+C64_FLOAT       = $BC3C ;Convert 8bit signed int in A to float in FAC.
 C64_SNGFLT      = $B3A2 ;Convert 8bit unsigned int in Y to float in FAC.
 C64_FACINX      = $B1AA ;Convert float in FAC to 16bit signed int (Y=lo/A=hi).
 C64_QINT        = $BC9B ;Conv. float in FAC to 32bit signed int $62 BIG-ENDIAN.
 C64_FADFLT      = $B8D2 ;Normalize value in FAC;(SEC(+)/CLC(-) needed before.)
         ;; Polynomials
-C64_POLY1       = $E043 ;Evaluate a polynomial with odd powers only, for FAC
-C64_POLY2       = $E059 ;Evaluate a polynomial with odd & even powers, for FAC
+C64_POLY1       = $E043 ;[!] Evaluate a polynomial with odd powers only, for FAC
+C64_POLY2       = $E059 ;[!] Evaluate a polynomial with odd&even powers, for FAC
         ;; Constants
 C64_PI          = $AEA8 ;constant  3.14159265   = pi
 C64_MININT      = $B1A5 ;constant -32768
@@ -340,24 +343,20 @@ C64_ATNPLYA     = $E36C ;constant  .19999912
 C64_ATNPLYB     = $E371 ;constant -.333333316
 C64_ATNPLYC     = $E376 ;constant 1
 
-        ;; Other useful BASIC/Kernal routines
-C64_DSPP        = $EA13 ;Put char(A) and color(X) onto screen, blink delay <- 2.
-C64_ERROR       = $E38B ;Print an error string (error code in A).
-C64_RESET       = $FCE2 ;Reset routine, see C64_HW_RESET
-        ;; Input
-;C64_CHRGET     = $0073 ;in Zeropage - Get next byte of BASIC text
-C64_INITAT      = $E3A2 ;CHRGET routine in ROM
-C64_GETBYTC     = $B79B ;CHRGET uint8 to X (range checking)
+        ;; Other BASIC & Kernal routines
+C64_QPLOP       = $A717 ;Print BASIC token from A
 C64_LINGET      = $A96B ;CHRGET uint16 (0-63999) to $14-$15
-C64_CHKOPN      = $AEFA ;Check for and skip open paren (syntax error otherwise)
+C64_STROUT      = $AB1E ;Print zero- or quote- terminated string @ <A >Y
 C64_CHKCLS      = $AEF7 ;Check for and skip close paren (syntax error otherwise)
+C64_CHKOPN      = $AEFA ;Check for and skip open paren (syntax error otherwise)
 C64_CHKCOM      = $AEFD ;Check for and skip comma (syntax error otherwise)
 C64_SYNCHR      = $AEFF ;Check for and skip char in A (syntax error otherwise)
+C64_GETBYTC     = $B79B ;CHRGET uint8 to X (range checking)
+C64_LINPRT      = $BDCD ;Print uint16 as a decimal, A=hi byte, X=lo byte
 C64_COMINT      = $E200 ;Skip comma and get int8 in X
-        ;; Output
-C64_STROUT      = $AB1E ;Print zero-terminated string @ <A >Y
-C64_LINPRT      = $BDCD ;Print uint16 <X >A
-C64_QPLOP       = $A717 ;Print BASIC token from A
+C64_ERROR       = $E38B ;Print an error string (error code in A).
+C64_DSPP        = $EA13 ;Put char(A) and color(X) onto screen, set blink delay=2
+C64_RESET       = $FCE2 ;Reset routine, see C64_HW_RESET
 
         ;; Kernal jump table
 C64_KACPTR      = $FFA5 ;JMP C64_ACPTR
@@ -496,44 +495,48 @@ C64_VIC_M6C     = $D02D ;(R/W)  Sprite 6 Color
 C64_VIC_M7C     = $D02E ;(R/W)  Sprite 7 Color
 }
 
-        ;; BASIC V2.0 error codes
-C64_ERR_TOO_MANY_FILES          = $01
-C64_ERR_FILE_OPEN               = $02
-C64_ERR_FILE_NOT_OPEN           = $03
-C64_ERR_FILE_NOT_FOUND          = $04
-C64_ERR_DEVICE_NOT_PRESENT      = $05
-C64_ERR_NOT_INPUT_FILE          = $06
-C64_ERR_NOT_OUTPUT_FILE         = $07
-C64_ERR_MISSING_FILE_NAME       = $08
-C64_ERR_ILLEGAL_DEVICE_NUMBER   = $09
-C64_ERR_NEXT_WITHOUT_FOR        = $0A
-C64_ERR_SYNTAX                  = $0B
-C64_ERR_RETURN_WITHOUT_GOSUB    = $0C
-C64_ERR_OUT_OF_DATA             = $0D
-C64_ERR_ILLEGAL_QUANTITY        = $0E
-C64_ERR_OVERFLOW                = $0F
-C64_ERR_OUT_OF_MEMORY           = $10
-C64_ERR_UNDEFD_STATMENT         = $11
-C64_ERR_BAD_SUBSCRIPT           = $12
-C64_ERR_REDIMD_ARRAY            = $13
-C64_ERR_DIVISION_BY_ZERO        = $14
-C64_ERR_ILLEGAL_DIRECT          = $15
-C64_ERR_TYPE_MISMATCH           = $16
-C64_ERR_STRING_TOO_LONG         = $17
-C64_ERR_FILE_DATA               = $18
-C64_ERR_FORMULA_TOO_COMPLEX     = $19
-C64_ERR_CANT_CONTINUE           = $1A
-C64_ERR_UNDEFD_FUNCTION         = $1B
-C64_ERR_VERIFY                  = $1C
-C64_ERR_LOAD                    = $1D
-C64_ERR_BREAK                   = $1E
+        ;; Kernal error codes
+C64_ERR_TMF     = $01 ; TOO MANY FILES
+C64_ERR_FOP     = $02 ; FILE OPEN
+C64_ERR_FNO     = $03 ; FILE NOT OPEN
+C64_ERR_FNF     = $04 ; FILE NOT FOUND
+C64_ERR_DNP     = $05 ; DEVICE NOT PRESENT
+C64_ERR_NIF     = $06 ; NOT INPUT FILE
+C64_ERR_NOF     = $07 ; NOT OUTPUT FILE
+C64_ERR_MFN     = $08 ; MISSING FILE NAME
+C64_ERR_IDN     = $09 ; ILLEGAL DEVICE NUMBER
+	;; BASIC V2.0 error codes
+C64_ERR_NWF     = $0A ; NEXT WITHOUT FOR
+C64_ERR_SYN     = $0B ; SYNTAX
+C64_ERR_RWG     = $0C ; RETURN WITHOUT GOSUB
+C64_ERR_OOD     = $0D ; OUT OF DATA
+C64_ERR_IQN     = $0E ; ILLEGAL QUANTITY
+C64_ERR_OVF     = $0F ; OVERFLOW
+C64_ERR_OOM     = $10 ; OUT OF MEMORY
+C64_ERR_UST     = $11 ; UNDEFD STATMENT
+C64_ERR_BSU     = $12 ; BAD SUBSCRIPT
+C64_ERR_RAR     = $13 ; REDIMD ARRAY
+C64_ERR_DBZ     = $14 ; DIVISION BY ZERO
+C64_ERR_IDI     = $15 ; ILLEGAL DIRECT
+C64_ERR_TMM     = $16 ; TYPE MISMATCH
+C64_ERR_STL     = $17 ; STRING TOO LONG
+C64_ERR_FDA     = $18 ; FILE DATA
+C64_ERR_FTC     = $19 ; FORMULA TOO COMPLEX
+C64_ERR_CCN     = $1A ; CANT CONTINUE
+C64_ERR_UFN     = $1B ; UNDEFD FUNCTION
+C64_ERR_VRF     = $1C ; VERIFY
+C64_ERR_LOD     = $1D ; LOAD
+C64_ERR_BRK     = $1E ; BREAK
+        ;; Table of error message address locations. Last character of each
+        ;; message has its msb set.
+C64_ERRTAB      = $A328
 
         ;; BASIC V2.0 tokens
 C64_BAS_ABS                     = $B6   ; ABS
 C64_BAS_AND                     = $AF   ; AND
 C64_BAS_ASC                     = $C6   ; ASC
 C64_BAS_ATN                     = $C1   ; ATN
-C64_BAS_CHR_D                   = $C7   ; CHR$    -- trailing '$' included
+C64_BAS_CHR                     = $C7   ; CHR$
 C64_BAS_CLOSE                   = $A0   ; CLOSE
 C64_BAS_CLR                     = $9C   ; CLR
 C64_BAS_CMD                     = $9D   ; CMD
@@ -553,15 +556,15 @@ C64_BAS_GOSUB                   = $8D   ; GOSUB
 C64_BAS_GOTO                    = $89   ; GOTO
 C64_BAS_IF                      = $8B   ; IF
 C64_BAS_INPUT                   = $85   ; INPUT
-C64_BAS_INPUT_N                 = $84   ; INPUT#  -- trailing '#' included
+C64_BAS_INPUTN                  = $84   ; INPUT#
 C64_BAS_INT                     = $B5   ; INT
-C64_BAS_LEFT_D                  = $C8   ; LEFT$   -- trailing '$' included
+C64_BAS_LEFT                    = $C8   ; LEFT$
 C64_BAS_LEN                     = $C3   ; LEN
 C64_BAS_LET                     = $88   ; LET
 C64_BAS_LIST                    = $9B   ; LIST
 C64_BAS_LOAD                    = $93   ; LOAD
 C64_BAS_LOG                     = $BC   ; LOG
-C64_BAS_MID_D                   = $CA   ; MID$    -- trailing '$' included
+C64_BAS_MID                     = $CA   ; MID$
 C64_BAS_NEW                     = $A2   ; NEW
 C64_BAS_NEXT                    = $82   ; NEXT
 C64_BAS_NOT                     = $A8   ; NOT
@@ -572,25 +575,25 @@ C64_BAS_PEEK                    = $C2   ; PEEK
 C64_BAS_POKE                    = $97   ; POKE
 C64_BAS_POS                     = $B9   ; POS
 C64_BAS_PRINT                   = $99   ; PRINT
-C64_BAS_PRINT_N                 = $98   ; PRINT#  -- trailing '#' included
+C64_BAS_PRINTN                  = $98   ; PRINT#
 C64_BAS_PI                      = $FF   ; Pi constant
 C64_BAS_READ                    = $87   ; READ
 C64_BAS_REM                     = $8F   ; REM
 C64_BAS_RESTORE                 = $8C   ; RESTORE
 C64_BAS_RETURN                  = $8E   ; RETURN
-C64_BAS_RIGHT                   = $C9   ; RIGHT$  -- trailing '$' included
+C64_BAS_RIGHT                   = $C9   ; RIGHT$
 C64_BAS_RND                     = $BB   ; RND
 C64_BAS_RUN                     = $8A   ; RUN
 C64_BAS_SAVE                    = $94   ; SAVE
 C64_BAS_SGN                     = $B4   ; SGN
 C64_BAS_SIN                     = $BF   ; SIN
-C64_BAS_SPC_P                   = $A6   ; SPC(    -- trailing '(' included
+C64_BAS_SPC                     = $A6   ; SPC(
 C64_BAS_SQR                     = $BA   ; SQR
 C64_BAS_STEP                    = $A9   ; STEP
 C64_BAS_STOP                    = $90   ; STOP
-C64_BAS_STR_D                   = $C4   ; STR$    -- trailing '$' included
+C64_BAS_STR                     = $C4   ; STR$
 C64_BAS_SYS                     = $9E   ; SYS
-C64_BAS_TAB_P                   = $A3   ; TAB(    -- trailing '(' included
+C64_BAS_TAB                     = $A3   ; TAB(
 C64_BAS_TAN                     = $C0   ; TAN
 C64_BAS_THEN                    = $A7   ; THEN
 C64_BAS_TO                      = $A4   ; TO
@@ -598,11 +601,11 @@ C64_BAS_USR                     = $B7   ; USR
 C64_BAS_VAL                     = $C5   ; VAL
 C64_BAS_VERIFY                  = $95   ; VERIFY
 C64_BAS_WAIT                    = $92   ; WAIT
-C64_BAS_ADD                     = $AA   ; '+', addition/string concatenation
-C64_BAS_SUB                     = $AB   ; '-', subtraction
-C64_BAS_MUL                     = $AC   ; '*', multiplication
-C64_BAS_DIV                     = $AD   ; '/', division
-C64_BAS_POW                     = $AE   ; '^' (up-arrow), Power
-C64_BAS_GT                      = $B1   ; '>', greater-than operator
-C64_BAS_EQ                      = $B2   ; '=', equals operator
-C64_BAS_LT                      = $B3   ; '<', less-than operator
+C64_BAS_ADD                     = $AA   ; + operator
+C64_BAS_SUB                     = $AB   ; - operator
+C64_BAS_MUL                     = $AC   ; * operator
+C64_BAS_DIV                     = $AD   ; / operator
+C64_BAS_POW                     = $AE   ; UpArrow operator
+C64_BAS_GT                      = $B1   ; > operator
+C64_BAS_EQ                      = $B2   ; = operator
+C64_BAS_LT                      = $B3   ; < operator
