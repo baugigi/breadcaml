@@ -6,7 +6,7 @@ include $(if $(wildcard $(CONF)),$(CONF),$(error \
 .PHONY: asm
 asm:
 	@$(MAKE) -q stdlib.asm 2> /dev/null || \
-	  echo '$(call message,GENERATE:,Assembly routines)'
+	  $(call message,GENERATE:,Assembly routines)
 	$(MAKE) stdlib.asm
 
 stdlib.asm: depends.asm stdlib_*.asm

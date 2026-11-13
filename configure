@@ -300,7 +300,15 @@ OCAMLSTDLIB := $OCAMLSTDLIB
 OCAMLDOC := ${CMD[ocamldoc]}
 OCAMLOPT := ${CMD[ocamlopt]} $OCAMLSAFEOPTS
 VERSION := $VERSION
-message = ${grn}\$(1)${nrm} \$(2)
+
+# Progress message for make recipes: coloured only if make's stdout is a
+# terminal (GNU make >= 4.1 sets MAKE_TERMOUT) and NO_COLOR is not set
+ifdef MAKE_TERMOUT
+ifndef NO_COLOR
+message = printf '\033[32m%s\033[0m %s\n' '\$(1)' '\$(2)'
+endif
+endif
+message ?= printf '%s %s\n' '\$(1)' '\$(2)'
 EOF
 
 # Show the result of the configuration

@@ -9,7 +9,7 @@ SOURCE := petscii petsciiPPX polyvarArray polyvarPPX bcamlppx
 FLAGS  := -I +compiler-libs ocamlcommon.cmxa str.cmxa unix.cmxa
 
 $(TARGET): $(SOURCE:=.ml)
-	@echo '$(call message,COMPILE: ,BreadCaml preprocessor)'
+	@$(call message,COMPILE: ,BreadCaml preprocessor)
 	$(OCAMLOPT) $(FLAGS) -o $@ $^
 
 .PHONY: clean

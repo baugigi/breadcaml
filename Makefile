@@ -29,7 +29,7 @@ all:
 
 .PHONY: install
 install: all
-	@echo '$(call message,GENERATE:,Uninstaller script)'
+	@$(call message,GENERATE:,Uninstaller script)
 	{ echo '#!/bin/bash'; \
 	  echo '# AUTO-GENERATED FILE - DO NOT EDIT'; \
 	  echo 'sed -nE "s/^FILE:(.+)$$/\1/p" "$$0"|while read -r f; do'; \
@@ -43,25 +43,25 @@ install: all
 	  echo '# --- MANIFEST ---'; \
 	} > $(UNINST)
 	chmod +x "$(UNINST)"
-	@echo '$(call message,INSTALL: ,Binaries)'
+	@$(call message,INSTALL: ,Binaries)
 	$(call inst_and_rec,bin/bcamlc,$(BINDIR),755)
 	$(call inst_and_rec,bin/bcamlppx,$(BINDIR),755)
 	strip bin/bcaml{c,ppx}
 	ln -fsT $(BINDIR)/bcamlc $(BINDIR)/bcamlopt
 	echo "FILE:$(BINDIR)/bcamlopt" >> "$(UNINST)"
-	@echo '$(call message,INSTALL: ,Assembly routines)'
+	@$(call message,INSTALL: ,Assembly routines)
 	$(call inst_and_rec,src/asm/*.asm,$(LIBDIR),755)
-	@echo '$(call message,INSTALL: ,Standard Library)'
+	@$(call message,INSTALL: ,Standard Library)
 	$(call inst_and_rec,src/stdlib/stdlib.cma,$(LIBDIR),755)
 	$(call inst_and_rec,src/stdlib/libcamlrun.a,$(LIBDIR),755)
 	$(call inst_and_rec,src/stdlib/*.ml,$(LIBDIR),755)
 	$(call inst_and_rec,src/stdlib/*.mli,$(LIBDIR),755)
 	$(call inst_and_rec,src/stdlib/*.cmo,$(LIBDIR),755)
 	$(call inst_and_rec,src/stdlib/*.cmi,$(LIBDIR),755)
-	@echo '$(call message,INSTALL: ,Man pages)'
+	@$(call message,INSTALL: ,Man pages)
 	$(call inst_and_rec,man/*,$(MAN1DIR),644)
 	$(call inst_and_rec,src/stdlib/*.$(MAN3EXT),$(MAN3DIR),644)
-	@echo '$(call message,INSTALL: ,HTML documentation)'
+	@$(call message,INSTALL: ,HTML documentation)
 	$(call inst_and_rec,src/stdlib/*.html,$(DOCDIR),644)
 	$(call inst_and_rec,src/stdlib/*.css,$(DOCDIR),644)
 

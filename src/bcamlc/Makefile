@@ -12,7 +12,7 @@ SOURCE := $(OCLEAN) $(BCAMLC)
 FLAGS  := -I +/../obytelib/ obytelib.cmxa -I $(VPATH)
 
 $(TARGET): $(SOURCE:=.ml)
-	@echo '$(call message,COMPILE: ,BreadCaml compiler)'
+	@$(call message,COMPILE: ,BreadCaml compiler)
 	$(OCAMLOPT) $(FLAGS) -o $@ $^
 
 config.ml: config.ml.tpl $(CONF)

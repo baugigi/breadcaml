@@ -46,7 +46,7 @@ all: lib man doc
 lib_tgt := $(CMI) $(CMO) stdlib.cma libcamlrun.a 
 lib:
 	@$(MAKE) -q $(lib_tgt) 2> /dev/null || \
-	  echo '$(call message,COMPILE: ,Standard library)'
+	  $(call message,COMPILE: ,Standard library)
 	$(MAKE) $(lib_tgt)
 
 stdlib.cma: $(CMO)
@@ -127,7 +127,7 @@ moreLabels.mli: $(patsubst %.mli,$(TPL)/%.template.mli,$@ $(FUNCTOR)) \
 man: .man_timestamp
 
 .man_timestamp: $(BASENAMES:=.mli)
-	@echo '$(call message,GENERATE:,Man pages)'
+	@$(call message,GENERATE:,Man pages)
 	$(OCAMLDOC) -hide-warnings -t "The BreadCaml Project" \
 	  -man -man-mini -man-suffix $(MAN3EXT) -man-section $(MAN3EXT) $^
 	touch $@
@@ -136,7 +136,7 @@ man: .man_timestamp
 doc: .doc_timestamp
 
 .doc_timestamp: $(BASENAMES:=.mli)
-	@echo '$(call message,GENERATE:,HTML documentation)'
+	@$(call message,GENERATE:,HTML documentation)
 	$(OCAMLDOC) -hide-warnings -html -charset utf-8 -colorize-code \
 	  -sort -t "The BreadCaml Project" $^
 	touch $@
