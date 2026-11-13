@@ -478,10 +478,6 @@ caml_int32_to_int = caml_i_to_int
 caml_int32_bswap
         +caml_i_stub 4, caml_i_bswap
 }
-!ifdef caml_PRIM__caml_int32_of_float {
-caml_int32_of_float
-        +caml_i_stub 4, caml_i_of_float
-}
 !ifdef caml_PRIM__caml_int64_of_int {
 caml_int64_of_int
         +caml_i_stub 8, caml_i_of_int
@@ -500,10 +496,6 @@ caml_int64_to_int = caml_i_to_int
 !ifdef caml_PRIM__caml_int64_bswap {
 caml_int64_bswap
         +caml_i_stub 8, caml_i_bswap
-}
-!ifdef caml_PRIM__caml_int64_of_float {
-caml_int64_of_float
-        +caml_i_stub 8, caml_i_of_float
 }
 
 !ifdef caml_AUX__caml_i_of_int {
@@ -597,6 +589,15 @@ caml_i_bswap                          ;push NB bytes, pop them back
 ;; The 32-bit mantissa is copied MSB first at the top of a big-endian NB-byte
 ;; magnitude M, shifted right by 8*NB - e bits (e = exponent - 128), then
 ;; negated if needed.
+
+!ifdef caml_PRIM__caml_int32_of_float {
+caml_int32_of_float
+        +caml_i_stub 4, caml_i_of_float
+}
+!ifdef caml_PRIM__caml_int64_of_float {
+caml_int64_of_float
+        +caml_i_stub 8, caml_i_of_float
+}
 
 !ifdef caml_AUX__caml_i_of_float {
 caml_i_of_float

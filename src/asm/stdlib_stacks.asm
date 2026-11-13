@@ -5,7 +5,7 @@
 !zone caml_STACK {
 
 !ifndef caml_stack_warn {
-caml_stack_warn
+!set caml_stack_warn = 1
   !warn "TODO: caml_ensure_stack_capacity"
 }
 

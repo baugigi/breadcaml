@@ -25,7 +25,7 @@
     }
   }
   !ifndef caml_mem_shown { ;show once only
-caml_mem_shown
+    !set caml_mem_shown = 1
     !ifdef caml_INTERP {
       .program = "Bytecode    "
       .runtime = "Interpreter "

@@ -5,7 +5,7 @@
 !zone caml_COMPARISONS {
 
 !ifndef caml_compare_warn {
-caml_compare_warn
+!set caml_compare_warn = 1
   !warn "TODO: caml_compare_val_custom_tag"
   !warn "TODO: caml_compare_val_double_array_tag"
   !warn "TODO: caml_compare_val_object_tag"
@@ -56,42 +56,6 @@ caml_int_compare
         ;;
         ;; float
         ;;
-
-!ifdef caml_PRIM__caml_eq_float {
-caml_eq_float
-        LDA # .EQUAL
-        BNE caml_fcmp
-}
-
-!ifdef caml_PRIM__caml_neq_float {
-caml_neq_float
-        LDA # .LESS | .GREATER
-        BNE caml_fcmp
-}
-
-!ifdef caml_PRIM__caml_le_float {
-caml_le_float
-        LDA # .LESS | .EQUAL
-        BNE caml_fcmp
-}
-
-!ifdef caml_PRIM__caml_lt_float {
-caml_lt_float
-        LDA # .LESS
-        BNE caml_fcmp
-}
-
-!ifdef caml_PRIM__caml_ge_float {
-caml_ge_float
-        LDA # .GREATER | .EQUAL
-        BNE caml_fcmp
-}
-
-!ifdef caml_PRIM__caml_gt_float {
-caml_gt_float
-        LDA # .GREATER
-        BNE caml_fcmp
-}
 
 !ifdef caml_PRIM__caml_float_compare {
 caml_float_compare
@@ -292,6 +256,46 @@ caml_cmp__mask = * + 1
         BNE caml_return_true
         BEQ caml_return_false
 .res    !byte .LESS, .EQUAL, .GREATER
+}
+
+        ;;
+        ;; float comparison operators (kept next to caml_fcmp: BNE range)
+        ;;
+
+!ifdef caml_PRIM__caml_eq_float {
+caml_eq_float
+        LDA # .EQUAL
+        BNE caml_fcmp
+}
+
+!ifdef caml_PRIM__caml_neq_float {
+caml_neq_float
+        LDA # .LESS | .GREATER
+        BNE caml_fcmp
+}
+
+!ifdef caml_PRIM__caml_le_float {
+caml_le_float
+        LDA # .LESS | .EQUAL
+        BNE caml_fcmp
+}
+
+!ifdef caml_PRIM__caml_lt_float {
+caml_lt_float
+        LDA # .LESS
+        BNE caml_fcmp
+}
+
+!ifdef caml_PRIM__caml_ge_float {
+caml_ge_float
+        LDA # .GREATER | .EQUAL
+        BNE caml_fcmp
+}
+
+!ifdef caml_PRIM__caml_gt_float {
+caml_gt_float
+        LDA # .GREATER
+        BNE caml_fcmp
 }
 
 !ifdef caml_AUX__caml_compare_identity_setV2 {

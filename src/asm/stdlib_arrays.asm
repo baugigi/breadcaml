@@ -5,7 +5,7 @@
 !zone caml_ARRAYS {
 
 !ifndef caml_arrays_warn {
-caml_arrays_warn
+!set caml_arrays_warn = 1
   !warn "TODO: caml_array_fill"
   !warn "TODO: caml_floatarray_blit"
   !warn "BUG: GC-invalidated pointers in caml_array_concat"
