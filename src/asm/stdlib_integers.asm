@@ -40,9 +40,9 @@
 !ifdef caml_AUX__caml_i_custom {
 !align $01, $00
 caml_i_custom
-caml_int32_custom
+caml_i_custom__int32
         !word caml_int32_compare, caml_int32_hash
-caml_int64_custom
+caml_i_custom__int64
         !word caml_int64_compare, caml_int64_hash
 }
 
