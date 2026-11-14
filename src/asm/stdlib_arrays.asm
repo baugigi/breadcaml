@@ -929,7 +929,7 @@ caml_array_concat
 +       INY
         LDA @TAIL
         BIT caml_is_block               ;end of list?
-        BEQ @alloc                      ;yes:  exit loop
+        BNE @alloc                      ;Z=0: not a block, i.e. []: exit loop
         LDA (@TAIL),Y                   ;no:   continue
         STA @HEAD
         INY
@@ -986,7 +986,7 @@ caml_array_concat
 +       LDY # 0
         LDA @TAIL
         BIT caml_is_block               ;end of list?
-        BEQ @eol                        ;yes:  exit
+        BNE @eol                        ;Z=0: not a block, i.e. []: exit
         LDA (@TAIL),Y                   ;no:   continue
         STA ACCU
         INY

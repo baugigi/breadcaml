@@ -1,0 +1,23 @@
+=== build/nat/run//t9c_diag_matrix_raw.log (esecuzione 1) ===
+[CLR]
+
+    **** COMMODORE 64 BASIC V2 ****
+
+ 64K RAM SYSTEM  38911 BASIC BYTES FREE
+
+READY.
+
+
+SEARCHING FOR T9C_DIAG_MATRIX
+LOADING
+READY.
+
+FAIL mat 1x1 EXN
+FAIL mat 2x2 EXN
+FAIL mat 4x4 EXN
+FAIL mat 8x8 EXN
+FAIL mat 16x16 EXN
+FAIL mat 16x16 float EXN
+D_MAT FAIL
+
+ready.

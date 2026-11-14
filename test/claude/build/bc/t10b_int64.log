@@ -1,0 +1,6 @@
+Warning - File /home/piero/.opam/LTS/lib/bcaml/stdlib_arrays.asm, line 9 (Subzone caml_ARRAYS): !warn: TODO: caml_array_fill
+Warning - File /home/piero/.opam/LTS/lib/bcaml/stdlib_arrays.asm, line 10 (Subzone caml_ARRAYS): !warn: TODO: caml_floatarray_blit
+Warning - File /home/piero/.opam/LTS/lib/bcaml/stdlib_arrays.asm, line 11 (Subzone caml_ARRAYS): !warn: BUG: GC-invalidated pointers in caml_array_concat
+Warning - File /home/piero/.opam/LTS/lib/bcaml/stdlib_stacks.asm, line 9 (Subzone caml_STACK): !warn: TODO: caml_ensure_stack_capacity
+Error - File ./build/bc/t10b_int64.prg80dd68.asm~, line 273 (Zone <untitled>): Symbol not defined (caml_int64_to_float).
+BreadCaml> Error: ''/home/piero/.opam/LTS/bin/acme'   -Dcaml_INTERP=1 './build/bc/t10b_int64.prg80dd68.asm~'' exited with status code 1.

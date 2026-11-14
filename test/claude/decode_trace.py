@@ -14,6 +14,7 @@ def char(a):
     if a == 0x0A: return ''
     if a == 0x93: return '\n[CLR]\n'
     if a == 0x5F: return '_'
+    if a == 0xA4: return "_"
     if 0x41 <= a <= 0x5A: return chr(a + 32) if LOWER else chr(a)       # $41-$5A: a-z (lower) / A-Z (upper)
     if 0xC1 <= a <= 0xDA: return chr(a - 0x80) if LOWER else '<%s>' % chr(a - 0x80)  # A-Z (lower) / glifo grafico (upper)
     if 0x20 <= a <= 0x5D: return chr(a)

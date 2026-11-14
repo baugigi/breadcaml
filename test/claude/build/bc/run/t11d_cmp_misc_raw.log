@@ -1,0 +1,321 @@
+TRACE: 1  C:$f1ca  (Trace load store exec)
+BREAK: 2  C:$a480  (Stop on exec)
+Will ignore the next 2 hits of checkpoint #2
+Setting checkpoint 2 command to: log off; quit
+#1 (Trace  exec f1ca)  295/$127,  35/$23
+.C:f1ca  48          PHA            - A:93 X:38 Y:00 SP:f5 N.-B...C    2062844
+#1 (Trace  exec f1ca)  311/$137,  32/$20
+.C:f1ca  48          PHA            - A:0D X:37 Y:01 SP:f5 ..-....C    2103161
+#1 (Trace  exec f1ca)    4/$004,   8/$08
+.C:f1ca  48          PHA            - A:20 X:36 Y:02 SP:f5 ..-....C    2103452
+#1 (Trace  exec f1ca)    9/$009,  15/$0f
+.C:f1ca  48          PHA            - A:20 X:35 Y:03 SP:f5 ..-....C    2103774
+#1 (Trace  exec f1ca)   14/$00e,  22/$16
+.C:f1ca  48          PHA            - A:20 X:34 Y:04 SP:f5 ..-....C    2104096
+#1 (Trace  exec f1ca)   19/$013,  29/$1d
+.C:f1ca  48          PHA            - A:20 X:33 Y:05 SP:f5 ..-....C    2104418
+#1 (Trace  exec f1ca)   24/$018,  36/$24
+.C:f1ca  48          PHA            - A:2A X:32 Y:06 SP:f5 ..-....C    2104740
+#1 (Trace  exec f1ca)   29/$01d,  43/$2b
+.C:f1ca  48          PHA            - A:2A X:31 Y:07 SP:f5 ..-....C    2105062
+#1 (Trace  exec f1ca)   34/$022,  50/$32
+.C:f1ca  48          PHA            - A:2A X:30 Y:08 SP:f5 ..-....C    2105384
+#1 (Trace  exec f1ca)   39/$027,  57/$39
+.C:f1ca  48          PHA            - A:2A X:2F Y:09 SP:f5 ..-....C    2105706
+#1 (Trace  exec f1ca)   45/$02d,   1/$01
+.C:f1ca  48          PHA            - A:20 X:2E Y:0A SP:f5 ..-....C    2106028
+#1 (Trace  exec f1ca)   50/$032,   8/$08
+.C:f1ca  48          PHA            - A:43 X:2D Y:0B SP:f5 ..-....C    2106350
+#1 (Trace  exec f1ca)   55/$037,  56/$38
+.C:f1ca  48          PHA            - A:4F X:2C Y:0C SP:f5 ..-....C    2106713
+#1 (Trace  exec f1ca)   61/$03d,  43/$2b
+.C:f1ca  48          PHA            - A:4D X:2B Y:0D SP:f5 ..-....C    2107078
+#1 (Trace  exec f1ca)   66/$042,  50/$32
+.C:f1ca  48          PHA            - A:4D X:2A Y:0E SP:f5 ..-....C    2107400
+#1 (Trace  exec f1ca)   72/$048,  37/$25
+.C:f1ca  48          PHA            - A:4F X:29 Y:0F SP:f5 ..-....C    2107765
+#1 (Trace  exec f1ca)   78/$04e,  24/$18
+.C:f1ca  48          PHA            - A:44 X:28 Y:10 SP:f5 ..-....C    2108130
+#1 (Trace  exec f1ca)   84/$054,   9/$09
+.C:f1ca  48          PHA            - A:4F X:27 Y:11 SP:f5 ..-....C    2108493
+#1 (Trace  exec f1ca)   89/$059,  16/$10
+.C:f1ca  48          PHA            - A:52 X:26 Y:12 SP:f5 ..-....C    2108815
+#1 (Trace  exec f1ca)   95/$05f,   3/$03
+.C:f1ca  48          PHA            - A:45 X:25 Y:13 SP:f5 ..-....C    2109180
+#1 (Trace  exec f1ca)  100/$064,  53/$35
+.C:f1ca  48          PHA            - A:20 X:24 Y:14 SP:f5 ..-....C    2109545
+#1 (Trace  exec f1ca)  110/$06e,   7/$07
+.C:f1ca  48          PHA            - A:36 X:23 Y:15 SP:f5 ..-....C    2110129
+#1 (Trace  exec f1ca)  115/$073,  57/$39
+.C:f1ca  48          PHA            - A:34 X:22 Y:16 SP:f5 ..-....C    2110494
+#1 (Trace  exec f1ca)  121/$079,   1/$01
+.C:f1ca  48          PHA            - A:20 X:21 Y:17 SP:f5 ..-....C    2110816
+#1 (Trace  exec f1ca)  126/$07e,  51/$33
+.C:f1ca  48          PHA            - A:42 X:20 Y:18 SP:f5 ..-....C    2111181
+#1 (Trace  exec f1ca)  132/$084,  38/$26
+.C:f1ca  48          PHA            - A:41 X:1F Y:19 SP:f5 ..-....C    2111546
+#1 (Trace  exec f1ca)  137/$089,  45/$2d
+.C:f1ca  48          PHA            - A:53 X:1E Y:1A SP:f5 ..-....C    2111868
+#1 (Trace  exec f1ca)  143/$08f,  32/$20
+.C:f1ca  48          PHA            - A:49 X:1D Y:1B SP:f5 ..-....C    2112233
+#1 (Trace  exec f1ca)  149/$095,  19/$13
+.C:f1ca  48          PHA            - A:43 X:1C Y:1C SP:f5 ..-....C    2112598
+#1 (Trace  exec f1ca)  154/$09a,  26/$1a
+.C:f1ca  48          PHA            - A:20 X:1B Y:1D SP:f5 ..-....C    2112920
+#1 (Trace  exec f1ca)  160/$0a0,  13/$0d
+.C:f1ca  48          PHA            - A:56 X:1A Y:1E SP:f5 ..-....C    2113285
+#1 (Trace  exec f1ca)  166/$0a6,   0/$00
+.C:f1ca  48          PHA            - A:32 X:19 Y:1F SP:f5 ..-....C    2113650
+#1 (Trace  exec f1ca)  171/$0ab,   7/$07
+.C:f1ca  48          PHA            - A:20 X:18 Y:20 SP:f5 ..-....C    2113972
+#1 (Trace  exec f1ca)  176/$0b0,  57/$39
+.C:f1ca  48          PHA            - A:2A X:17 Y:21 SP:f5 ..-....C    2114337
+#1 (Trace  exec f1ca)  182/$0b6,  44/$2c
+.C:f1ca  48          PHA            - A:2A X:16 Y:22 SP:f5 ..-....C    2114702
+#1 (Trace  exec f1ca)  188/$0bc,  31/$1f
+.C:f1ca  48          PHA            - A:2A X:15 Y:23 SP:f5 ..-....C    2115067
+#1 (Trace  exec f1ca)  193/$0c1,  38/$26
+.C:f1ca  48          PHA            - A:2A X:14 Y:24 SP:f5 ..-....C    2115389
+#1 (Trace  exec f1ca)  199/$0c7,  25/$19
+.C:f1ca  48          PHA            - A:0D X:13 Y:25 SP:f5 ..-....C    2115754
+#1 (Trace  exec f1ca)  204/$0cc,  44/$2c
+.C:f1ca  48          PHA            - A:0D X:12 Y:26 SP:f5 ..-....C    2116088
+#1 (Trace  exec f1ca)  209/$0d1,  20/$14
+.C:f1ca  48          PHA            - A:20 X:11 Y:27 SP:f5 ..-....C    2116379
+#1 (Trace  exec f1ca)  215/$0d7,   7/$07
+.C:f1ca  48          PHA            - A:36 X:10 Y:28 SP:f5 ..-....C    2116744
+#1 (Trace  exec f1ca)  220/$0dc,  57/$39
+.C:f1ca  48          PHA            - A:34 X:0F Y:29 SP:f5 ..-....C    2117109
+#1 (Trace  exec f1ca)  226/$0e2,   1/$01
+.C:f1ca  48          PHA            - A:4B X:0E Y:2A SP:f5 ..-....C    2117431
+#1 (Trace  exec f1ca)  231/$0e7,  51/$33
+.C:f1ca  48          PHA            - A:20 X:0D Y:2B SP:f5 ..-....C    2117796
+#1 (Trace  exec f1ca)  237/$0ed,  38/$26
+.C:f1ca  48          PHA            - A:52 X:0C Y:2C SP:f5 ..-....C    2118161
+#1 (Trace  exec f1ca)  242/$0f2,  45/$2d
+.C:f1ca  48          PHA            - A:41 X:0B Y:2D SP:f5 ..-....C    2118483
+#1 (Trace  exec f1ca)  248/$0f8,  32/$20
+.C:f1ca  48          PHA            - A:4D X:0A Y:2E SP:f5 ..-....C    2118848
+#1 (Trace  exec f1ca)  253/$0fd,  39/$27
+.C:f1ca  48          PHA            - A:20 X:09 Y:2F SP:f5 ..-....C    2119170
+#1 (Trace  exec f1ca)  258/$102,  46/$2e
+.C:f1ca  48          PHA            - A:53 X:08 Y:30 SP:f5 ..-....C    2119492
+#1 (Trace  exec f1ca)  263/$107,  53/$35
+.C:f1ca  48          PHA            - A:59 X:07 Y:31 SP:f5 ..-....C    2119814
+#1 (Trace  exec f1ca)  268/$10c,  60/$3c
+.C:f1ca  48          PHA            - A:53 X:06 Y:32 SP:f5 ..-....C    2120136
+#1 (Trace  exec f1ca)  274/$112,   4/$04
+.C:f1ca  48          PHA            - A:54 X:05 Y:33 SP:f5 ..-....C    2120458
+#1 (Trace  exec f1ca)  279/$117,  11/$0b
+.C:f1ca  48          PHA            - A:45 X:04 Y:34 SP:f5 ..-....C    2120780
+#1 (Trace  exec f1ca)  284/$11c,  18/$12
+.C:f1ca  48          PHA            - A:4D X:03 Y:35 SP:f5 ..-....C    2121102
+#1 (Trace  exec f1ca)  289/$121,  25/$19
+.C:f1ca  48          PHA            - A:20 X:02 Y:36 SP:f5 ..-....C    2121424
+#1 (Trace  exec f1ca)  294/$126,  32/$20
+.C:f1ca  48          PHA            - A:20 X:01 Y:37 SP:f5 ..-....C    2121746
+#1 (Trace  exec f1ca)   95/$05f,  45/$2d
+.C:f1ca  48          PHA            - A:33 X:05 Y:00 SP:f5 ..-B....    2128878
+#1 (Trace  exec f1ca)  101/$065,  31/$1f
+.C:f1ca  48          PHA            - A:38 X:04 Y:01 SP:f5 ..-B...C    2129242
+#1 (Trace  exec f1ca)  106/$06a,  38/$26
+.C:f1ca  48          PHA            - A:39 X:03 Y:02 SP:f5 ..-B...C    2129564
+#1 (Trace  exec f1ca)  112/$070,  25/$19
+.C:f1ca  48          PHA            - A:31 X:02 Y:03 SP:f5 ..-B...C    2129929
+#1 (Trace  exec f1ca)  118/$076,  11/$0b
+.C:f1ca  48          PHA            - A:31 X:01 Y:04 SP:f5 ..-B...C    2130293
+#1 (Trace  exec f1ca)  134/$086,  38/$26
+.C:f1ca  48          PHA            - A:20 X:12 Y:00 SP:f5 ..-B...C    2131328
+#1 (Trace  exec f1ca)  140/$08c,  25/$19
+.C:f1ca  48          PHA            - A:42 X:11 Y:01 SP:f5 ..-B...C    2131693
+#1 (Trace  exec f1ca)  145/$091,  32/$20
+.C:f1ca  48          PHA            - A:41 X:10 Y:02 SP:f5 ..-B...C    2132015
+#1 (Trace  exec f1ca)  151/$097,  19/$13
+.C:f1ca  48          PHA            - A:53 X:0F Y:03 SP:f5 ..-B...C    2132380
+#1 (Trace  exec f1ca)  157/$09d,   6/$06
+.C:f1ca  48          PHA            - A:49 X:0E Y:04 SP:f5 ..-B...C    2132745
+#1 (Trace  exec f1ca)  162/$0a2,  13/$0d
+.C:f1ca  48          PHA            - A:43 X:0D Y:05 SP:f5 ..-B...C    2133067
+#1 (Trace  exec f1ca)  168/$0a8,   0/$00
+.C:f1ca  48          PHA            - A:20 X:0C Y:06 SP:f5 ..-B...C    2133432
+#1 (Trace  exec f1ca)  173/$0ad,  50/$32
+.C:f1ca  48          PHA            - A:42 X:0B Y:07 SP:f5 ..-B...C    2133797
+#1 (Trace  exec f1ca)  178/$0b2,  57/$39
+.C:f1ca  48          PHA            - A:59 X:0A Y:08 SP:f5 ..-B...C    2134119
+#1 (Trace  exec f1ca)  184/$0b8,  44/$2c
+.C:f1ca  48          PHA            - A:54 X:09 Y:09 SP:f5 ..-B...C    2134484
+#1 (Trace  exec f1ca)  190/$0be,  31/$1f
+.C:f1ca  48          PHA            - A:45 X:08 Y:0A SP:f5 ..-B...C    2134849
+#1 (Trace  exec f1ca)  196/$0c4,  18/$12
+.C:f1ca  48          PHA            - A:53 X:07 Y:0B SP:f5 ..-B...C    2135214
+#1 (Trace  exec f1ca)  201/$0c9,  25/$19
+.C:f1ca  48          PHA            - A:20 X:06 Y:0C SP:f5 ..-B...C    2135536
+#1 (Trace  exec f1ca)  207/$0cf,  12/$0c
+.C:f1ca  48          PHA            - A:46 X:05 Y:0D SP:f5 ..-B...C    2135901
+#1 (Trace  exec f1ca)  212/$0d4,  62/$3e
+.C:f1ca  48          PHA            - A:52 X:04 Y:0E SP:f5 ..-B...C    2136266
+#1 (Trace  exec f1ca)  218/$0da,   6/$06
+.C:f1ca  48          PHA            - A:45 X:03 Y:0F SP:f5 ..-B...C    2136588
+#1 (Trace  exec f1ca)  223/$0df,  56/$38
+.C:f1ca  48          PHA            - A:45 X:02 Y:10 SP:f5 ..-B...C    2136953
+#1 (Trace  exec f1ca)  229/$0e5,  43/$2b
+.C:f1ca  48          PHA            - A:0D X:01 Y:11 SP:f5 ..-B...C    2137318
+#1 (Trace  exec f1ca)  246/$0f6,  60/$3c
+.C:f1ca  48          PHA            - A:0D X:0A Y:00 SP:f3 ..-B...C    2138406
+#1 (Trace  exec f1ca)  251/$0fb,  36/$24
+.C:f1ca  48          PHA            - A:0A X:09 Y:01 SP:f3 ..-B...C    2138697
+#1 (Trace  exec f1ca)  257/$101,  54/$36
+.C:f1ca  48          PHA            - A:52 X:08 Y:02 SP:f3 ..-B....    2139093
+#1 (Trace  exec f1ca)  262/$106,  61/$3d
+.C:f1ca  48          PHA            - A:45 X:07 Y:03 SP:f3 ..-B...C    2139415
+#1 (Trace  exec f1ca)  268/$10c,   5/$05
+.C:f1ca  48          PHA            - A:41 X:06 Y:04 SP:f3 ..-B...C    2139737
+#1 (Trace  exec f1ca)  273/$111,  12/$0c
+.C:f1ca  48          PHA            - A:44 X:05 Y:05 SP:f3 ..-B...C    2140059
+#1 (Trace  exec f1ca)  278/$116,  19/$13
+.C:f1ca  48          PHA            - A:59 X:04 Y:06 SP:f3 ..-B...C    2140381
+#1 (Trace  exec f1ca)  283/$11b,  26/$1a
+.C:f1ca  48          PHA            - A:2E X:03 Y:07 SP:f3 ..-B...C    2140703
+#1 (Trace  exec f1ca)  288/$120,  33/$21
+.C:f1ca  48          PHA            - A:0D X:02 Y:08 SP:f3 ..-B...C    2141025
+#1 (Trace  exec f1ca)  293/$125,   9/$09
+.C:f1ca  48          PHA            - A:0A X:01 Y:09 SP:f3 ..-B...C    2141316
+#1 (Trace  exec f1ca)   90/$05a,  52/$34
+.C:f1ca  48          PHA            - A:0D X:FF Y:01 SP:f3 .V-....C    2993434
+#1 (Trace  exec f1ca)  165/$0a5,  53/$35
+.C:f1ca  48          PHA            - A:0D X:01 Y:0C SP:f0 ..-B...C    3017816
+#1 (Trace  exec f1ca)  169/$0a9,  50/$32
+.C:f1ca  48          PHA            - A:53 X:01 Y:0D SP:f0 ..-B...C    3018065
+#1 (Trace  exec f1ca)  175/$0af,  11/$0b
+.C:f1ca  48          PHA            - A:45 X:01 Y:0E SP:f0 ..-B...C    3018404
+#1 (Trace  exec f1ca)  180/$0b4,  35/$23
+.C:f1ca  48          PHA            - A:41 X:01 Y:0F SP:f0 ..-B...C    3018743
+#1 (Trace  exec f1ca)  185/$0b9,  16/$10
+.C:f1ca  48          PHA            - A:52 X:01 Y:10 SP:f0 ..-B...C    3019039
+#1 (Trace  exec f1ca)  190/$0be,  40/$28
+.C:f1ca  48          PHA            - A:43 X:01 Y:11 SP:f0 ..-B...C    3019378
+#1 (Trace  exec f1ca)  196/$0c4,   1/$01
+.C:f1ca  48          PHA            - A:48 X:01 Y:12 SP:f0 ..-B...C    3019717
+#1 (Trace  exec f1ca)  200/$0c8,  45/$2d
+.C:f1ca  48          PHA            - A:49 X:01 Y:13 SP:f0 ..-B...C    3020013
+#1 (Trace  exec f1ca)  206/$0ce,   6/$06
+.C:f1ca  48          PHA            - A:4E X:01 Y:14 SP:f0 ..-B...C    3020352
+#1 (Trace  exec f1ca)  210/$0d2,  50/$32
+.C:f1ca  48          PHA            - A:47 X:01 Y:15 SP:f0 ..-B...C    3020648
+#1 (Trace  exec f1ca)  216/$0d8,  11/$0b
+.C:f1ca  48          PHA            - A:20 X:01 Y:16 SP:f0 ..-B...C    3020987
+#1 (Trace  exec f1ca)  221/$0dd,  55/$37
+.C:f1ca  48          PHA            - A:46 X:01 Y:17 SP:f0 ..-B....    3021346
+#1 (Trace  exec f1ca)  226/$0e2,  36/$24
+.C:f1ca  48          PHA            - A:4F X:01 Y:18 SP:f0 ..-B....    3021642
+#1 (Trace  exec f1ca)  231/$0e7,  60/$3c
+.C:f1ca  48          PHA            - A:52 X:01 Y:19 SP:f0 ..-B....    3021981
+#1 (Trace  exec f1ca)  237/$0ed,  21/$15
+.C:f1ca  48          PHA            - A:20 X:01 Y:1A SP:f0 ..-B....    3022320
+#1 (Trace  exec f1ca)  242/$0f2,  12/$0c
+.C:f1ca  48          PHA            - A:54 X:01 Y:00 SP:f3 ..-B....    3022626
+#1 (Trace  exec f1ca)  247/$0f7,  31/$1f
+.C:f1ca  48          PHA            - A:31 X:01 Y:01 SP:f3 ..-B....    3022960
+#1 (Trace  exec f1ca)  252/$0fc,   7/$07
+.C:f1ca  48          PHA            - A:31 X:01 Y:02 SP:f3 ..-B....    3023251
+#1 (Trace  exec f1ca)  256/$100,  46/$2e
+.C:f1ca  48          PHA            - A:44 X:01 Y:03 SP:f3 ..-B....    3023542
+#1 (Trace  exec f1ca)  261/$105,  22/$16
+.C:f1ca  48          PHA            - A:5F X:01 Y:04 SP:f3 ..-B....    3023833
+#1 (Trace  exec f1ca)  265/$109,  61/$3d
+.C:f1ca  48          PHA            - A:43 X:01 Y:05 SP:f3 ..-B....    3024124
+#1 (Trace  exec f1ca)  270/$10e,  37/$25
+.C:f1ca  48          PHA            - A:4D X:01 Y:06 SP:f3 ..-B....    3024415
+#1 (Trace  exec f1ca)  275/$113,  13/$0d
+.C:f1ca  48          PHA            - A:50 X:01 Y:07 SP:f3 ..-B....    3024706
+#1 (Trace  exec f1ca)  279/$117,  52/$34
+.C:f1ca  48          PHA            - A:5F X:01 Y:08 SP:f3 ..-B....    3024997
+#1 (Trace  exec f1ca)  284/$11c,  28/$1c
+.C:f1ca  48          PHA            - A:4D X:01 Y:09 SP:f3 ..-B....    3025288
+#1 (Trace  exec f1ca)  289/$121,   4/$04
+.C:f1ca  48          PHA            - A:49 X:01 Y:0A SP:f3 ..-B....    3025579
+#1 (Trace  exec f1ca)  293/$125,  43/$2b
+.C:f1ca  48          PHA            - A:53 X:01 Y:0B SP:f3 ..-B....    3025870
+#1 (Trace  exec f1ca)  298/$12a,  19/$13
+.C:f1ca  48          PHA            - A:43 X:01 Y:0C SP:f3 ..-B....    3026161
+#1 (Trace  exec f1ca)  308/$134,  61/$3d
+.C:f1ca  48          PHA            - A:0D X:01 Y:49 SP:f2 ..-B....    4835185
+#1 (Trace  exec f1ca)    0/$000,  59/$3b
+.C:f1ca  48          PHA            - A:4C X:01 Y:4A SP:f2 ..-B....    4835435
+#1 (Trace  exec f1ca)    9/$009,   8/$08
+.C:f1ca  48          PHA            - A:4F X:01 Y:4B SP:f2 ..-.....    4835951
+#1 (Trace  exec f1ca)   13/$00d,  53/$35
+.C:f1ca  48          PHA            - A:41 X:01 Y:4C SP:f2 ..-B....    4836248
+#1 (Trace  exec f1ca)   18/$012,  35/$23
+.C:f1ca  48          PHA            - A:44 X:01 Y:4D SP:f2 ..-B....    4836545
+#1 (Trace  exec f1ca)   23/$017,  17/$11
+.C:f1ca  48          PHA            - A:49 X:01 Y:4E SP:f2 ..-B....    4836842
+#1 (Trace  exec f1ca)   27/$01b,  62/$3e
+.C:f1ca  48          PHA            - A:4E X:01 Y:4F SP:f2 ..-B....    4837139
+#1 (Trace  exec f1ca)   32/$020,  44/$2c
+.C:f1ca  48          PHA            - A:47 X:01 Y:50 SP:f2 ..-B....    4837436
+#1 (Trace  exec f1ca)  100/$064,   7/$07
+.C:f1ca  48          PHA            - A:0D X:0A Y:00 SP:f1 ..-B...C   23573851
+#1 (Trace  exec f1ca)  104/$068,  46/$2e
+.C:f1ca  48          PHA            - A:0A X:09 Y:01 SP:f1 ..-B...C   23574142
+#1 (Trace  exec f1ca)  111/$06f,  44/$2c
+.C:f1ca  48          PHA            - A:52 X:08 Y:02 SP:f1 ..-B....   23574581
+#1 (Trace  exec f1ca)  117/$075,  31/$1f
+.C:f1ca  48          PHA            - A:45 X:07 Y:03 SP:f1 ..-B...C   23574946
+#1 (Trace  exec f1ca)  122/$07a,  38/$26
+.C:f1ca  48          PHA            - A:41 X:06 Y:04 SP:f1 ..-B...C   23575268
+#1 (Trace  exec f1ca)  128/$080,  25/$19
+.C:f1ca  48          PHA            - A:44 X:05 Y:05 SP:f1 ..-B...C   23575633
+#1 (Trace  exec f1ca)  134/$086,  11/$0b
+.C:f1ca  48          PHA            - A:59 X:04 Y:06 SP:f1 ..-B...C   23575997
+#1 (Trace  exec f1ca)  139/$08b,  60/$3c
+.C:f1ca  48          PHA            - A:2E X:03 Y:07 SP:f1 ..-B...C   23576361
+#1 (Trace  exec f1ca)  145/$091,   4/$04
+.C:f1ca  48          PHA            - A:0D X:02 Y:08 SP:f1 ..-B...C   23576683
+#1 (Trace  exec f1ca)  150/$096,  23/$17
+.C:f1ca  48          PHA            - A:0A X:01 Y:09 SP:f1 ..-B...C   23577017
+#1 (Trace  exec f1ca)   58/$03a,  55/$37
+.C:f1ca  48          PHA            - A:0D X:FF Y:01 SP:f2 .V-....C   23610565
+#1 (Trace  exec f1ca)  279/$117,  45/$2d
+.C:f1ca  48          PHA            - A:0E X:F6 Y:00 SP:f4 ..-.....   23624478
+#1 (Trace  exec f1ca)   82/$052,  39/$27
+.C:f1ca  48          PHA            - A:D4 X:02 Y:00 SP:f1 N.-B....   26344245
+#1 (Trace  exec f1ca)   87/$057,  29/$1d
+.C:f1ca  48          PHA            - A:31 X:02 Y:01 SP:f1 ..-B....   26344550
+#1 (Trace  exec f1ca)   92/$05c,  45/$2d
+.C:f1ca  48          PHA            - A:31 X:01 Y:02 SP:f1 ..-B....   26344881
+#1 (Trace  exec f1ca)   97/$061,  10/$0a
+.C:f1ca  48          PHA            - A:C4 X:01 Y:03 SP:f1 N.-B....   26345161
+#1 (Trace  exec f1ca)  111/$06f,  31/$1f
+.C:f1ca  48          PHA            - A:20 X:01 Y:00 SP:f1 ..-B....   26346064
+#1 (Trace  exec f1ca)  116/$074,  39/$27
+.C:f1ca  48          PHA            - A:CF X:01 Y:01 SP:f1 N.-B....   26346387
+#1 (Trace  exec f1ca)  121/$079,   7/$07
+.C:f1ca  48          PHA            - A:CB X:00 Y:02 SP:f1 N.-B....   26346670
+#1 (Trace  exec f1ca)  136/$088,  19/$13
+.C:f1ca  48          PHA            - A:0D X:01 Y:00 SP:f3 ..-B...C   26347627
+#1 (Trace  exec f1ca)  192/$0c0,  38/$26
+.C:f1ca  48          PHA            - A:0E X:03 Y:FF SP:f6 ..-....C   26351174
+#1 (Trace  exec f1ca)  249/$0f9,  50/$32
+.C:f1ca  48          PHA            - A:0D X:0A Y:00 SP:f2 ..-B...C   26354777
+#1 (Trace  exec f1ca)  254/$0fe,  26/$1a
+.C:f1ca  48          PHA            - A:0A X:09 Y:01 SP:f2 ..-B...C   26355068
+#1 (Trace  exec f1ca)  260/$104,  44/$2c
+.C:f1ca  48          PHA            - A:52 X:08 Y:02 SP:f2 ..-B....   26355464
+#1 (Trace  exec f1ca)  265/$109,  51/$33
+.C:f1ca  48          PHA            - A:45 X:07 Y:03 SP:f2 ..-B...C   26355786
+#1 (Trace  exec f1ca)  270/$10e,  58/$3a
+.C:f1ca  48          PHA            - A:41 X:06 Y:04 SP:f2 ..-B...C   26356108
+#1 (Trace  exec f1ca)  276/$114,   2/$02
+.C:f1ca  48          PHA            - A:44 X:05 Y:05 SP:f2 ..-B...C   26356430
+#1 (Trace  exec f1ca)  281/$119,   9/$09
+.C:f1ca  48          PHA            - A:59 X:04 Y:06 SP:f2 ..-B...C   26356752
+#1 (Trace  exec f1ca)  286/$11e,  16/$10
+.C:f1ca  48          PHA            - A:2E X:03 Y:07 SP:f2 ..-B...C   26357074
+#1 (Trace  exec f1ca)  291/$123,  23/$17
+.C:f1ca  48          PHA            - A:0D X:02 Y:08 SP:f2 ..-B...C   26357396
+#1 (Trace  exec f1ca)  295/$127,  62/$3e
+.C:f1ca  48          PHA            - A:0A X:01 Y:09 SP:f2 ..-B...C   26357687
+#2 (Stop on  exec a480)  302/$12e,  26/$1a
+.C:a480  6C 02 03    JMP ($0302)    - A:40 X:00 Y:0A SP:fa ..-B....   26358092
+Executing: log off; quit

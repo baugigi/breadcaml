@@ -1,0 +1,11 @@
+File "tests/t14b_buf_str_qs.ml", line 56, characters 40-60:
+56 |   check "map" (String.equal (String.map Char.uppercase_ascii "abc") "ABC");
+                                             ^^^^^^^^^^^^^^^^^^^^
+Alert deprecated: Stdlib.Char.uppercase_ascii
+Use [uppercase_petscii] instead.
+File "tests/t14b_buf_str_qs.ml", line 59, characters 39-59:
+59 |   check "chars" (Char.code 'A' = 65 && Char.lowercase_ascii 'A' = 'a')
+                                            ^^^^^^^^^^^^^^^^^^^^
+Alert deprecated: Stdlib.Char.lowercase_ascii
+Use [lowercase_petscii] instead.
+Error: tl
