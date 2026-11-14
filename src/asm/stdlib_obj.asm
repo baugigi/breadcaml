@@ -82,6 +82,7 @@ caml_obj_set_tag
         ;;   Tag_val (blk) = Forward_tag;
         ;;   return Val_unit;
         ;; }
+caml_obj_make_forward
         LDA (SP),Y
         STA (ACCU),Y
         INY

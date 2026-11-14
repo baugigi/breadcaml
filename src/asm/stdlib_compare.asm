@@ -4,13 +4,6 @@
 
 !zone caml_COMPARISONS {
 
-!ifndef caml_compare_warn {
-!set caml_compare_warn = 1
-  !warn "TODO: caml_compare_val_custom_tag"
-  !warn "TODO: caml_compare_val_double_array_tag"
-  !warn "TODO: caml_compare_val_object_tag"
-}
-
 .dummy = $1234                          ;dummy address for SMC
 
 .V1     = ACCU                          ;word, 1st argument
@@ -370,8 +363,6 @@ caml_compare_val
         INC .V2 + 1
         CMP # Forward_tag               ;check for special cases
         BEQ .v2_forward
-        CMP # Custom_tag
-        BEQ .v2_custom
         LDA # -1
         JMP .return                     ;int < block => RETURN LESS
 .v2_forward
@@ -383,15 +374,6 @@ caml_compare_val
         STX .V2 + 1
         STA .V2
         JMP .loop                       ;continue
-.v2_custom
-        LDY # 1
-        LDA (.V2),Y                     ;load jmptbl address
-        STA .v2jsr + 2
-        DEY
-        LDA (.V2),Y
-        STA .v2jsr + 1
-.v2jsr  JSR .dummy                      ;call custom_compare, res. in A
-        JMP .return_or_next
 .v1_block
         LDA .V2
         BIT caml_is_block
@@ -402,8 +384,6 @@ caml_compare_val
         INC .V1 + 1
         CMP # Forward_tag               ;check for special cases
         BEQ .v1_forward
-        CMP # Custom_tag
-        BEQ .v1_cust_tst
         LDA # 1
         JMP .return                     ;block > int => RETURN GREATER
 .v1_forward
@@ -415,15 +395,6 @@ caml_compare_val
         STX .V1 + 1
         STA .V1
         JMP .loop                       ;continue
-.v1_cust_tst
-        LDY # 1
-        LDA (.V1),Y                     ;load jmptbl address
-        STA .v1jsr + 2
-        DEY
-        LDA (.V1),Y
-        STA .v1jsr + 1
-.v1jsr  JSR .dummy                      ;call custom_compare, res. in A
-        JMP .return_or_next
 .v1_block_v2_block
         LDY # -2
         DEC .V1 + 1
@@ -447,30 +418,28 @@ caml_compare_val
         LDA # 1                         ;Tag_v1 > Tag_v2 => RETURN GREATER
 +       JMP .return
 .switch_on_tag
-        CPX # String_tag                ;dichotomic switch
-        BCC .t249
-        BNE .t254
-        JSR caml_compare_val_string_tag
-        JMP .return_or_next
-.t249   CPX # Infix_tag
-        BCC .t247
-        BNE +
--       +caml_raise Invalid_argument, "compare: functional value"
-+       +caml_raise Invalid_argument, "compare: abstract value"
-.t247   CPX # Closure_tag
+        CPX # Closure_tag
         BCC .default
-        BEQ -
-        JSR caml_compare_val_object_tag
+        LDA .brtbl - Closure_tag,X      ;Switch on tag: load the branch offset
+        STA .brtbl - 1                  ; and save it as the argument of BNE.
+        BNE *                           ;SMC; branch always taken.
+.brtbl  !for .t in [.tcl,.tob,.tcl,.tfw,.tab,.tst,.tdb,.tar,.tcu] {
+          !byte .t - .brtbl             ;Offsets for the BNE above.
+        }
+.tcl    JMP .err_fun                    ;(the code is out of line: the offsets
+                                        ; in .brtbl must be < 128)
+.tob    JSR caml_compare_val_object_tag
         JMP .return_or_next
-.t254   CPX # Double_array_tag
-        BCC .t253
-        BNE .t255
-        JSR caml_compare_val_double_array_tag
+.tab    JMP .err_abs
+.tst    JSR caml_compare_val_string_tag
         JMP .return_or_next
-.t253   JSR caml_compare_val_double_tag
+.tdb    JSR caml_compare_val_double_tag
         JMP .return_or_next
-.t255   JSR caml_compare_val_custom_tag
+.tar    JSR caml_compare_val_double_array_tag
         JMP .return_or_next
+.tcu    JSR caml_compare_val_custom_tag
+        JMP .return_or_next
+.tfw
 .default
         ;; compare sizes first
         LDY # -1
@@ -596,6 +565,11 @@ caml_compare_val
         LDA .CMP
         STA .V2 + 1
         JMP .loop                       ;continue loop
+.err_fun +caml_raise Invalid_argument, "compare: functional value"
+.err_abs +caml_raise Invalid_argument, "compare: abstract value"
+!if .tfw - .brtbl > 127 {
+        !error "caml_compare_val: branch table offset too large"
+}
 }
 
 !ifdef caml_AUX__caml_compare_val_double_tag {
@@ -664,28 +638,128 @@ caml_compare_val_string_tag
 @gt     LDY # 0 : LDA # 1  : RTS
 }
 
+        ;; Custom blocks: Field(v,0) points to the custom operations, a table
+        ;; whose first word is the address of the compare primitive.
+        ;; BreadCaml has no compare_ext: int vs custom is decided by
+        ;; caml_compare_val (int < block), as in OCaml when compare_ext = NULL.
 !ifdef caml_AUX__caml_compare_val_custom_tag {
 caml_compare_val_custom_tag
-        ;; Compare custom values in ACCU and SP[0].
-        ;; Result: A </=/> 0 according to the OCaml semantics of compare.
-        ;; Status byte is set according to A.
-        +caml_raise Not_found
+        ;; Compare custom blocks in .V1 (ACCU) and .V2, by calling the
+        ;; compare primitive of v1: ACCU = v1, SP[0] = v2, ACCU := Val_int(-1/0/1).
+        ;; Result: A = -1/0/1 according to the OCaml semantics of compare.
+        ;; Status byte is set according to A. Clobbers .V2.
+        +caml_grow_stack 1              ;push v2: SP[0] := v2 (popped below)
+        LDY # 1
+        LDA .V2 + 1
+        STA (SP),Y
+        DEY
+        LDA .V2
+        STA (SP),Y
+        LDA (.V1),Y                     ;.V2 := Field(v1,0) = custom ops
+        STA .V2
+        INY
+        LDA (.V1),Y
+        STA .V2 + 1
+        LDA (.V2),Y                     ;Y = 1: hi byte of the compare routine
+        STA @jsr + 2
+        DEY
+        LDA (.V2),Y                     ;lo byte
+        STA @jsr + 1
+@jsr    JSR .dummy                      ;SMC: ACCU := Val_int(compare(v1, v2))
+        CLC
+        LDA SP                          ;pop v2
+        ADC # 2
+        STA SP
+        BCC +
+        INC SP + 1
++       LDY # 0
+        LDA ACCU + 1                    ;Val_int(-1) = $FFFF: A = $FF, N = 1
+        BNE +
+        LDA ACCU                        ;Val_int(0) = 1, Val_int(1) = 3
+        LSR                             ; => A = 0 or 1, status set by LSR
++       RTS
 }
 
 !ifdef caml_AUX__caml_compare_val_double_array_tag {
 caml_compare_val_double_array_tag
-        ;; Compare floatarrays in ACCU and SP[0].
-        ;; Result: A </=/> 0 according to the OCaml semantics of compare.
-        ;; Status byte is set according to A.
-        +caml_raise Not_found
+        ;; Compare floatarrays in .V1 (ACCU) and .V2: first the sizes (as in
+        ;; OCaml; size = 3 words per element, so comparing words is the same
+        ;; as comparing lengths), then element by element.
+        ;; Result: A = -1/0/1 according to the OCaml semantics of compare.
+        ;; Status byte is set according to A. Clobbers .V1, .V2, .CMP.
+        ;; (C64 floats have no NaN: there is no unordered case.)
+        LDY # -1
+        DEC .V1 + 1
+        DEC .V2 + 1
+        LDA (.V1),Y                     ;A := size(v1)
+        TAX
+        SEC
+        SBC (.V2),Y                     ;C = (size(v1) >= size(v2)): UNSIGNED
+        BEQ @same
+        LDA # -1                        ;LDA doesn't alter C
+        BCC +
+        LDA # 1
++       LDY # 0
+        ORA # 0                         ;set status byte according to A
+        RTS
+@same   INC .V1 + 1
+        INC .V2 + 1
+        STX .CMP                        ;.CMP := words left = 3 * elements left
+        TXA
+        BEQ @eq                         ;(cannot happen: empty array is an atom)
+@elem   JSR caml_compare_val_double_tag ;compare the floats at .V1 and .V2
+        BNE @ret                        ;different: return -1 or 1
+        LDA .V1                         ;next element: both pointers += 6
+        CLC
+        ADC # 2 * Double_wosize
+        STA .V1
+        BCC +
+        INC .V1 + 1
++       LDA .V2
+        CLC
+        ADC # 2 * Double_wosize
+        STA .V2
+        BCC +
+        INC .V2 + 1
++       LDA .CMP
+        SEC
+        SBC # Double_wosize
+        STA .CMP
+        BNE @elem
+@eq     LDY # 0
+        TYA                             ;A = 0: equal
+@ret    RTS
 }
 
 !ifdef caml_AUX__caml_compare_val_object_tag {
 caml_compare_val_object_tag
-        ;; Compare objects in ACCU and SP[0].
-        ;; Result: A </=/> 0 according to the OCaml semantics of compare.
-        ;; Status byte is set according to A.
-        +caml_raise Not_found
+        ;; Compare objects (in BreadCaml: exceptions) in .V1 (ACCU) and .V2
+        ;; by their oid = Field(v,1), a (signed) tagged integer, as in OCaml.
+        ;; Result: A = -1/0/1; equal oids => A = 0 (the caller goes on with
+        ;; the next item). Status byte is set according to A.
+        LDY # 3
+        LDA (.V1),Y                     ;oid, hi byte: signed comparison
+        SEC
+        SBC (.V2),Y
+        BVC +
+        BPL @lt                         ;overflow: sign is inverted
+        BMI @gt
++       BMI @lt
+        BNE @gt
+        DEY
+        LDA (.V1),Y                     ;oid, lo byte: unsigned comparison
+        CMP (.V2),Y
+        BCC @lt
+        BNE @gt
+        LDY # 0
+        TYA                             ;A = 0: equal
+        RTS
+@lt     LDY # 0
+        LDA # -1
+        RTS
+@gt     LDY # 0
+        LDA # 1
+        RTS
 }
 
 !ifdef caml_AUX__caml_string_eq_neq {  ;caml_compare_val_string_tag is
