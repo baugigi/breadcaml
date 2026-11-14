@@ -2,5 +2,5 @@ Warning - File /home/piero/.opam/LTS/lib/bcaml/stdlib_arrays.asm, line 9 (Subzon
 Warning - File /home/piero/.opam/LTS/lib/bcaml/stdlib_arrays.asm, line 10 (Subzone caml_ARRAYS): !warn: TODO: caml_floatarray_blit
 Warning - File /home/piero/.opam/LTS/lib/bcaml/stdlib_arrays.asm, line 11 (Subzone caml_ARRAYS): !warn: BUG: GC-invalidated pointers in caml_array_concat
 Warning - File /home/piero/.opam/LTS/lib/bcaml/stdlib_stacks.asm, line 9 (Subzone caml_STACK): !warn: TODO: caml_ensure_stack_capacity
-Error - File ./build/nat/t91_hashtbl_hash.prgaa70b6.asm~, line 153 (Zone <untitled>): Symbol not defined (caml_hash).
-BreadCaml> Error: ''/home/piero/.opam/LTS/bin/acme'    './build/nat/t91_hashtbl_hash.prgaa70b6.asm~'' exited with status code 1.
+Error - File ./build/nat/t91_hashtbl_hash.prg74f13e.asm~, line 153 (Zone <untitled>): Symbol not defined (caml_hash).
+BreadCaml> Error: ''/home/piero/.opam/LTS/bin/acme'    './build/nat/t91_hashtbl_hash.prg74f13e.asm~'' exited with status code 1.

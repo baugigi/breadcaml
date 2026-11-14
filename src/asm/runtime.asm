@@ -420,7 +420,8 @@ caml_GRAB
             EOR # $FF
             SEC
             ADC XARGS                   ;A := XARGS - v = ~A + 1 + XARGS
-            BCC @mkclos                 ;If XARGS >= v then
+            BCC @mkclos                 ;C=0 <=> XARGS < v (use C, not N: N is
+                                        ; wrong if |XARGS-v| >= 128); else
             ORA # 1                     ; set XARGS's lsb
             STA XARGS                   ; XARGS := XARGS - v and exit
             +caml_NEXT                  ;{Y = 0}
@@ -442,10 +443,11 @@ caml_GRAB
             STA (BLK),Y                 ;Field(BLK,0) := CODE
   !ifdef caml_INTERP {
                 LDA PC + 1
+                SBC # 0                 ;propagate the borrow (C from SBC above)
   } else {
         PLA
+        SBC # 0
   }
-            SBC # 0                     ;propagate the borrow (C from SBC above)
             INY
             STA (BLK),Y
             INY
@@ -1031,7 +1033,7 @@ caml_GETVEC
             STA TMP
             INC SP
             LDA (SP),Y                  ;Val_Int(index), hi
-            BNE +
+            BEQ +                       ;index >= 128: array page + 1
             INC ACCU + 1
 +           INC SP
             BNE +
@@ -1053,7 +1055,7 @@ caml_SETVEC
             STA TMP
             INC SP
             LDA (SP),Y                  ;Val_Int(index), hi
-            BNE +
+            BEQ +                       ;index >= 128: array page + 1
             INC ACCU + 1
 +           INC SP
             BNE +
