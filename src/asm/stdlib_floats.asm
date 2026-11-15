@@ -261,10 +261,29 @@ caml_float_of_string
         STA TMP
         LDA C64_CHRPTR + 1
         STA TMP + 1
+!ifdef caml_basic_rom_overlap {
+        ;; FIN reads the string with the BASIC ROM on, but the string may be in
+        ;; the RAM under it ($A000-$BFFF): copy it (0-terminated, max 80 chars)
+        ;; to the BASIC input buffer and convert the copy.
+        LDY # 0
+-       LDA (ACCU),Y
+        STA C64_BUF,Y
+        BEQ +
+        INY
+        CPY # 80
+        BCC -
+        LDA # 0
+        STA C64_BUF,Y
++       LDA # <C64_BUF
+        STA C64_CHRPTR
+        LDA # >C64_BUF
+        STA C64_CHRPTR + 1
+} else {
         LDA ACCU
         STA C64_CHRPTR
         LDA ACCU + 1
         STA C64_CHRPTR + 1
+}
         JSR C64_CHRGOT                  ;not a BASIC ROM routine
         +caml_JSR_BASROM C64_FIN
         LDA TMP

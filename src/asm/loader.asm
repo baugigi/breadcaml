@@ -474,13 +474,14 @@ caml_syserr
         STA TMP
         LDA C64_ERRTAB + 1,X
         STA TMP + 1
-!ifdef caml_basic_rom_overlap {JSR caml_BASROM_off}
 -       LDA (TMP),Y                     ;Copy the err. msg. from ROM to the
         BMI +                           ; allocated string block; last char has 
         STA (BLK),Y                     ; its msb set.
         INY
         BNE -                           ;BNE=JMP
-+       EOR # $80                       ;Last char: reset the msb and save it.
++
+!ifdef caml_basic_rom_overlap {JSR caml_BASROM_off}
+        EOR # $80                       ;Last char: reset the msb and save it.
         STA (BLK),Y
         INY
         LDA # 0                         ;OCaml terminator, 1st (maybe unique) 
@@ -692,9 +693,20 @@ caml_uncaught_exn
 +       RTS
 
         ;; Print the float in @out
-@pr_fl  LDA @out 
+@pr_fl
+!ifdef caml_basic_rom_overlap {
+        LDY # 4                     ;MOVFM reads its operand with the BASIC ROM
+-       LDA (@out),Y                ; on, but the float may be in the RAM under
+        STA TMP + 8,Y               ; it: copy it to the zero page first.
+        DEY
+        BPL -
+        LDA # TMP + 8
+        LDY # 0
+        JSR caml_BASROM_on
+} else {
+        LDA @out
         LDY @out + 1
-!ifdef caml_basic_rom_overlap {JSR caml_BASROM_on}
+}
         JSR C64_MOVFM
         JSR C64_FOUT
         JSR C64_STROUT
