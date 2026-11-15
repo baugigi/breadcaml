@@ -1,0 +1,14 @@
+diff -ruN a/globalise.ml b/globalise.ml
+--- a/globalise.ml	2026-11-14 21:19:03.974828043 +0000
++++ b/globalise.ml	2026-11-14 21:19:04.018193595 +0000
+@@ -27,7 +27,9 @@
+               incr glob_counter;
+             | _ -> assert false
+         done;
+-        code.(setg_ind - 1) <- POP (popn - nb_fields);
++        (* Several fields may alias the same local, so nb_fields can exceed
++           popn: never emit a negative POP. *)
++        code.(setg_ind - 1) <- POP (max 0 (popn - nb_fields));
+       | _ -> assert false
+ ;;
+ 

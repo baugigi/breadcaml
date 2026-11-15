@@ -77,7 +77,6 @@ clean:
 	$(MAKE) -C src/bcamlppx $@
 	$(MAKE) -C src/stdlib $@
 	$(MAKE) -C src/asm $@
-	$(MAKE) -C test $@
 
 .PHONY: fullinstall
 fullinstall: install clean

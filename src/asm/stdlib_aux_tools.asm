@@ -156,14 +156,4 @@ caml_block_fill0                        ;{X = #fields, Y = 0}
         RTS                             ;{A = BLK + 1, X = 0, Y = 0}
 }
 
-!ifdef  caml_AUX__caml_mkatom0 {
-        ;; ACCU := Atom(0)
-caml_mkatom0
-        LDA # < caml_atom0
-        STA ACCU
-        LDA # > caml_atom0
-        STA ACCU + 1
-        RTS
-}
-
 }       ;; !zone AUX_TOOLS

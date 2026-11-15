@@ -1,8 +1,2 @@
-- Bytecode interpreter crashes frequently, need to recheck opcodes routines.
-
 - Some runtime and stdlib asm routines use gc-unprotected pointers; need to strictly enforce a policy to protect pointers which must be valid before and after a collection (e.g., pushing them onto the stack).
-
-- Many primitives to be implemented.
-
-- Uncaught exceptions: 
-
+- Some primitives to be implemented.

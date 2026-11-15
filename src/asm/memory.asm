@@ -456,5 +456,13 @@ caml_load_newblk
         STA ACCU
         RTS
 
+        ;; ACCU := Atom(0)
+caml_mkatom0
+        LDA # < caml_atom0
+        STA ACCU
+        LDA # > caml_atom0
+        STA ACCU + 1
+        RTS
+
 caml_memory_end
 } ;!zone caml_MEMORY

@@ -1,0 +1,11 @@
+diff -ruN a/step2.ml b/step2.ml
+--- a/step2.ml	2026-11-15 09:20:44.905489940 +0000
++++ b/step2.ml	2026-11-15 09:20:49.817713590 +0000
+@@ -16,6 +16,7 @@
+     | C_CALL (_, p) ->
+       Prim.no_side_effect prim.(p)
+     |  POP _ | APPLY _ | PUSHTRAP _ | POPTRAP | RAISE | RERAISE
++    | ASSIGN _ (* may be observed by a try handler (see PUSHTRAP) *)
+     | RAISE_NOTRACE | OFFSETCLOSURE _ | OFFSETREF _ | CHECK_SIGNALS
+     | SETGLOBAL _ | SETVECTITEM | SETBYTESCHAR
+     | BRANCH _ | BRANCHIF _ | BRANCHIFNOT _ 

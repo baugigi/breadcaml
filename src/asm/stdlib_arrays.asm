@@ -8,7 +8,6 @@
 !set caml_arrays_warn = 1
   !warn "TODO: caml_array_fill"
   !warn "TODO: caml_floatarray_blit"
-  !warn "BUG: GC-invalidated pointers in caml_array_concat"
 }
         
 !ifdef caml_PRIM__caml_make_vect {

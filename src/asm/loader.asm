@@ -389,9 +389,9 @@ caml_end
 !ifdef caml_basic_rom_overlap {
 caml_BASROM_wrapper                     ;Wrapper for 'Worst case' above
         SEI
-        LDA C64_D6510
+        LDA C64_R6510
         ORA # %00000011
-        STA C64_D6510
+        STA C64_R6510
         CLI
         PLA
         PLP
@@ -402,9 +402,9 @@ caml_BASROM_off                         ;Deactivate BASIC ROM
         PHP
         PHA
         SEI
-        LDA C64_D6510
+        LDA C64_R6510
         AND # %11111110
-        STA C64_D6510
+        STA C64_R6510
         CLI
         PLA
         PLP
@@ -413,9 +413,9 @@ caml_BASROM_on                          ;Activate BASIC ROM
         PHP
         PHA
         SEI
-        LDA C64_D6510
+        LDA C64_R6510
         ORA # %00000011
-        STA C64_D6510
+        STA C64_R6510
         CLI
         PLA
         PLP
