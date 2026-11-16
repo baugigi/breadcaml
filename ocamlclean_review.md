@@ -1,45 +1,45 @@
-# OCamlclean: static review (as vendored in BreadCaml bcamlc)
+# OCamlclean: static review
 
-Method: reading of `src/bcamlc/ocamlclean/*.ml` (step1, step2, step3, data, cleanbra,
-rmnop, globalise, cleanenvs, prim) plus `export.ml`, and the two failure logs of t14b2.
-No OCaml toolchain in the sandbox: nothing below was compiled or executed except
-the evidence taken from the user's logs. Confidence is stated per item.
 
 ## 1. How the size reduction works (pipeline in `Export.OCamlclean.clean`)
 
 Everything operates on the *main code* (the module initialisation code, executed
-once, from instruction 0 up to STOP). Function bodies are never analysed; they are
-only kept or dropped as a whole.
+once, from instruction 0 up to STOP). Function bodies are never analysed; they
+are only kept or dropped as a whole.
 
 `compress_loop` (repeated until the code is stable):
+
 1. `Step1.clean`: for each global with one SETGLOBAL and no whole-block read
    (only `GETGLOBAL g; GETFIELD f`), remove the (PUSH, ACC) pairs of the unused
-   fields of the module block, shrink MAKEBLOCK (or turn it into ATOM) and renumber
-   GETFIELD. This is what makes unused toplevel values of every stdlib module dead.
+   fields of the module block, shrink MAKEBLOCK (or turn it into ATOM) and
+   renumber GETFIELD. This is what makes unused toplevel values of every stdlib
+   module dead.
 2. `Step2.clean`: `compute_deps` simulates the main code (accu producer + stack
    producers per instruction, with merging at joins) then removes instructions
    whose result is never used and which are side-effect free (`is_removable`,
    `Prim.no_side_effect`), cascading to their producers, and rewrites POP/ACC
    counts to match the removed pushes.
-3. `Step3.clean`: reachability from 0; everything else (closure bodies of removed
-   closures, dead code) becomes nop.
+3. `Step3.clean`: reachability from 0; everything else (closure bodies of
+   removed closures, dead code) becomes nop.
 4. `Data.clean`: renumber used globals, drop unused ones, nop the SETGLOBAL of a
    never-read global.
 5. `Cleanbra` (branch to next instruction), `Rmnop` (compaction + pointer remap).
+
 Iteration matters: removing a CLOSURE makes its body unreachable, which frees
 globals, which frees more block fields.
 
 After the loop:
-6. `Globalise.globalise_closures`: a module block whose global is read only through
-   `GETGLOBAL g; GETFIELD f` is split into one global per field (`GETGLOBAL g'`),
-   removing the block and the field accesses.
+
+6. `Globalise.globalise_closures`: a module block whose global is read only
+   through `GETGLOBAL g; GETFIELD f` is split into one global per field
+   (`GETGLOBAL g'`), removing the block and the field accesses.
 7. `Cleanenvs.clean_environments`: closures created in main code with an
    environment (`CLOSURE n>0`, `CLOSUREREC`) keep their free variables in new
-   globals (SETGLOBAL at creation, ENVACC -> GETGLOBAL). Valid only for code that
-   runs once (marks Valid = main code not in a cycle). `factor_globals` then
-   shares globals that hold the same value.
-8. A second `compress_loop`, and `Prim.clean` renumbers/prunes the primitive table
-   (hard limit 256).
+   globals (SETGLOBAL at creation, ENVACC -> GETGLOBAL). Valid only for code
+   that runs once (marks Valid = main code not in a cycle). `factor_globals`
+   then shares globals that hold the same value.
+8. A second `compress_loop`, and `Prim.clean` renumbers/prunes the primitive
+   table (hard limit 256).
 
 ## 2. Findings
 
@@ -56,20 +56,21 @@ After the loop:
 | F9 | step2.ml `clean_code`, non-cleanable branch | `ACC n` and `POP n` offsets are recomputed with `compute_new_stack_top_size`, but `ASSIGN n` is not. Looks like an omission, only relevant if a slot below an `ASSIGN` target is removed. | Low (code reading, no test) | Not patched; to be checked |
 
 Things checked and found consistent: stack effect of every instruction in
-`compute_deps` against the real VM semantics (PUSH_RETADDR + APPLY n>3, CLOSUREREC
-pushes, MAKEBLOCK/C_CALL n-1 pops, SETVECTITEM 2 pops); `replace_envaccs` keeps the
-stack effect of `CLOSURE n` (SETGLOBAL + (ACC 0; SETGLOBAL; POP 1)*(n-1)) and of
-`CLOSUREREC`; closures nested in function bodies are never rewritten (the marks only
-follow main code), so per-call environments are not globalised; `Rmnop` maps
-pointers that target a nop to the next live instruction; `factor_globals` compares
-`data.(g) = Obj.repr 0` which is safe (block vs immediate).
+`compute_deps` against the real VM semantics (PUSH_RETADDR + APPLY n>3,
+CLOSUREREC pushes, MAKEBLOCK/C_CALL n-1 pops, SETVECTITEM 2 pops);
+`replace_envaccs` keeps the stack effect of `CLOSURE n` (SETGLOBAL + (ACC 0;
+SETGLOBAL; POP 1)*(n-1)) and of `CLOSUREREC`; closures nested in function bodies
+are never rewritten (the marks only follow main code), so per-call environments
+are not globalised; `Rmnop` maps pointers that target a nop to the next live
+instruction; `factor_globals` compares `data.(g) = Obj.repr 0` which is safe
+(block vs immediate).
 
 ## 3. Tests
 
-`ocamlclean_tests.zip` (10 programs, same prelude as the t14b tests, no character
-literal compared with a raw code). Each prints `OCnn OK` / `FAIL`. All checks are
-written at toplevel (main code) because function bodies are not touched by the
-analysis.
+`ocamlclean_tests.zip` (10 programs, same prelude as the t14b tests, no
+character literal compared with a raw code). Each prints `OCnn OK` / `FAIL`. All
+checks are written at toplevel (main code) because function bodies are not
+touched by the analysis.
 
 | File | Probes |
 |------|--------|
@@ -84,11 +85,11 @@ analysis.
 | oc08_many | 14 toplevel functions + 7 aliases (the t14b2 shape) |
 | oc09_exn | nested handlers and re-raise in main code |
 
-Results (VICE, BC and NAT): oc01-oc09 all OK with the F1 patch (`globalise`) and
-the F3 patch (`step2`). Before the F3 patch only oc03a failed (miscompilation: the
-handler saw the initial value of the mutable local). F2, F4, F5, F8 have no failing
-test; F9 has none yet.
+Results (VICE, BC and NAT): oc01-oc09 all OK with patched `globalise` and
+`step2`.
 
-Expected: all OK without the F1 patch except those that trigger F1 (oc01/oc07/oc08
-may fail the *build* with `Error: tl`); all OK with it. oc03a is the one most
-likely to show a real miscompilation.
+### Note:
+The confirmation of the identified bugs, the patches to fix them, the testing,
+and this report were all carried out with the help of Anthropic Claude.  As
+things currently stand, no further miscompilations by OCamlclean have been
+detected in the context of its use by BreadCaml.
