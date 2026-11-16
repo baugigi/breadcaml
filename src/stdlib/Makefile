@@ -33,6 +33,13 @@ LIB := $(foreach F,$(BASENAMES),$(if $(filter $(NOPFX),$(F)),,$(PFX))$(F))
 CMI := $(LIB:=.cmi)
 CMO := $(LIB:=.cmo)
 
+# The BreadCaml preprocessor translates char and string literals to PETSCII.
+# All modules are compiled with it. Literals that must keep their ASCII value
+# are written as [%ascii 'c'] / [%ascii "str"] (single constants only: ranges
+# and intervals must be written with character codes).
+PPXDB := stdlib.db
+PPX   := -ppx '$(abspath ../../bin/bcamlppx) $(abspath $(PPXDB))'
+
 # Prototypes of non-standard primitives (auto-generated)
 CPROTO := stdlib__nonstd.c
 
@@ -53,7 +60,7 @@ stdlib.cma: $(CMO)
 	$(OCAMLC) -nostdlib -a $^ -o $@
 
 stdlib.cmo: stdlib.ml stdlib.cmi
-	$(OCAMLC) -absname -no-alias-deps -nostdlib -nopervasives -c -w -49 $<
+	$(OCAMLC) $(PPX) -absname -no-alias-deps -nostdlib -nopervasives -c -w -49 $<
 
 stdlib.cmi: stdlib.mli #camlinternalFormatBasics.cmi
 	$(OCAMLC) -absname -no-alias-deps -nostdlib -nopervasives -c -w -49 $<
@@ -69,7 +76,7 @@ libcamlrun.a: $(CMI) $(CMO) $(LIBRUN) stdlib.cma
 #	$(OCAMLC) -nostdlib -nopervasives -c $<
 
 camlinternal%.cmo: camlinternal%.ml camlinternal%.cmi
-	$(OCAMLC_UNSAFE) -absname -nostdlib -c $<
+	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $<
 
 camlinternal%.cmi: camlinternal%.mli
 	$(OCAMLC_UNSAFE) -absname -nostdlib -c $<
@@ -87,13 +94,13 @@ $(PFX)%Labels.cmi: %Labels.mli
 	$(OCAMLC_UNSAFE) -nostdlib -nolabels -c $< -o $@
 
 $(PFX)float.cmo: float.ml $(PFX)float.cmi
-	$(OCAMLC_UNSAFE) -absname -nostdlib -nolabels -c $< -o $@
+	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -nolabels -c $< -o $@
 
 $(PFX)float.cmi: float.mli
 	$(OCAMLC_UNSAFE) -absname -nostdlib -nolabels -c $< -o $@
 
 $(PFX)%.cmo: %.ml $(PFX)%.cmi
-	$(OCAMLC_UNSAFE) -absname -nostdlib -c $< -o $@
+	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $< -o $@
 
 $(PFX)%.cmi: %.mli
 	$(OCAMLC_UNSAFE) -absname -nostdlib -c $< -o $@
