@@ -52,7 +52,7 @@ install: all
 	echo "FILE:$(BINDIR)/bcamlopt" >> "$(UNINST)"
 	@echo '$(call message,INSTALL: ,Assembly routines)'
 	$(call inst_and_rec,src/asm/*.asm,$(LIBDIR),755)
-	$(call inst_and_rec,c64lib/asm/*.asm,$(LIBDIR),755)
+	$(call inst_and_rec,src/c64lib/asm/*.asm,$(LIBDIR),755)
 	@echo '$(call message,INSTALL: ,Standard Library)'
 	$(call inst_and_rec,src/stdlib/stdlib.cma,$(LIBDIR),755)
 	$(call inst_and_rec,src/stdlib/libcamlrun.a,$(LIBDIR),755)
@@ -95,4 +95,4 @@ fullinstall: install clean
 
 .PHONY: gitclean
 gitclean: clean
-	rm -f etc/Makefile.conf etc/$(UNINST)
+	rm -f etc/Makefile.conf $(UNINST)

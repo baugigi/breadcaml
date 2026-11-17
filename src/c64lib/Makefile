@@ -1,6 +1,6 @@
 SHELL := /usr/bin/env bash
-CONF  := ../etc/Makefile.conf
-TOOLS := ../tools
+CONF  := ../../etc/Makefile.conf
+TOOLS := ../../tools
 include $(if $(wildcard $(CONF)),$(CONF),$(error \
 	Please run «./configure [options...]» from the main source directory))
 
@@ -15,7 +15,7 @@ STDLIBDIR := ../stdlib
 # The BreadCaml preprocessor translates char and string literals to PETSCII
 # (see src/stdlib/Makefile).
 PPXDB := c64lib.db
-PPX   := -ppx '$(abspath ../bin/bcamlppx) $(abspath $(PPXDB))'
+PPX   := -ppx '$(abspath ../../bin/bcamlppx) $(abspath $(PPXDB))'
 
 OCFLAGS := -absname -nostdlib -I $(STDLIBDIR)
 
