@@ -833,6 +833,7 @@ module Bool         = Stdlib__bool
 module Buffer       = Stdlib__buffer
 module Bytes        = Stdlib__bytes
 module BytesLabels  = Stdlib__bytesLabels
+module C64          = Stdlib__c64
 (* removed: module Callback *)
 module Char         = Stdlib__char
 module Complex      = Stdlib__complex
