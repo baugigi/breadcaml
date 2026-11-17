@@ -1,4 +1,6 @@
-(** Commodore 64 specific modules (BreadCaml only; not in the OCaml stdlib). *)
+(** Commodore 64 specific modules (BreadCaml only; not in the OCaml standard
+    library). They live in the [c64lib] directory of the distribution; link
+    them explicitly: [bcamlopt c64lib.cma prog.ml] (same for [bcamlc]). *)
 
 (** Low level hardware access. Nothing here is portable and little is safe. *)
 module Hw : sig

@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-                       CODING RULES FOR stdlib_*.asm FILES
+                       CODING RULES FOR stdlib_*.asm AND c64lib_*.asm FILES
                  for automatic generation of the dependency file
 --------------------------------------------------------------------------------
 

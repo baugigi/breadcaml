@@ -16,7 +16,7 @@ STDLIB_MODULE_BASENAMES := camlinternalFormatBasics camlinternalAtomic stdlib \
   arg atomic printexc fun gc digest random hashtbl weak format scanf callback \
   camlinternalOO oo camlinternalMod genlex ephemeron filename complex         \
   arrayLabels listLabels bytesLabels stringLabels moreLabels stdLabels        \
-  bigarray in_channel out_channel c64 std_exit
+  bigarray in_channel out_channel std_exit
 
 # Modules removed in BreadCaml
 REMOVED := arg atomic bigarray callback camlinternalAtomic camlinternalFormat \

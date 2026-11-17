@@ -25,11 +25,12 @@ all:
 	$(MAKE) -C src/bcamlc
 	$(MAKE) -C src/bcamlppx
 	$(MAKE) -C src/stdlib
+	$(MAKE) -C c64lib
 	$(MAKE) -C src/asm
 
 .PHONY: install
 install: all
-	@$(call message,GENERATE:,Uninstaller script)
+	@echo '$(call message,GENERATE:,Uninstaller script)'
 	{ echo '#!/bin/bash'; \
 	  echo '# AUTO-GENERATED FILE - DO NOT EDIT'; \
 	  echo 'sed -nE "s/^FILE:(.+)$$/\1/p" "$$0"|while read -r f; do'; \
@@ -43,27 +44,37 @@ install: all
 	  echo '# --- MANIFEST ---'; \
 	} > $(UNINST)
 	chmod +x "$(UNINST)"
-	@$(call message,INSTALL: ,Binaries)
+	@echo '$(call message,INSTALL: ,Binaries)'
 	$(call inst_and_rec,bin/bcamlc,$(BINDIR),755)
 	$(call inst_and_rec,bin/bcamlppx,$(BINDIR),755)
 	strip bin/bcaml{c,ppx}
 	ln -fsT $(BINDIR)/bcamlc $(BINDIR)/bcamlopt
 	echo "FILE:$(BINDIR)/bcamlopt" >> "$(UNINST)"
-	@$(call message,INSTALL: ,Assembly routines)
+	@echo '$(call message,INSTALL: ,Assembly routines)'
 	$(call inst_and_rec,src/asm/*.asm,$(LIBDIR),755)
-	@$(call message,INSTALL: ,Standard Library)
+	$(call inst_and_rec,c64lib/asm/*.asm,$(LIBDIR),755)
+	@echo '$(call message,INSTALL: ,Standard Library)'
 	$(call inst_and_rec,src/stdlib/stdlib.cma,$(LIBDIR),755)
 	$(call inst_and_rec,src/stdlib/libcamlrun.a,$(LIBDIR),755)
 	$(call inst_and_rec,src/stdlib/*.ml,$(LIBDIR),755)
 	$(call inst_and_rec,src/stdlib/*.mli,$(LIBDIR),755)
 	$(call inst_and_rec,src/stdlib/*.cmo,$(LIBDIR),755)
 	$(call inst_and_rec,src/stdlib/*.cmi,$(LIBDIR),755)
-	@$(call message,INSTALL: ,Man pages)
+	@echo '$(call message,INSTALL: ,C64 Library)'
+	$(call inst_and_rec,c64lib/c64lib.cma,$(LIBDIR),755)
+	$(call inst_and_rec,c64lib/libc64lib.a,$(LIBDIR),755)
+	$(call inst_and_rec,c64lib/*.ml,$(LIBDIR),755)
+	$(call inst_and_rec,c64lib/*.mli,$(LIBDIR),755)
+	$(call inst_and_rec,c64lib/*.cmo,$(LIBDIR),755)
+	$(call inst_and_rec,c64lib/*.cmi,$(LIBDIR),755)
+	@echo '$(call message,INSTALL: ,Man pages)'
 	$(call inst_and_rec,man/*,$(MAN1DIR),644)
 	$(call inst_and_rec,src/stdlib/*.$(MAN3EXT),$(MAN3DIR),644)
-	@$(call message,INSTALL: ,HTML documentation)
+	$(call inst_and_rec,c64lib/man3/*.$(MAN3EXT),$(MAN3DIR),644)
+	@echo '$(call message,INSTALL: ,HTML documentation)'
 	$(call inst_and_rec,src/stdlib/*.html,$(DOCDIR),644)
 	$(call inst_and_rec,src/stdlib/*.css,$(DOCDIR),644)
+	$(call inst_and_rec,c64lib/html/*,$(DOCDIR)/c64lib,644)
 
 .PHONY: uninstall
 uninstall:
@@ -76,7 +87,9 @@ clean:
 	$(MAKE) -C src/bcamlc $@
 	$(MAKE) -C src/bcamlppx $@
 	$(MAKE) -C src/stdlib $@
+	$(MAKE) -C c64lib $@
 	$(MAKE) -C src/asm $@
+	$(MAKE) -C test $@
 
 .PHONY: fullinstall
 fullinstall: install clean

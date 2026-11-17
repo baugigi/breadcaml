@@ -697,11 +697,11 @@ let read_int_opt () = int_of_string_opt(read_line())
 let read_float () = float_of_string(read_line())
 let read_float_opt () = float_of_string_opt(read_line())
 
+(*++ *)
 (* Standard channels and basic channel functions.
    BreadCaml channels are plain closures (in_channel = unit -> char,
    out_channel = char -> unit): stdout/stderr print on the screen, stdin waits
    for a key. *)
-(*++ *)
 external wait_key : unit -> char = "caml_nonstd_wait_key"
 external bytes_unsafe_set : bytes -> int -> char -> unit = "%bytes_unsafe_set"
 let stdin = wait_key
@@ -874,7 +874,6 @@ module Bool         = Stdlib__bool
 module Buffer       = Stdlib__buffer
 module Bytes        = Stdlib__bytes
 module BytesLabels  = Stdlib__bytesLabels
-module C64          = Stdlib__c64
 (* removed: module Callback *)
 module Char         = Stdlib__char
 module Complex      = Stdlib__complex

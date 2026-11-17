@@ -9,14 +9,19 @@ asm:
 	  $(call message,GENERATE:,Assembly routines)
 	$(MAKE) stdlib.asm
 
-stdlib.asm: depends.asm stdlib_*.asm
+# Assembly sources: the standard library ones, plus the C64 library ones
+# (../../c64lib/asm/c64lib_*.asm), all installed in $(LIBDIR)
+C64ASM := $(wildcard ../../c64lib/asm/c64lib_*.asm)
+ASMSRC := $(wildcard stdlib_*.asm) $(C64ASM)
+
+stdlib.asm: depends.asm $(ASMSRC)
 	{ echo ';; AUTO-GENERATED FILE - DO NOT EDIT'; \
 	  echo -n 'caml_stdlib'; \
-	  echo -e '$(patsubst %,\n\t!source "$(LIBDIR)/%",$^)'; \
+	  echo -e '$(patsubst %,\n\t!source "$(LIBDIR)/%",$(notdir $^))'; \
 	  echo 'caml_stdlib_end'; \
 	} > $@
 
-depends.asm: stdlib_*.asm
+depends.asm: $(ASMSRC)
 	../../tools/mkdepends $@ $^
 
 .PHONY: clean
