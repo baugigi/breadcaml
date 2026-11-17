@@ -120,4 +120,58 @@ caml_nonstd_print_string
         RTS
 }
 
+!ifdef caml_PRIM__caml_nonstd_get_key {
+caml_nonstd_get_key
+        ;; C64.Key.get : unit -> char; '\000' if no key is waiting
+        JSR C64_GETIN                   ;A := PETSCII code or 0
+        LDY # 0
+        STY ACCU + 1
+        SEC
+        ROL
+        STA ACCU
+        ROL ACCU + 1                    ;ACCU := Val_int(A)
+        RTS
+}
+
+!ifdef caml_PRIM__caml_nonstd_wait_key {
+caml_nonstd_wait_key
+        ;; Stdlib.stdin, C64.Key.wait : unit -> char; waits for a key
+-       JSR C64_GETIN
+        BEQ -
+        LDY # 0
+        STY ACCU + 1
+        SEC
+        ROL
+        STA ACCU
+        ROL ACCU + 1                    ;ACCU := Val_int(A)
+        RTS
+}
+
+!ifdef caml_PRIM__caml_nonstd_joystick {
+caml_nonstd_joystick
+        ;; C64.Key.joy : int -> int; port 1 or 2 -> |FIRE|RIGHT|LEFT|DOWN|UP|
+        LSR ACCU + 1
+        ROR ACCU                        ;ACCU := Int_val(port)
+        LDA ACCU
+        LDY # 0
+        CMP # 1
+        BNE @port2
+        PHP
+        SEI
+        LDA # $FF
+        STA C64_CIA1_PRA                ;deselect all keyboard columns
+        LDA C64_CIA1_PRB
+        PLP
+        JMP @ret
+@port2  LDA C64_CIA1_PRA
+@ret    EOR # $FF
+        AND # %00011111                 ;1 = active
+        STY ACCU + 1
+        SEC
+        ROL
+        STA ACCU
+        ROL ACCU + 1                    ;ACCU := Val_int(A)
+        RTS
+}
+
 }       ;; !zone caml_IO

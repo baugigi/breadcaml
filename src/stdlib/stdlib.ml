@@ -697,6 +697,47 @@ let read_int_opt () = int_of_string_opt(read_line())
 let read_float () = float_of_string(read_line())
 let read_float_opt () = float_of_string_opt(read_line())
 
+(* Standard channels and basic channel functions.
+   BreadCaml channels are plain closures (in_channel = unit -> char,
+   out_channel = char -> unit): stdout/stderr print on the screen, stdin waits
+   for a key. *)
+(*++ *)
+external wait_key : unit -> char = "caml_nonstd_wait_key"
+external bytes_unsafe_set : bytes -> int -> char -> unit = "%bytes_unsafe_set"
+let stdin = wait_key
+let stdout = print_char
+let stderr = print_char
+let flush (_ : out_channel) = ()
+let flush_all () = ()
+let input_char (ic : in_channel) = ic ()
+let input_byte (ic : in_channel) = int_of_char (ic ())
+let input_line (ic : in_channel) =
+  if ic == stdin then read_line () (* echo and editing from the keyboard *)
+  else begin
+    let finish b n =
+      let r = bytes_create n in
+      bytes_blit b 0 r 0 n;
+      bytes_unsafe_to_string r in
+    let rec loop b n =
+      match (try Some (ic ()) with End_of_file -> None) with
+        None -> if n = 0 then raise End_of_file else finish b n
+      | Some c ->
+          if c = '\013' || c = '\n' then finish b n
+          else begin
+            let b =
+              if n < bytes_length b then b
+              else begin
+                let b2 = bytes_create (2 * n) in
+                bytes_blit b 0 b2 0 n;
+                b2
+              end in
+            bytes_unsafe_set b n c;
+            loop b (n + 1)
+          end in
+    loop (bytes_create 16) 0
+  end
+(* ++*)
+
 (*--
 (* Operations on large files *)
 

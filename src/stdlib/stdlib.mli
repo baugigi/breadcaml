@@ -934,6 +934,22 @@ val stdout : out_channel
 val stderr : out_channel
 (** The standard error output for the process. *)
 --*)
+(*++ *)
+val stdin : in_channel
+(** The standard input: reading a character waits for a key to be pressed. *)
+
+val stdout : out_channel
+(** The standard output (the screen). *)
+
+val stderr : out_channel
+(** The standard error output (the screen, as {!Stdlib.stdout}). *)
+
+val flush : out_channel -> unit
+(** Does nothing: BreadCaml output channels are not buffered. *)
+
+val flush_all : unit -> unit
+(** Does nothing. *)
+(* ++*)
 
 (** {2 Output functions on standard output} *)
 
@@ -1299,6 +1315,22 @@ val set_binary_mode_in : in_channel -> bool -> unit
    This function has no effect under operating systems that
    do not distinguish between text mode and binary mode. *)
 --*)
+(*++ *)
+(** {2 General input functions} *)
+
+val input_char : in_channel -> char
+(** Read one character from the given input channel. On [stdin] it waits for
+    a key to be pressed (no echo). May raise [End_of_file] on other channels. *)
+
+val input_line : in_channel -> string
+(** Read characters up to a RETURN (PETSCII 13) or newline; neither is
+    included in the result. On {!Stdlib.stdin} it behaves as
+    {!Stdlib.read_line} (cursor, echo, DEL). On other channels it raises
+    [End_of_file] if the end of input is met before any character. *)
+
+val input_byte : in_channel -> int
+(** Same as {!Stdlib.input_char}, but return the 8-bit code. *)
+(* ++*)
 
 (*--
 (** {2 Operations on large files} *)

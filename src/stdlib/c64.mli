@@ -130,3 +130,323 @@ module Hw : sig
     val poke : int -> int -> unit
   end
 end
+
+(** Keyboard and joysticks. *)
+module Key : sig
+  val get : unit -> char
+  (** The next key from the keyboard buffer (a PETSCII code, as returned by
+      the Kernal), or ['\000'] if no key is waiting. Never blocks. *)
+
+  val wait : unit -> char
+  (** Waits for a key and returns it. No echo, no cursor. *)
+
+  val joy : int -> int
+  (** [joy port] (port 1 or 2) returns a bit mask: {!joy_up}, {!joy_down},
+      {!joy_left}, {!joy_right}, {!joy_fire}; a bit is set when the
+      corresponding switch is closed. Reading port 1 briefly interferes with
+      the keyboard scan. *)
+
+  val joy_up : int  val joy_down : int  val joy_left : int
+  val joy_right : int  val joy_fire : int
+end
+
+(** 40x25 text screen. [x] is the column (0..39), [y] the row (0..24).
+    Direct access functions use {e screen codes} (the values stored in the
+    screen RAM), not PETSCII: see {!code_of_char} and {!char_of_code}.
+    Functions without [unsafe_] raise [Invalid_argument] when the coordinates
+    are out of range. *)
+module Screen : sig
+  val cols : int
+  val rows : int
+
+  (** {2 Through the Kernal (PETSCII)} *)
+
+  val clear : unit -> unit            (** Clears the screen, cursor at home. *)
+  val home : unit -> unit             (** Cursor at the top left corner. *)
+  val locate : int -> int -> unit     (** [locate x y] moves the cursor. *)
+  val cursor : unit -> int * int      (** Cursor position [(x, y)]. *)
+  val reverse : bool -> unit          (** Reverse video on/off for printing. *)
+  val lower_case : bool -> unit
+  (** [lower_case true] selects the upper/lower case character set,
+      [false] the upper case/graphics one. *)
+
+  val text_color : int -> unit        (** Color (0..15) for printing. *)
+  val border : int -> unit            (** Border color. *)
+  val background : int -> unit        (** Background color. *)
+
+  (** {2 Direct access (screen codes)} *)
+
+  val get : int -> int -> int
+  val put : int -> int -> int -> unit
+  (** [put x y code] stores the screen code [code] (0..255). *)
+
+  val unsafe_get : int -> int -> int
+  val unsafe_put : int -> int -> int -> unit
+
+  val get_color : int -> int -> int
+  val put_color : int -> int -> int -> unit
+  (** Color RAM, colors 0..15; reading returns the low nybble. *)
+
+  val unsafe_get_color : int -> int -> int
+  val unsafe_put_color : int -> int -> int -> unit
+
+  val code_of_char : char -> int
+  (** Screen code of a PETSCII character. Control codes ([0x00-0x1F],
+      [0x80-0x9F]) give the space code ([0x20]). *)
+
+  val char_of_code : int -> char
+  (** PETSCII character for a screen code (the reverse video bit is ignored). *)
+
+  val put_char : int -> int -> char -> unit
+  (** [put_char x y c] is [put x y (code_of_char c)]. *)
+
+  val get_char : int -> int -> char
+
+  val print_at : ?color:int -> int -> int -> string -> unit
+  (** [print_at ?color x y s] writes [s] directly in the screen RAM, from
+      column [x] of row [y]; characters beyond column 39 are dropped. With
+      [~color] the color RAM is set too. The cursor does not move. *)
+
+  val fill : int -> unit              (** Fills the whole screen with a code. *)
+  val fill_color : int -> unit        (** Fills the whole color RAM. *)
+
+  val scroll_up : ?color:bool -> unit -> unit
+  (** Scrolls the screen one row up (the last row is filled with spaces);
+      with [~color:true] the color RAM scrolls too. *)
+
+  val scroll_down : ?color:bool -> unit -> unit
+end
+
+
+(** Hires / multicolor bitmap graphics (VIC-II), 320x200 (hires) or 160x200
+    (multicolor, 4 colors per 4x8 cell). Origin (0,0) is the top left.
+
+    {b Memory.} The VIC sees 16 KB at a time ("bank"). The program must
+    leave the bitmap area outside the OCaml stack: with the standard
+    [bank2] layout run with [-mem 0x7FFF] (stack below $8000):
+    {v
+      $8000-$83E7  screen matrix (colors)      $83F8-$83FF sprite pointers
+      $8400-$8FFF  sprite data (pointers 16..63)
+      $9000-$9FFF  CPU only (VIC sees char ROM there)
+      $A000-$BF3F  bitmap (RAM under the BASIC ROM, handled automatically)
+      $BF40-$BFFF  3 more sprite blocks (pointers 253..255)
+    v}
+    {b Interrupts.} Do not rely on the BASIC ROM while the bitmap is in
+    $A000-$BFFF; reading it back from OCaml needs [Hw.Mem.peek ~ram:true]
+    (and [Hw.Nmi.block] against RESTORE). *)
+module Gfx : sig
+  type mode = Hires | Multicolor
+
+  type layout = {
+    bank : int;    (** VIC bank 0, 1 or 2 (bank 3 is not supported). *)
+    screen : int;  (** Screen matrix offset in the bank: multiple of 0x400, not
+                       in 0x1000-0x1FFF of banks 0 and 2 (char ROM image). *)
+    bitmap : int;  (** Bitmap offset in the bank: 0x2000, or 0 only in bank 1
+                       (offset 0 of banks 0 and 2 shows the char ROM). *)
+    sprites : int; (** Sprite data offset in the bank (used by [Sprite]). *)
+  }
+
+  val bank2 : layout  (** bank 2: screen $8000, bitmap $A000. *)
+  val bank1 : layout  (** bank 1: screen $4000, bitmap $6000; needs [-mem 0x3FFF]. *)
+
+  val init : ?mode:mode -> layout -> unit
+  (** Switches to bitmap mode (default [Hires]). Resets pen and window.
+      @raise Invalid_argument on an invalid layout. The bitmap is not cleared. *)
+
+  val exit : unit -> unit
+  (** Back to text mode, bank 0, standard memory control. *)
+
+  val width : unit -> int   (** 320 (hires) or 160 (multicolor). *)
+  val height : int          (** 200 *)
+
+  val clear : unit -> unit
+  (** Clears the bitmap (all pixels pen 0). *)
+
+  val fill_screen : int -> unit
+  (** Fills the screen matrix with a byte. *)
+
+  val colors : ink:int -> paper:int -> unit
+  (** Hires: sets every cell colors (pen 1 = [ink], pen 0 = [paper]).
+      Multicolor: pen 1 = [ink], pen 2 = [paper] (matrix nibbles). *)
+
+  val fill_color : int -> unit
+  (** Fills the color RAM (multicolor pen 3 color). *)
+
+  val background : int -> unit
+  (** Background color ($D021, multicolor pen 0). *)
+
+  val pen : int -> unit
+  (** Hires: 0 (erase) or 1. Multicolor: 0..3. *)
+
+  val plot : int -> int -> unit
+  (** Pixel with the current pen; silently clipped. *)
+
+  val point : int -> int -> int
+  (** Pen value of the pixel, or [-1] if outside. *)
+
+  val line : int -> int -> int -> int -> unit
+  (** [line x1 y1 x2 y2]: Bresenham line, clipped. Fully visible lines use a
+      self-modifying fast loop. *)
+
+  val window : int -> int -> int -> int -> unit
+  (** [window x0 y0 x1 y1] defines virtual coordinates: [(x0,y0)] maps to the
+      top left pixel and [(x1,y1)] to the bottom right one (spans may be
+      reversed, giving flipped axes; coordinates are saturated to +-16383).
+      Must be called after [init]. @raise Invalid_argument if a span is < 2. *)
+
+  val unwindow : unit -> unit  (** Back to physical coordinates. *)
+
+  (** {b Shapes} are drawn with [line]/[plot], so they are clipped and follow
+      the window (in virtual coordinates; with a window that enlarges, rows of
+      [fill_rect] / [fill_circle] may leave gaps). In multicolor mode pixels
+      are twice as wide as tall, so circles come out as ellipses. *)
+
+  val hline : int -> int -> int -> unit  (** [hline x1 x2 y] *)
+  val vline : int -> int -> int -> unit  (** [vline x y1 y2] *)
+  val rect : int -> int -> int -> int -> unit
+  (** [rect x1 y1 x2 y2]: outline. *)
+  val fill_rect : int -> int -> int -> int -> unit
+  val circle : int -> int -> int -> unit
+  (** [circle cx cy r]: midpoint algorithm. @raise Invalid_argument if [r < 0]. *)
+  val fill_circle : int -> int -> int -> unit
+end
+
+(** Hardware sprites (VIC-II). Data are copied into the VIC bank: the source
+    array or string can be discarded (it becomes garbage) right after
+    [define]. A block is 64 bytes; [blk] is the block number in the VIC bank
+    (address in the bank = [blk * 64]) and is also the sprite pointer value.
+    With [Gfx.bank2] blocks 16..63 are free ($8400-$8FFF; 253..255 too).
+    Call [setup] with the same layout given to [Gfx.init] (default [Gfx.bank2]).
+    Sprite numbers are 0..7. Sprite pixel (24,50) is the top left of the
+    320x200 screen area. *)
+module Sprite : sig
+  val setup : Gfx.layout -> unit
+  val layout : unit -> Gfx.layout
+
+  val define : int -> int array -> unit
+  (** [define blk a]: copies [a.(0..62)] (bytes; 3 per row, 21 rows). *)
+
+  val define_string : int -> string -> unit
+  (** Same, from the first 63 characters of a string. *)
+
+  val define_art : int -> string array -> unit
+  (** [define_art blk rows]: 21 rows of 24 characters; ' ' and '.' are empty
+      pixels, any other character sets it. *)
+
+  val define_art_mc : int -> string array -> unit
+  (** Multicolor: 21 rows of 12 characters ['0'..'3'] (pen of each double
+      pixel: 0 transparent, 1 and 3 = [mcolors], 2 = [color]). *)
+
+  val assign : int -> int -> unit
+  (** [assign n blk]: sprite [n] shows block [blk]. *)
+
+  val enable : int -> bool -> unit
+  val pos : int -> int -> int -> unit
+  (** [pos n x y]: raw VIC coordinates, [x] in 0..511. *)
+
+  val move : int -> int -> int -> unit
+  (** [move n x y] = [pos n (x+24) (y+50)] (screen pixel coordinates). *)
+
+  val color : int -> int -> unit
+  val mcolors : int -> int -> unit  (** The two shared multicolor colors. *)
+  val multicolor : int -> bool -> unit
+  val expand_x : int -> bool -> unit
+  val expand_y : int -> bool -> unit
+  val behind : int -> bool -> unit  (** Priority: behind the foreground. *)
+
+  val hit_sprites : unit -> int
+  (** Sprite-sprite collision bits ($D01E); reading clears them. *)
+
+  val hit_background : unit -> int
+  (** Sprite-background collision bits ($D01F); reading clears them. *)
+end
+
+(** SID sound. The SID clock depends on the video standard, so frequencies,
+    the lowest and highest pitch change: PAL 985248 Hz (max 3848 Hz),
+    NTSC 1022727 Hz (max 3994 Hz), PAL-N 1023440 Hz. Register value
+    F = Hz * 2^24 / clock. [init] measures the frame length with a CIA timer
+    to detect it (19656 cycles PAL, 17095 NTSC, 16768 old NTSC, 20280 PAL-N).
+    Voices are numbered 1..3 as in [Hw.Sid.voice]. The SID registers are
+    write-only, so [Sound] keeps a shadow copy: do not mix with direct
+    [Hw.Sid.poke] on the same registers. *)
+module Sound : sig
+  type system = Pal | Ntsc | Pal_n
+
+  val frame_cycles : unit -> int
+  (** Cycles of one video frame (IRQs are masked ~3 frames while measuring). *)
+
+  val system_of_cycles : int -> system
+  val detect : unit -> system
+  val system : unit -> system
+  val set_system : system -> unit
+  val clock_khz : unit -> int
+  val max_hz : unit -> int      (** Highest frequency (F = 65535). *)
+  val min_mhz : unit -> int     (** Lowest frequency (F = 1), in millihertz. *)
+
+  val init : ?detect_clock:bool -> unit -> unit
+  (** Clears the SID, volume 15, detects the clock (default). *)
+
+  val wait_frame : unit -> unit  (** Waits for raster line 248. *)
+
+  (** {2 Voices} *)
+
+  val tri : int  val saw : int  val pulse : int  val noise : int
+  (** Waveform bits, combinable with [lor]. *)
+
+  val waveform : int -> int -> unit
+  val gate : int -> bool -> unit
+  val sync : int -> bool -> unit   (** Hard sync with the previous voice. *)
+  val ring : int -> bool -> unit   (** Ring modulation (needs [tri]). *)
+  val test : int -> bool -> unit   (** Test bit: holds/resets the oscillator. *)
+  val adsr : int -> a:int -> d:int -> s:int -> r:int -> unit  (** 0..15 each. *)
+  val pulse_width : int -> int -> unit  (** 0..4095. *)
+
+  val freq_raw : int -> hi:int -> lo:int -> unit
+  val freq_hz : int -> int -> unit  (** Integer Hz, 0..[max_hz]. *)
+  val note : int -> int -> unit
+  (** [note v n]: [n] = semitones above C0 (0..95; A4 = 57), equal
+      temperament; notes above the SID range saturate. *)
+  val freq_f4 : int -> int -> unit  (** F/4 as one int (0..16383). *)
+  val f4_of_hz : int -> int
+
+  val play : int -> int -> unit     (** [note] then [gate]. *)
+  val stop : int -> unit            (** Gate off (release). *)
+  val silence : unit -> unit
+
+  (** {2 Filter and volume} *)
+
+  val cutoff : int -> unit          (** 0..2047. *)
+  val resonance : int -> unit       (** 0..15. *)
+  val route : int -> bool -> unit   (** Voice 1..3, or 4 = external input. *)
+  val filter_mode : lp:bool -> bp:bool -> hp:bool -> unit
+  val mute_voice3 : bool -> unit
+  val volume : int -> unit          (** 0..15. *)
+  val pot_x : unit -> int
+  val pot_y : unit -> int
+  val shadow : int -> int           (** Last value written to a register. *)
+
+  (** {2 Modulation with voice 3 (OSC3 / ENV3)}
+
+      Voice 3 can run silently as an LFO: its waveform output (OSC3) and
+      envelope (ENV3) are readable. [modulate] samples it once and writes
+      the target register; call it repeatedly (e.g. once per [wait_frame]). *)
+
+  type source = Osc3 | Env3
+  type dest =
+    | Freq of int   (** voice; value unit is F/4 (see [f4_of_hz]) *)
+    | Pw of int     (** voice; 0..4095 *)
+    | Cutoff | Volume | Resonance
+
+  val lfo : ?wave:int -> int -> unit
+  (** [lfo ~wave f]: voice 3 at register value [f] (0..16383), muted from
+      the output. About [f * 0.0587] Hz on PAL. *)
+
+  val lfo_raw : ?wave:int -> hi:int -> lo:int -> unit -> unit
+  val random_init : unit -> unit  (** Voice 3 noise at full speed. *)
+  val random : unit -> int        (** OSC3 as a random byte. *)
+  val sample : source -> int
+
+  val modulate : source -> dest -> base:int -> depth:int -> unit
+  (** Writes [base + (sample - 128) * depth / 128] (clamped to the range of
+      [dest]). [depth] in -16383..16383. *)
+end
