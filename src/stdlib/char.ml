@@ -21,11 +21,12 @@ external unsafe_chr: int -> char = "%identity"
 let chr n =
   if n < 0 || n > 255 then invalid_arg "Char.chr" else unsafe_chr n
 
-(* This file is compiled with bcamlppx: char and string literals are translated
-   to PETSCII. Ranges of raw character codes (which the preprocessor would
-   translate if written as literals) are therefore tested by code with
-   [within]; literals that must stay ASCII are written [%ascii 'c']. *)
-let within lo hi c = let n = code c in n >= lo && n <= hi
+(*++ *)
+(* This file is compiled with bcamlppx: char and string literals (also the
+   ends of the ranges in patterns) are translated to PETSCII. Literals and
+   ranges that must keep their raw code are written [%ascii 'c'] in
+   expressions, and [%ascii? 'a' .. 'z'] (or-patterns allowed) in patterns. *)
+(* ++*)
 
 external bytes_create: int -> bytes = "caml_create_bytes"
 external bytes_unsafe_set : bytes -> int -> char -> unit
@@ -56,41 +57,68 @@ let escaped = function
 module Ascii = struct
   let escaped = escaped
 (* ++*)
-  let lowercase c =
-    if c >= [%ascii 'A'] && c <= [%ascii 'Z'] || within 192 214 c
-       || within 216 222 c
-    then unsafe_chr(code c + 32)
-    else c
+(*--
+  let lowercase = function
+    | 'A' .. 'Z'
+      | '\192' .. '\214'
+      | '\216' .. '\222' as c ->
+       unsafe_chr(code c + 32)
+    | c -> c
 
-  let uppercase c =
-    if c >= [%ascii 'a'] && c <= [%ascii 'z'] || within 224 246 c
-       || within 248 254 c
-    then unsafe_chr(code c - 32)
-    else c
+  let uppercase = function
+    | 'a' .. 'z'
+      | '\224' .. '\246'
+      | '\248' .. '\254' as c ->
+       unsafe_chr(code c - 32)
+    | c -> c
 
-  let lowercase_ascii c =
-    if c >= [%ascii 'A'] && c <= [%ascii 'Z'] then unsafe_chr(code c + 32)
-    else c
+  let lowercase_ascii = function
+    | 'A' .. 'Z' as c -> unsafe_chr(code c + 32)
+    | c -> c
 
-  let uppercase_ascii c =
-    if c >= [%ascii 'a'] && c <= [%ascii 'z'] then unsafe_chr(code c - 32)
-    else c
+  let uppercase_ascii = function
+    | 'a' .. 'z' as c -> unsafe_chr(code c - 32)
+    | c -> c
+--*)
+(*++ *)
+  let lowercase = function
+    | [%ascii? 'A' .. 'Z']
+      | '\192' .. '\214'
+      | '\216' .. '\222' as c ->
+       unsafe_chr(code c + 32)
+    | c -> c
+
+  let uppercase = function
+    | [%ascii? 'a' .. 'z']
+      | '\224' .. '\246'
+      | '\248' .. '\254' as c ->
+       unsafe_chr(code c - 32)
+    | c -> c
+
+  let lowercase_ascii = function
+    | [%ascii? 'A' .. 'Z'] as c -> unsafe_chr(code c + 32)
+    | c -> c
+
+  let uppercase_ascii = function
+    | [%ascii? 'a' .. 'z'] as c -> unsafe_chr(code c - 32)
+    | c -> c
+(* ++*)
 
 (*++ *)
-  let to_petscii c =
-    if c >= [%ascii 'a'] && c <= [%ascii 'z'] then unsafe_chr(code c + 0x80)
-    else if c >= [%ascii 'A'] && c <= [%ascii 'Z'] then unsafe_chr(code c - 0x20)
-    else if c = [%ascii '_'] then '\xA4'
-    else if c = [%ascii '|'] then '\xDD'
-    else c
+  let to_petscii = function
+    | [%ascii? 'a' .. 'z'] as c -> unsafe_chr(code c + 0x80)
+    | [%ascii? 'A' .. 'Z'] as c -> unsafe_chr(code c - 0x20)
+    | [%ascii '_'] -> '\xA4'
+    | [%ascii '|'] -> '\xDD'
+    | c -> c
 
-  let of_petscii c =
-    if within 0x41 0x5A c then unsafe_chr(code c + 0x20)
-    else if within 0x61 0x7A c then unsafe_chr(code c - 0x20)
-    else if within 0xC1 0xDA c then unsafe_chr(code c - 0x80)
-    else if code c = 0xA4 then [%ascii '_']
-    else if code c = 0xDD then [%ascii '|']
-    else c
+  let of_petscii = function
+    | [%ascii? '\x41' .. '\x5A'] as c -> unsafe_chr(code c + 0x20)
+    | [%ascii? '\x61' .. '\x7A'] as c -> unsafe_chr(code c - 0x20)
+    | '\xC1' .. '\xDA' as c -> unsafe_chr(code c - 0x80)
+    | '\xA4' -> [%ascii '_']
+    | '\xDD' -> [%ascii '|']
+    | c -> c
 
 end
 (* ++*)
@@ -105,11 +133,17 @@ let is_control = function
   | '\x00'..'\x1F' | '\x80'..'\x9F' -> true
   | _ -> false
 
-let is_letter c = within 0x41 0x5A c || within 0xC1 0xDA c || within 0x61 0x7A c
+let is_letter = function
+  | [%ascii? '\x41'..'\x5A' | '\x61'..'\x7A'] | '\xC1'..'\xDA' -> true
+  | _ -> false
 
-let is_upper c = within 0xC1 0xDA c || within 0x61 0x7A c
+let is_upper = function
+  | '\xC1'..'\xDA' | [%ascii? '\x61'..'\x7A'] -> true
+  | _ -> false
 
-let is_lower c = within 0x41 0x5A c
+let is_lower = function
+  | [%ascii? '\x41'..'\x5A'] -> true
+  | _ -> false
 
 let is_digit = function
   | '\x30'..'\x39' -> true
@@ -121,7 +155,9 @@ let is_white = function
   | ' ' | '\r' -> true
   | _ -> false
 
-let is_symbol c = within 0x21 0x2F c || within 0x3A 0x40 c || within 0x5B 0x5F c
+let is_symbol = function
+  | [%ascii? '\x21'..'\x2F' | '\x3A'..'\x40' | '\x5B'..'\x5F'] -> true
+  | _ -> false
 
 let is_graphic = function
   | '\x60' | '\x7B'..'\x7F' | '\xA0'..'\xC0' | '\xDB'..'\xFF' -> true
@@ -150,14 +186,14 @@ let org = function
   | '\xFF' -> Some '\xDE'
   | _ -> None
 
-let lowercase_petscii c =
-  if within 0x61 0x7A c then unsafe_chr(code c - 0x20)
-  else if within 0xC1 0xDA c then unsafe_chr(code c - 0x80)
-  else c
+let lowercase_petscii = function
+  | [%ascii? '\x61' .. '\x7A'] as c -> unsafe_chr(code c - 0x20)
+  | '\xC1' .. '\xDA' as c -> unsafe_chr(code c - 0x80)
+  | c -> c
 
-let uppercase_petscii c =
-  if within 0x41 0x5A c then unsafe_chr(code c + 0x80)
-  else c
+let uppercase_petscii = function
+  | [%ascii? '\x41' .. '\x5A'] as c -> unsafe_chr(code c + 0x80)
+  | c -> c
 
 let lowercase = lowercase_petscii
 let uppercase = uppercase_petscii

@@ -35,8 +35,9 @@ CMO := $(LIB:=.cmo)
 
 # The BreadCaml preprocessor translates char and string literals to PETSCII.
 # All modules are compiled with it. Literals that must keep their ASCII value
-# are written as [%ascii 'c'] / [%ascii "str"] (single constants only: ranges
-# and intervals must be written with character codes).
+# are written as [%ascii 'c'] / [%ascii "str"] in expressions and patterns
+# (single constants), and as [%ascii? 'a' .. 'z' | ...] for raw ranges and
+# or-patterns in patterns (the ends of an interval are translated otherwise).
 PPXDB := stdlib.db
 PPX   := -ppx '$(abspath ../../bin/bcamlppx) $(abspath $(PPXDB))'
 

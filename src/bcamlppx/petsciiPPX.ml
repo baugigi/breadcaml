@@ -32,7 +32,18 @@ let expr_rewriter mapper expr = match expr.pexp_desc with
     default_mapper.expr mapper expr
 
 
+(* Patterns allowed in [%ascii? ...]: char/string constants, char intervals and
+   or-patterns of them. They are left untranslated (raw codes). *)
+let rec raw_pattern p = match p.ppat_desc with
+  | Ppat_constant(Pconst_char _ | Pconst_string _)
+  | Ppat_interval(Pconst_char _, Pconst_char _) -> true
+  | Ppat_or(p1, p2) -> raw_pattern p1 && raw_pattern p2
+  | _ -> false
+
 let pat_rewriter mapper pat = match pat.ppat_desc with
+  | Ppat_extension({ txt = "ascii"; loc }, PPat(p, None)) ->
+    if raw_pattern p then p
+    else Pat.extension ~loc (error ~loc err_ascii)
   | Ppat_extension({ txt = "ascii"; loc }, PStr[item]) ->
     (match item.pstr_desc with
      | Pstr_eval
