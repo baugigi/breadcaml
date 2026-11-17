@@ -24,8 +24,8 @@ the usual  `LOAD "MYPROG.PRG",8` and `RUN`  commands.
 
 In addition  to the compilers,  the BreadCaml Project  includes a
 specially modified  distribution of  the OCaml  Standard Library,
-the   `bcamlppx`  preprocessor,   and  (coming   soon)  libraries
-dedicated to graphics and sound.
+the `bcamlppx` preprocessor, and  libraries dedicated to graphics
+and sound.
 
 ## Installation
 

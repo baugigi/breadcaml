@@ -126,7 +126,8 @@ To install BreadCaml immediately using the default options, run:
 | `-b`, `--bindir` | `<dir>` | Target directory for Breadcaml binaries |
 | `-l`, `--libdir` | `<dir>` | Target directory for the BreadCaml Stdlib files |
 | `-m`, `--mandir` | `<dir>` | Target directory for manual pages |
-| `-p`, `--prefix` | `<dir>` | Shortcut for `-b <dir>/bin -l <dir>/lib/breadcaml -m <dir>/man` |
+| `-d`, `--docdir` | `<dir>` | Target directory for HTML documentation |
+| `-p`, `--prefix` | `<dir>` | Shortcut for `-b <dir>/bin -l <dir>/lib/breadcaml -m <dir>/man -d <dir>/doc/bcaml` |
 | `-y`, `--yes`    |         | Automatically accept the ACME installation prompt |
 | `-s`, `--silent` |         | Like '-y', also do not display messages (except errors) |
 | `-h`, `--help`   |         | Display the help message and default installation paths |
@@ -150,7 +151,7 @@ To install BreadCaml immediately using the default options, run:
 
 #### 2. Build the system
 
-Run the following command from the root directory:
+Run the following command from the root directory of the source tree:
 
 ```bash
 make
@@ -178,14 +179,9 @@ make clean
 
 ## Uninstallation
 
-To remove BreadCaml, run the following command from the root directory:
+To remove BreadCaml, run the following command from the root directory
+of the source tree:
 
 ```bash
 make uninstall
 ```
-
-> [!WARNING]
-> _Uninstallation    will   fail    if    the   configuration    file_
-> `./etc/Makefile.conf`   _is  missing.    If  this   occurs,  re-run_
-> `./configure` _using the same options specified during installation,
-> then attempt to uninstall again._

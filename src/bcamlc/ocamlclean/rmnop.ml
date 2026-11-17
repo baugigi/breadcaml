@@ -1,3 +1,20 @@
+(* ——————————————————————————————————————————————————————————————————————
+   Progetto BreadCaml / The BreadCaml Project
+   Copyright (C) 21-Apr-2026 Piero Furiesi
+
+                                     SOFTWARE DI TERZI/3RD PARTY SOFTWARE
+   OCamlclean   (C) Benoît Vaugon <https://github.com/bvaugon/ocamlclean>
+
+   Questo file, originariamente distribuito con licenza CeCILL, è incluso
+   nel Progetto  BreadCaml e, in  conformità all′Articolo 5.3.4  di detta
+   licenza — vedere LICENSE-fr, in francese, o LICENSE-en, in inglese, in
+   questa cartella — è ridistribuito con licenza GNU GPL versione 2.
+
+   This  file,  originally  distributed  under  the  CeCILL  license,  is
+   included in  the BreadCaml Project  and, pursuant to Section  5.3.4 of
+   that license —  see LICENSE-fr, in French, or  LICENSE-en, in English,
+   in this directory — is redistributed under the GNU GPL version 2.
+   —————————————————————————————————————————————————————————————————————— *)
 (*************************************************************************)
 (*                                                                       *)
 (*                              OCamlClean                               *)

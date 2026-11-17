@@ -24,8 +24,8 @@ caricabili ed  avviabili con i consueti  `LOAD "MIOPROG.PRG",8` e
 
 Oltre  ai  compilatori,  il   Progetto  BreadCaml  comprende  una
 distribuzione  della  libreria  standard di  OCaml  appositamente
-modificata, il  preprocessore `bcamlppx` e  (prossimamente) delle
-librerie dedicate alla grafica e al suono.
+modificata, il preprocessore `bcamlppx` e delle librerie dedicate
+alla grafica e al suono.
 
 ## Installazione
 

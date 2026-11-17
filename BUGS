@@ -1,2 +1,1 @@
-- Some runtime and stdlib asm routines use gc-unprotected pointers; need to strictly enforce a policy to protect pointers which must be valid before and after a collection (e.g., pushing them onto the stack).
-- Some primitives to be implemented.
+- PRE-RELEASE, not fully tested.
