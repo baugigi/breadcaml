@@ -89,7 +89,6 @@ clean:
 	$(MAKE) -C src/stdlib $@
 	$(MAKE) -C c64lib $@
 	$(MAKE) -C src/asm $@
-	$(MAKE) -C test $@
 
 .PHONY: fullinstall
 fullinstall: install clean
