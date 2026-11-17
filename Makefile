@@ -25,7 +25,7 @@ all:
 	$(MAKE) -C src/bcamlc
 	$(MAKE) -C src/bcamlppx
 	$(MAKE) -C src/stdlib
-	$(MAKE) -C c64lib
+	$(MAKE) -C src/c64lib
 	$(MAKE) -C src/asm
 
 .PHONY: install
@@ -61,20 +61,20 @@ install: all
 	$(call inst_and_rec,src/stdlib/*.cmo,$(LIBDIR),755)
 	$(call inst_and_rec,src/stdlib/*.cmi,$(LIBDIR),755)
 	@echo '$(call message,INSTALL: ,C64 Library)'
-	$(call inst_and_rec,c64lib/c64lib.cma,$(LIBDIR),755)
-	$(call inst_and_rec,c64lib/libc64lib.a,$(LIBDIR),755)
-	$(call inst_and_rec,c64lib/*.ml,$(LIBDIR),755)
-	$(call inst_and_rec,c64lib/*.mli,$(LIBDIR),755)
-	$(call inst_and_rec,c64lib/*.cmo,$(LIBDIR),755)
-	$(call inst_and_rec,c64lib/*.cmi,$(LIBDIR),755)
+	$(call inst_and_rec,src/c64lib/c64lib.cma,$(LIBDIR),755)
+	$(call inst_and_rec,src/c64lib/libc64lib.a,$(LIBDIR),755)
+	$(call inst_and_rec,src/c64lib/*.ml,$(LIBDIR),755)
+	$(call inst_and_rec,src/c64lib/*.mli,$(LIBDIR),755)
+	$(call inst_and_rec,src/c64lib/*.cmo,$(LIBDIR),755)
+	$(call inst_and_rec,src/c64lib/*.cmi,$(LIBDIR),755)
 	@echo '$(call message,INSTALL: ,Man pages)'
 	$(call inst_and_rec,man/*,$(MAN1DIR),644)
 	$(call inst_and_rec,src/stdlib/*.$(MAN3EXT),$(MAN3DIR),644)
-	$(call inst_and_rec,c64lib/man3/*.$(MAN3EXT),$(MAN3DIR),644)
+	$(call inst_and_rec,src/c64lib/man3/*.$(MAN3EXT),$(MAN3DIR),644)
 	@echo '$(call message,INSTALL: ,HTML documentation)'
 	$(call inst_and_rec,src/stdlib/*.html,$(DOCDIR),644)
 	$(call inst_and_rec,src/stdlib/*.css,$(DOCDIR),644)
-	$(call inst_and_rec,c64lib/html/*,$(DOCDIR)/c64lib,644)
+	$(call inst_and_rec,src/c64lib/html/*,$(DOCDIR)/c64lib,644)
 
 .PHONY: uninstall
 uninstall:
@@ -87,7 +87,7 @@ clean:
 	$(MAKE) -C src/bcamlc $@
 	$(MAKE) -C src/bcamlppx $@
 	$(MAKE) -C src/stdlib $@
-	$(MAKE) -C c64lib $@
+	$(MAKE) -C src/c64lib $@
 	$(MAKE) -C src/asm $@
 
 .PHONY: fullinstall

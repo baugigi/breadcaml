@@ -10,7 +10,7 @@ include $(if $(wildcard $(CONF)),$(CONF),$(error \
 # The Assembly primitives are in asm/c64lib_*.asm; src/asm/Makefile merges
 # them into stdlib.asm, so that the dependency resolution works across files.
 
-STDLIBDIR := ../src/stdlib
+STDLIBDIR := ../stdlib
 
 # The BreadCaml preprocessor translates char and string literals to PETSCII
 # (see src/stdlib/Makefile).
