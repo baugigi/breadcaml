@@ -314,13 +314,13 @@ caml_end
         BNE -
         JSR C64_RESTOR                  ;Restore system vectors.
         JSR C64_IOINIT                  ;Reset I/O devices.
-        LDA $DD0D                       ;Acknowledge a pending CIA2 NMI (see Nmi.block).
+        LDA C64_CIA2_ICR                ;Acknowledge a pending CIA2 NMI (see Nmi.block).
         LDA # 0
         LDX # $18
--       STA $D400,X                     ;Reset SID.
+-       STA C64_SID_V1FL,X              ;Reset SID.
         DEX
         BNE -
-        JSR $E5A0                       ;Reset VIC.
+        JSR C64_VICINIT                 ;Reset VIC.
         LDX # $00
         STX C64_VIC_IRQEN               ;Disable VIC IRQs and
         DEX

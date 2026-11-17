@@ -9,15 +9,9 @@
 ;; unsafe_poke/unsafe_poke_at do not check anything. The value is masked to 8 bits.
 ;; peek_ram/peek_at_ram read the RAM under the ROMs/I/O (interrupts disabled).
 
-;; short form: ACCU := sign-extended Int_val(ACCU)
 !zone caml_C64_HW {
 
-caml_hw_CIA2TAL = $DD04
-caml_hw_CIA2TAH = $DD05
-caml_hw_CIA2ICR = $DD0D
-caml_hw_CIA2CRA = $DD0E
-caml_hw_NMI_DEF = $FE47                 ;default Kernal NMI vector
-
+;; short form: ACCU := sign-extended Int_val(ACCU)
 !macro caml_hw_addr_short {
         LDA ACCU + 1
         CMP # $80
@@ -83,7 +77,7 @@ caml_hw_NMI_DEF = $FE47                 ;default Kernal NMI vector
         SEI
         LDA C64_R6510
         PHA
-        AND # $F8
+        AND # C64_R6510_RAM
         STA C64_R6510
         LDA (ACCU),Y
         TAX
@@ -348,16 +342,16 @@ caml_nonstd_hw_nmi_block
         STA C64_NMINV
         LDA # >@rti
         STA C64_NMINV + 1
-        LDA # $7F
-        STA caml_hw_CIA2ICR             ;disable all CIA2 interrupt sources
-        LDA caml_hw_CIA2ICR             ; and acknowledge pending ones
+        LDA # C64_CIA_ICR_ALL
+        STA C64_CIA2_ICR             ;disable all CIA2 interrupt sources
+        LDA C64_CIA2_ICR             ; and acknowledge pending ones
         LDA # 1
-        STA caml_hw_CIA2TAL
-        STY caml_hw_CIA2TAH             ;timer A latch := 1
-        LDA # $81
-        STA caml_hw_CIA2ICR             ;enable NMI on timer A underflow
-        LDA # %00011001
-        STA caml_hw_CIA2CRA             ;force load, one shot, start
+        STA C64_CIA2_TALO
+        STY C64_CIA2_TAHI             ;timer A latch := 1
+        LDA # C64_CIA_ICR_SET | C64_CIA_ICR_TA
+        STA C64_CIA2_ICR             ;enable NMI on timer A underflow
+        LDA # C64_CIA_CR_LOAD | C64_CIA_CR_ONESHOT | C64_CIA_CR_START
+        STA C64_CIA2_CRA             ;force load, one shot, start
         NOP
         NOP
         NOP
@@ -372,14 +366,97 @@ caml_nonstd_hw_nmi_block
 caml_nonstd_hw_nmi_unblock
         PHP
         SEI
-        LDA # $7F
-        STA caml_hw_CIA2ICR             ;disable all CIA2 interrupt sources
-        LDA caml_hw_CIA2ICR             ; and acknowledge pending ones
-        LDA # <caml_hw_NMI_DEF
+        LDA # C64_CIA_ICR_ALL
+        STA C64_CIA2_ICR             ;disable all CIA2 interrupt sources
+        LDA C64_CIA2_ICR             ; and acknowledge pending ones
+        LDA # <C64_KNMI
         STA C64_NMINV
-        LDA # >caml_hw_NMI_DEF
+        LDA # >C64_KNMI
         STA C64_NMINV + 1
         PLP
+        +caml_hw_ret_unit
+        RTS
+}
+
+;; ---- chip registers ------------------------------------------------------------
+;; peek off / poke off v on VIC-II, SID, CIA1, CIA2: off = register offset from
+;; the chip base address (0..127; larger values wrap modulo 128). No checks at all.
+;; Color RAM: off = 0..999, reads return the low nybble only.
+
+!macro caml_hw_reg_peek .base {
+        LDA ACCU
+        LSR
+        TAX                             ;X := Int_val(off) mod 128
+        LDA .base,X
+        +caml_hw_ret_int
+        RTS
+}
+!macro caml_hw_reg_poke .base {
+        LDA ACCU
+        LSR
+        TAX                             ;X := Int_val(off) mod 128
+        +caml_hw_value 0
+        STA .base,X
+        +caml_hw_ret_unit
+        RTS
+}
+
+!ifdef caml_PRIM__caml_nonstd_hw_vic_peek {
+caml_nonstd_hw_vic_peek
+        +caml_hw_reg_peek C64_VIC_M0X
+}
+!ifdef caml_PRIM__caml_nonstd_hw_vic_poke {
+caml_nonstd_hw_vic_poke
+        +caml_hw_reg_poke C64_VIC_M0X
+}
+!ifdef caml_PRIM__caml_nonstd_hw_sid_peek {
+caml_nonstd_hw_sid_peek
+        +caml_hw_reg_peek C64_SID_V1FL
+}
+!ifdef caml_PRIM__caml_nonstd_hw_sid_poke {
+caml_nonstd_hw_sid_poke
+        +caml_hw_reg_poke C64_SID_V1FL
+}
+!ifdef caml_PRIM__caml_nonstd_hw_cia1_peek {
+caml_nonstd_hw_cia1_peek
+        +caml_hw_reg_peek C64_CIA1_PRA
+}
+!ifdef caml_PRIM__caml_nonstd_hw_cia1_poke {
+caml_nonstd_hw_cia1_poke
+        +caml_hw_reg_poke C64_CIA1_PRA
+}
+!ifdef caml_PRIM__caml_nonstd_hw_cia2_peek {
+caml_nonstd_hw_cia2_peek
+        +caml_hw_reg_peek C64_CIA2_PRA
+}
+!ifdef caml_PRIM__caml_nonstd_hw_cia2_poke {
+caml_nonstd_hw_cia2_poke
+        +caml_hw_reg_poke C64_CIA2_PRA
+}
+
+!ifdef caml_PRIM__caml_nonstd_hw_color_peek {
+caml_nonstd_hw_color_peek
+        LSR ACCU + 1
+        ROR ACCU                        ;ACCU := Int_val(off)
+        LDA ACCU + 1
+        CLC
+        ADC # >C64_COLRAM
+        STA ACCU + 1                    ;ACCU := C64_COLRAM + off
+        LDA (ACCU),Y
+        AND # $0F
+        +caml_hw_ret_int
+        RTS
+}
+!ifdef caml_PRIM__caml_nonstd_hw_color_poke {
+caml_nonstd_hw_color_poke
+        LSR ACCU + 1
+        ROR ACCU
+        LDA ACCU + 1
+        CLC
+        ADC # >C64_COLRAM
+        STA ACCU + 1
+        +caml_hw_value 0
+        STA (ACCU),Y
         +caml_hw_ret_unit
         RTS
 }

@@ -14,7 +14,7 @@ C64_KERROM      = $E000 ;Start address of Kernal ROM
         ;; Zeropage
         ;; Free locations: C64_UNUSZP (1 by.), C64_FREKZP (4 by.)
 C64_D6510       = $00   ;Data Direction register
-C64_R6510       = $01   ;Data buffer
+C64_R6510       = $01   ;Data buffer (processor port: bits 2-0 = CHAREN|HIRAM|LORAM)
 C64_UNUSZP      = $02   ;UNUSED
 C64_ADRAY1      = $03   ;-$04 Jump Vector: Convert Integer--Floating
 C64_ADRAY2      = $05   ;-$06 Jump Vector: Convert Integer--Floating
@@ -439,9 +439,11 @@ C64_UDTIM       = $F69B
 C64_UNLSN       = $EDFE
 C64_UNTLK       = $EDEF
 C64_VECTOR      = $FD1A
+C64_KNMI        = $FE47 ;Kernal NMI handler (default value of C64_NMINV)
+C64_VICINIT     = $E5A0 ;Kernal internal: reset VIC-II registers
 
         ;; System hardware vectors
-C64_HW_NMI      = $FFFA ;normally $FF43
+C64_HW_NMI      = $FFFA ;normally $FE43
 C64_HW_RESET    = $FFFC ;normally $FCE2 = C64_RESET
 C64_HW_IRQ      = $FFFE ;normally $FF48
 
@@ -493,7 +495,94 @@ C64_VIC_M4C     = $D02B ;(R/W)  Sprite 4 Color
 C64_VIC_M5C     = $D02C ;(R/W)  Sprite 5 Color
 C64_VIC_M6C     = $D02D ;(R/W)  Sprite 6 Color
 C64_VIC_M7C     = $D02E ;(R/W)  Sprite 7 Color
+
+        ;; SID registers (all write-only except $D419-$D41C)
+C64_SID_V1FL    = $D400 ;(W)    Voice 1 Frequency, lo byte (first SID register)
+C64_SID_V1FH    = $D401 ;(W)    Voice 1 Frequency, hi byte
+C64_SID_V1PWL   = $D402 ;(W)    Voice 1 Pulse Width, lo byte
+C64_SID_V1PWH   = $D403 ;(W)    Voice 1 Pulse Width, hi nibble
+C64_SID_V1CR    = $D404 ;(W)    Voice 1 Control: |NOISE|PULSE|SAW|TRI|TEST|RING|SYNC|GATE|
+C64_SID_V1AD    = $D405 ;(W)    Voice 1 Attack/Decay: |ATK3-0|DCY3-0|
+C64_SID_V1SR    = $D406 ;(W)    Voice 1 Sustain/Release: |STN3-0|RLS3-0|
+C64_SID_V2FL    = $D407 ;(W)    Voice 2 Frequency, lo byte
+C64_SID_V2FH    = $D408 ;(W)    Voice 2 Frequency, hi byte
+C64_SID_V2PWL   = $D409 ;(W)    Voice 2 Pulse Width, lo byte
+C64_SID_V2PWH   = $D40A ;(W)    Voice 2 Pulse Width, hi nibble
+C64_SID_V2CR    = $D40B ;(W)    Voice 2 Control (as Voice 1)
+C64_SID_V2AD    = $D40C ;(W)    Voice 2 Attack/Decay
+C64_SID_V2SR    = $D40D ;(W)    Voice 2 Sustain/Release
+C64_SID_V3FL    = $D40E ;(W)    Voice 3 Frequency, lo byte
+C64_SID_V3FH    = $D40F ;(W)    Voice 3 Frequency, hi byte
+C64_SID_V3PWL   = $D410 ;(W)    Voice 3 Pulse Width, lo byte
+C64_SID_V3PWH   = $D411 ;(W)    Voice 3 Pulse Width, hi nibble
+C64_SID_V3CR    = $D412 ;(W)    Voice 3 Control (as Voice 1)
+C64_SID_V3AD    = $D413 ;(W)    Voice 3 Attack/Decay
+C64_SID_V3SR    = $D414 ;(W)    Voice 3 Sustain/Release
+C64_SID_FCL     = $D415 ;(W)    Filter Cutoff Frequency, lo (bits 2-0)
+C64_SID_FCH     = $D416 ;(W)    Filter Cutoff Frequency, hi byte
+C64_SID_RESFLT  = $D417 ;(W)    Resonance/Filter: |RES3-0|FILTEX|FILT3|FILT2|FILT1|
+C64_SID_MODVOL  = $D418 ;(W)    Mode/Volume: |3OFF|HP|BP|LP|VOL3-0|
+C64_SID_POTX    = $D419 ;(R)    Paddle X
+C64_SID_POTY    = $D41A ;(R)    Paddle Y
+C64_SID_OSC3    = $D41B ;(R)    Voice 3 Oscillator output (random numbers)
+C64_SID_ENV3    = $D41C ;(R)    Voice 3 Envelope output
+
+        ;; Color RAM (1000 nybbles; the high nybble is unused)
+C64_COLRAM      = $D800 ;(R/W)  Color RAM, start address
+
+        ;; CIA 1 (keyboard, joysticks, paddles; IRQ)
+C64_CIA1_PRA    = $DC00 ;(R/W)  Port A (keyboard columns, joystick 2, paddles)
+C64_CIA1_PRB    = $DC01 ;(R/W)  Port B (keyboard rows, joystick 1)
+C64_CIA1_DDRA   = $DC02 ;(R/W)  Port A data direction (1 = output)
+C64_CIA1_DDRB   = $DC03 ;(R/W)  Port B data direction (1 = output)
+C64_CIA1_TALO   = $DC04 ;(R/W)  Timer A, lo byte (R: counter, W: latch)
+C64_CIA1_TAHI   = $DC05 ;(R/W)  Timer A, hi byte
+C64_CIA1_TBLO   = $DC06 ;(R/W)  Timer B, lo byte
+C64_CIA1_TBHI   = $DC07 ;(R/W)  Timer B, hi byte
+C64_CIA1_TOD10  = $DC08 ;(R/W)  Time of Day, tenths of second (BCD)
+C64_CIA1_TODSEC = $DC09 ;(R/W)  Time of Day, seconds (BCD)
+C64_CIA1_TODMIN = $DC0A ;(R/W)  Time of Day, minutes (BCD)
+C64_CIA1_TODHR  = $DC0B ;(R/W)  Time of Day, hours (BCD, bit 7 = PM)
+C64_CIA1_SDR    = $DC0C ;(R/W)  Serial shift register
+C64_CIA1_ICR    = $DC0D ;(R/W)  Interrupt Control: R = status (reading clears it), W = mask
+C64_CIA1_CRA    = $DC0E ;(R/W)  Control Register A
+C64_CIA1_CRB    = $DC0F ;(R/W)  Control Register B
+
+        ;; CIA 2 (serial bus, RS-232, user port, VIC bank; NMI)
+C64_CIA2_PRA    = $DD00 ;(R/W)  Port A (bits 1-0: VIC bank, inverted; serial bus)
+C64_CIA2_PRB    = $DD01 ;(R/W)  Port B (user port)
+C64_CIA2_DDRA   = $DD02 ;(R/W)  Port A data direction (1 = output)
+C64_CIA2_DDRB   = $DD03 ;(R/W)  Port B data direction (1 = output)
+C64_CIA2_TALO   = $DD04 ;(R/W)  Timer A, lo byte (R: counter, W: latch)
+C64_CIA2_TAHI   = $DD05 ;(R/W)  Timer A, hi byte
+C64_CIA2_TBLO   = $DD06 ;(R/W)  Timer B, lo byte
+C64_CIA2_TBHI   = $DD07 ;(R/W)  Timer B, hi byte
+C64_CIA2_TOD10  = $DD08 ;(R/W)  Time of Day, tenths of second (BCD)
+C64_CIA2_TODSEC = $DD09 ;(R/W)  Time of Day, seconds (BCD)
+C64_CIA2_TODMIN = $DD0A ;(R/W)  Time of Day, minutes (BCD)
+C64_CIA2_TODHR  = $DD0B ;(R/W)  Time of Day, hours (BCD, bit 7 = PM)
+C64_CIA2_SDR    = $DD0C ;(R/W)  Serial shift register
+C64_CIA2_ICR    = $DD0D ;(R/W)  Interrupt Control: R = status (reading clears it), W = mask
+C64_CIA2_CRA    = $DD0E ;(R/W)  Control Register A
+C64_CIA2_CRB    = $DD0F ;(R/W)  Control Register B
 }
+
+        ;; Processor port mask (not an address)
+C64_R6510_RAM     = %11111000   ;AND mask for C64_R6510: LORAM=HIRAM=0, all RAM visible
+
+        ;; CIA bit masks (same layout in CIA 1 and CIA 2)
+        ;; ICR, written: bit 7 = 1 sets the bits given, bit 7 = 0 clears them
+C64_CIA_ICR_SET   = %10000000   ;ICR write: SET/CLEAR flag; ICR read: IR (any int.)
+C64_CIA_ICR_TA    = %00000001   ;Timer A underflow
+C64_CIA_ICR_TB    = %00000010   ;Timer B underflow
+C64_CIA_ICR_ALRM  = %00000100   ;Time of Day alarm
+C64_CIA_ICR_SP    = %00001000   ;Serial shift register full/empty
+C64_CIA_ICR_FLG   = %00010000   ;FLAG pin
+C64_CIA_ICR_ALL   = %01111111   ;Written without SET: disable all sources
+        ;; CRA / CRB
+C64_CIA_CR_START  = %00000001   ;Start timer (0 = stop)
+C64_CIA_CR_ONESHOT= %00001000   ;One-shot mode (0 = continuous)
+C64_CIA_CR_LOAD   = %00010000   ;Force load latch into the counter (strobe)
 
         ;; Kernal error codes
 C64_ERR_TMF     = $01 ; TOO MANY FILES

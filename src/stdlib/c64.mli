@@ -72,4 +72,61 @@ module Hw : sig
     val unblock : unit -> unit
     (** Restores the Kernal NMI vector and re-enables NMIs. *)
   end
+
+  (** Chip registers. [peek off] / [poke off v] access the register at offset
+      [off] from the chip base (0..127); [v] is masked to 8 bits. No checks. *)
+
+  (** VIC-II, base [$D000]. *)
+  module Vic : sig
+    val peek : int -> int
+    val poke : int -> int -> unit
+    val mx : int -> int   (** offset of the X position of sprite [n] (0..7) *)
+    val my : int -> int   (** offset of the Y position of sprite [n] *)
+    val mc : int -> int   (** offset of the color of sprite [n] *)
+    val mx8 : int   val cr1 : int    val raster : int  val lpx : int
+    val lpy : int   val me : int     val cr2 : int     val mye : int
+    val vmcb : int  val irqst : int  val irqen : int   val mdp : int
+    val mmc : int   val mxe : int    val mm : int      val md : int
+    val ec : int    val b0c : int    val b1c : int     val b2c : int
+    val b3c : int   val mm0 : int    val mm1 : int
+  end
+
+  (** SID, base [$D400]. Most registers are write-only. *)
+  module Sid : sig
+    val peek : int -> int
+    val poke : int -> int -> unit
+    val voice : int -> int  (** [voice n]: offset of voice [n] (1..3); add
+                                [fl], [fh], [pwl], [pwh], [cr], [ad], [sr]. *)
+    val fl : int  val fh : int  val pwl : int  val pwh : int
+    val cr : int  val ad : int  val sr : int
+    val fcl : int  val fch : int  val resflt : int  val modvol : int
+    val potx : int  val poty : int  val osc3 : int  val env3 : int
+  end
+
+  (** Register offsets shared by the two CIAs. *)
+  module Cia : sig
+    val pra : int  val prb : int  val ddra : int  val ddrb : int
+    val talo : int  val tahi : int  val tblo : int  val tbhi : int
+    val tod10 : int  val todsec : int  val todmin : int  val todhr : int
+    val sdr : int  val icr : int  val cra : int  val crb : int
+  end
+
+  (** CIA 1, base [$DC00] (keyboard, joysticks, IRQ). Reading [Cia.icr]
+      clears the interrupt flags. *)
+  module Cia1 : sig
+    val peek : int -> int
+    val poke : int -> int -> unit
+  end
+
+  (** CIA 2, base [$DD00] (serial bus, user port, VIC bank, NMI). *)
+  module Cia2 : sig
+    val peek : int -> int
+    val poke : int -> int -> unit
+  end
+
+  (** Color RAM, base [$D800]: offsets 0..999; [peek] returns the low nybble. *)
+  module Color : sig
+    val peek : int -> int
+    val poke : int -> int -> unit
+  end
 end
