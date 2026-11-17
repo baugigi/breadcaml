@@ -39,5 +39,37 @@ module Hw : sig
     (** Like {!poke}, no check at all. *)
 
     val unsafe_poke_at : int -> int -> int -> unit
+
+    val fill : int -> int -> int -> unit
+    (** [fill a len v] writes [v] (8 bit) in [len] bytes from [a] (short
+        form), [0 <= len <= 16383]. Raises [Invalid_argument] like {!poke},
+        and if [len] is negative or the range wraps past [0xFFFF]. *)
+
+    val fill_at : int -> int -> int -> int -> unit
+    (** [fill_at page off len v]: same as {!fill}, page form. *)
+
+    val blit : int -> int -> int -> unit
+    (** [blit src dst len] copies [len] bytes from [src] to [dst] (short
+        forms); source and destination may overlap. Only [dst] is checked
+        (as in {!fill}). *)
+
+    val blit_at : int -> int -> int -> int -> int -> unit
+    (** [blit_at spage soff dpage doff len]: same as {!blit}, page form. *)
+
+    val unsafe_fill : int -> int -> int -> unit
+    val unsafe_fill_at : int -> int -> int -> int -> unit
+    val unsafe_blit : int -> int -> int -> unit
+    val unsafe_blit_at : int -> int -> int -> int -> int -> unit
+  end
+
+  (** Blocking of the non maskable interrupt. *)
+  module Nmi : sig
+    val block : unit -> unit
+    (** Makes NMIs (RESTORE key included) harmless: required before
+        [peek ~ram:true] / [peek_at ~ram:true], which switch all ROMs off for a
+        few cycles. The state is cleared by {!unblock} or at program exit. *)
+
+    val unblock : unit -> unit
+    (** Restores the Kernal NMI vector and re-enables NMIs. *)
   end
 end

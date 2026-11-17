@@ -314,6 +314,7 @@ caml_end
         BNE -
         JSR C64_RESTOR                  ;Restore system vectors.
         JSR C64_IOINIT                  ;Reset I/O devices.
+        LDA $DD0D                       ;Acknowledge a pending CIA2 NMI (see Nmi.block).
         LDA # 0
         LDX # $18
 -       STA $D400,X                     ;Reset SID.

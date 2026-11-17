@@ -12,6 +12,12 @@
 ;; short form: ACCU := sign-extended Int_val(ACCU)
 !zone caml_C64_HW {
 
+caml_hw_CIA2TAL = $DD04
+caml_hw_CIA2TAH = $DD05
+caml_hw_CIA2ICR = $DD0D
+caml_hw_CIA2CRA = $DD0E
+caml_hw_NMI_DEF = $FE47                 ;default Kernal NMI vector
+
 !macro caml_hw_addr_short {
         LDA ACCU + 1
         CMP # $80
@@ -47,6 +53,17 @@
         DEY
         LDA (SP),Y
         ROR
+        LDY # 0
+}
+!macro caml_hw_int16 .n {               ;TMP,TMP+1 := Int_val(SP[.n])  {Y = 0}
+        LDY # .n * 2 + 1
+        LDA (SP),Y
+        LSR
+        STA TMP + 1
+        DEY
+        LDA (SP),Y
+        ROR
+        STA TMP
         LDY # 0
 }
 !macro caml_hw_ret_int {                ;ACCU := Val_int(A)
@@ -153,4 +170,218 @@ caml_nonstd_hw_poke_at
 @err    +caml_raise Invalid_argument, "C64.Hw.Mem.poke_at"
 }
 
+;; ---- block operations --------------------------------------------------------
+;; fill_at page off len v / blit_at spage soff dpage doff len
+;; len is 0..16383. The checked versions raise Invalid_argument if the (first)
+;; destination address is below caml_stack_end, if len is negative, or if the
+;; destination range wraps around $FFFF. A range ending exactly at $FFFF is ok.
+;; blit_at works also if source and destination overlap.
+
+!ifdef caml_AUX__caml_hw_fill {
+caml_hw_fill
+        ;; ACCU = destination, TMP,TMP+1 = count, A = value
+        LDX TMP + 1                     ;X := number of full pages
+        BEQ @rem
+@page   LDY # 0
+@byte   STA (ACCU),Y
+        INY
+        BNE @byte
+        INC ACCU + 1
+        DEX
+        BNE @page
+@rem    LDY TMP                         ;Y := remaining bytes
+        BEQ @done
+@rbyte  DEY
+        STA (ACCU),Y
+        BNE @rbyte
+@done   LDY # 0
+        +caml_hw_ret_unit
+        RTS
 }
+
+!ifdef caml_AUX__caml_hw_blit {
+caml_hw_blit
+        ;; ACCU = source, TMP+4,TMP+5 = destination, TMP,TMP+1 = count
+        LDA TMP + 4
+        CMP ACCU
+        LDA TMP + 5
+        SBC ACCU + 1
+        BCS @bwd                        ;destination >= source: copy backwards
+        LDX TMP + 1                     ;forward copy: X := full pages
+        BEQ @frem
+@fpage  LDY # 0
+@fbyte  LDA (ACCU),Y
+        STA (TMP + 4),Y
+        INY
+        BNE @fbyte
+        INC ACCU + 1
+        INC TMP + 5
+        DEX
+        BNE @fpage
+@frem   LDY # 0
+        CPY TMP
+        BEQ @done
+@frbyte LDA (ACCU),Y
+        STA (TMP + 4),Y
+        INY
+        CPY TMP
+        BNE @frbyte
+@done   LDY # 0
+        +caml_hw_ret_unit
+        RTS
+@bwd    CLC                             ;backward copy: point both addresses
+        LDA ACCU + 1                    ; to the end of the last full page,
+        ADC TMP + 1                     ; copy the remainder first, then the
+        STA ACCU + 1                    ; full pages from the top.
+        CLC
+        LDA TMP + 5
+        ADC TMP + 1
+        STA TMP + 5
+        LDY TMP
+        BEQ @bpages
+        DEY
+@brbyte LDA (ACCU),Y
+        STA (TMP + 4),Y
+        DEY
+        CPY # $FF
+        BNE @brbyte
+@bpages LDX TMP + 1
+        BEQ @bdone
+@bpage  DEC ACCU + 1
+        DEC TMP + 5
+        LDY # $FF
+@bbyte  LDA (ACCU),Y
+        STA (TMP + 4),Y
+        DEY
+        CPY # $FF
+        BNE @bbyte
+        DEX
+        BNE @bpage
+@bdone  JMP @done
+}
+
+!ifdef caml_PRIM__caml_nonstd_hw_unsafe_fill_at {
+caml_nonstd_hw_unsafe_fill_at
+        +caml_hw_addr_page
+        +caml_hw_int16 1
+        +caml_hw_value 2
+        JMP caml_hw_fill
+}
+
+!ifdef caml_PRIM__caml_nonstd_hw_fill_at {
+caml_nonstd_hw_fill_at
+        +caml_hw_addr_page
+        +caml_hw_int16 1
+        LDA ACCU
+        CMP # <caml_stack_end
+        LDA ACCU + 1
+        SBC # >caml_stack_end
+        BCC @err                        ;destination below caml_stack_end
+        LDA TMP + 1
+        CMP # $40
+        BCS @err                        ;negative length
+        LDA ACCU
+        CLC
+        ADC TMP
+        STA TMP + 2
+        LDA ACCU + 1
+        ADC TMP + 1
+        BCC @ok
+        ORA TMP + 2
+        BNE @err                        ;wraps around $FFFF
+@ok     +caml_hw_value 2
+        JMP caml_hw_fill
+@err    +caml_raise Invalid_argument, "C64.Hw.Mem.fill_at"
+}
+
+!ifdef caml_PRIM__caml_nonstd_hw_unsafe_blit_at {
+caml_nonstd_hw_unsafe_blit_at
+        +caml_hw_addr_page
+        +caml_hw_value 1
+        STA TMP + 5
+        +caml_hw_value 2
+        STA TMP + 4
+        +caml_hw_int16 3
+        JMP caml_hw_blit
+}
+
+!ifdef caml_PRIM__caml_nonstd_hw_blit_at {
+caml_nonstd_hw_blit_at
+        +caml_hw_addr_page
+        +caml_hw_value 1
+        STA TMP + 5
+        +caml_hw_value 2
+        STA TMP + 4
+        +caml_hw_int16 3
+        LDA TMP + 4
+        CMP # <caml_stack_end
+        LDA TMP + 5
+        SBC # >caml_stack_end
+        BCC @err                        ;destination below caml_stack_end
+        LDA TMP + 1
+        CMP # $40
+        BCS @err                        ;negative length
+        LDA TMP + 4
+        CLC
+        ADC TMP
+        STA TMP + 2
+        LDA TMP + 5
+        ADC TMP + 1
+        BCC @ok
+        ORA TMP + 2
+        BNE @err                        ;wraps around $FFFF
+@ok     JMP caml_hw_blit
+@err    +caml_raise Invalid_argument, "C64.Hw.Mem.blit_at"
+}
+
+;; ---- NMI blocking ------------------------------------------------------------
+;; Nmi.block: the Kernal NMI vector is pointed to an RTI and a CIA2 timer NMI is
+;; forced. The RTI does not read $DD0D (no ACK): CIA2 keeps /NMI low, no further
+;; edge can occur (RESTORE key included) until Nmi.unblock (or program exit).
+;; Needed by peek_ram/peek_at_ram, which run with all ROMs switched off.
+
+!ifdef caml_PRIM__caml_nonstd_hw_nmi_block {
+caml_nonstd_hw_nmi_block
+        PHP
+        SEI
+        LDA # <@rti
+        STA C64_NMINV
+        LDA # >@rti
+        STA C64_NMINV + 1
+        LDA # $7F
+        STA caml_hw_CIA2ICR             ;disable all CIA2 interrupt sources
+        LDA caml_hw_CIA2ICR             ; and acknowledge pending ones
+        LDA # 1
+        STA caml_hw_CIA2TAL
+        STY caml_hw_CIA2TAH             ;timer A latch := 1
+        LDA # $81
+        STA caml_hw_CIA2ICR             ;enable NMI on timer A underflow
+        LDA # %00011001
+        STA caml_hw_CIA2CRA             ;force load, one shot, start
+        NOP
+        NOP
+        NOP
+        NOP                             ;the NMI occurs here (and is ignored)
+        PLP
+        +caml_hw_ret_unit
+        RTS
+@rti    RTI
+}
+
+!ifdef caml_PRIM__caml_nonstd_hw_nmi_unblock {
+caml_nonstd_hw_nmi_unblock
+        PHP
+        SEI
+        LDA # $7F
+        STA caml_hw_CIA2ICR             ;disable all CIA2 interrupt sources
+        LDA caml_hw_CIA2ICR             ; and acknowledge pending ones
+        LDA # <caml_hw_NMI_DEF
+        STA C64_NMINV
+        LDA # >caml_hw_NMI_DEF
+        STA C64_NMINV + 1
+        PLP
+        +caml_hw_ret_unit
+        RTS
+}
+
+}       ;; !zone caml_C64_HW
