@@ -17,12 +17,12 @@ SHELL := /bin/bash
 TARGET := snake.prg
 SOURCE := iOtools snake
 EXTLIB := iOtools
-COMP = bcamlopt
-#COMP = bcamlc
+COMP = bcamlopt #bcamlc
 FLAGS = -verbose -db snake.db
+ASMFLAGS = #-r snake.rep -Dcaml_globals_on_heap=1
 
 $(TARGET): $(EXTLIB:=.asm) $(EXTLIB:=.c) $(SOURCE:=.cmo)
-	$(COMP) $(FLAGS) -o $@ $^ -- -r snake.rep -Dcaml_globals_on_heap=1
+	$(COMP) $(FLAGS) -o $@ $^ -- $(ASMFLAGS)
 
 %.cmo: %.ml $(SOURCE:=.cmi)
 	$(COMP) $(FLAGS) -c $<
@@ -32,7 +32,7 @@ $(TARGET): $(EXTLIB:=.asm) $(EXTLIB:=.c) $(SOURCE:=.cmo)
 
 .INTERMEDIATE: $(SOURCE:=.mli)
 %.mli: %.ml
-	$(COMP) $(FLAGS) -c -i $< > $@
+	$(COMP) -c -i $< > $@
 
 .INTERMEDIATE: $(SOURCE:=.c)
 %.c: %.asm
@@ -42,6 +42,7 @@ $(TARGET): $(EXTLIB:=.asm) $(EXTLIB:=.c) $(SOURCE:=.cmo)
 clean:
 	rm -f *.{cm?,o,prg,db,rep}
 
+.PHONY: .merlin
 .merlin:
 	echo -ne "\
 	STDLIB $$($(COMP) -where)\n\

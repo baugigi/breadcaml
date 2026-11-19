@@ -23,29 +23,30 @@ type game_params = {
   delay_step    : int; (** No. of cycles to reduce for each point gained *)
   food_at_wall  : int; (** Score beyond which food can be next to a wall *)
   bricks_score  : int; (** Score beyond which bricks can appear *)
-  bricks_period : int  (** Points ( > 0 ) between two brick apparitions *) 
+  bricks_period : int; (** Points ( > 0 ) between two brick apparitions *) 
   }
 
 let params = {
   snake_len     =  10;
   delay_max     = 250;
-  delay_step    =   4;
-  food_at_wall  =  50;
-  bricks_score  =  20;
-  bricks_period =   3
+  delay_step    =   5;
+  food_at_wall  =  30;
+  bricks_score  =  10;
+  bricks_period =   3;
   }
 
 (** Game status *)
 type status = {
   head : snake_end; (** Snake's head data *)
   tail : snake_end; (** Snake's tail data *)
-  score : int       (** Gamer's current score *)
+  score : int;      (** Gamer's current score *)
   }
 
 (** Snake's extremities *)
 and snake_end = {
-  pos : coord;      (** Position *)
-  dir : direction   (** Direction the end is facing *)
+  x : int;         (** x position *) 
+  y : int;         (** y position *) 
+  dir : direction; (** Direction the end is facing *)
   }
 
 (** Directions *)
@@ -58,12 +59,12 @@ let opposite_dir = function
   | Left  -> Right
   | Right -> Left
 
-(** [dist pos0 pos1] returns the "Manhattan distance" between two positions *)
-let dist (x, y) (x', y') = abs (x - x') + abs (y - y')
+(** [dist x y x' y'] returns the "Manhattan distance" between two cells *)
+let dist x y x' y' = abs (x - x') + abs (y - y')
 
-(** [next_to coord dir] returns the coordinates of the location next to [coord]
+(** [next_to x y dir] returns the coordinates of the location next to ([x],[y])
     in the direction [dir] *)
-let next_to (x, y) = function
+let next_to x y = function
   | Up    -> (x, succ y)
   | Down  -> (x, pred y)
   | Left  -> (pred x, y)
@@ -102,8 +103,8 @@ type cell =
   | Snake_head
   | Snake_tail of direction * direction
 
-(** [get_cell pos] returns the cell at position [pos] *) 
-let get_cell pos = match get_char pos with
+(** [get_cell x y] returns the kind of the cell at position ([x],[y]) *) 
+let get_cell x y = match get_char x y with
   | 0x20 -> Space
   | 0x5a -> Food
   | 0x51 -> Snake_head
@@ -115,23 +116,24 @@ let get_cell pos = match get_char pos with
   | 0x43 -> Snake_tail(Left, Right)
   | _ -> Wall
 
-(** [near_wall cell] is [true] if [cell] shares a border or a corner with
-    a wall *)
-let near_wall (x, y) =
-  let (px, sx, py, sy) = (pred x, succ x, pred y, succ y) in
+(** [near_wall x y] is [true] if the cell at ([x],[y]) shares a border or a
+    corner with a wall *)
+let near_wall x y =
+  let px = pred x and sx = succ x and py = pred y and sy = succ y in
   let rec f_aux = function
-    | cell :: cells -> get_cell cell = Wall || f_aux cells
+    | (x',y') :: cells -> get_cell x' y' = Wall || f_aux cells
     | [] -> false in
   f_aux [(px, sy);   (x, sy);   (sx, sy);
-         (px,  y); (*(x,  y);*) (sx,  y);
-         (px, py);   (x, py);   (sx, py)]
+         (px,  y);              (sx,  y);
+         (px, py);   (x, py);   (sx, py);]
 
-(** [rnd min max] returns a random integer from [min] to [max];
-    [min] should be >= 0 (not checked) *)
+(** [rnd min max] returns a random integer from [min] to [max] (0 <= [min] <=
+    [max], not checked) *)
 let rnd min max = min + Random.int (succ max - min)
 
-(** [put_cell pos cell] draws a [cell] at position [pos] *)
-let put_cell pos cell = put_char pos (match cell with
+(** [put_cell x y kind] set the [kind] of the cell at position ([x],[y]) *)
+let put_cell x y kind =
+  let k = match kind with
     | Space      -> 0x20
     | Wall       -> 0x66
     | Food       -> 0x5a
@@ -142,42 +144,40 @@ let put_cell pos cell = put_char pos (match cell with
     | Snake_tail(Down, Left)  | Snake_tail(Left, Down)  -> 0x49
     | Snake_tail(Down, Right) | Snake_tail(Right, Down) -> 0x55 
     | Snake_tail(Left, Right) | Snake_tail(Right, Left) -> 0x43
-    | _ -> failwith "put_cell")
+    | _ -> failwith "put_cell" in
+  put_char x y k
 
 (** [delay n] does an idle loop [n] times to slow down the snake's run *)
 let rec delay n = if n > 0 then delay (pred n)
-
-(** [print_center y str] prints [str] centered on the line of coordinate [y] *)
-let print_center y str = print_at ((40 - String.length str) / 2, y) str
 
 (** [print_score st] gets the player's score from [st] and print it *)
 let print_score st =
   let score = string_of_int st.score in
   let score = String.(sub score 1 (pred (length score))) in
-  print_at (2, 24) ("score:" ^ score)
+  print_at 2 24 ("score:" ^ score)
 
 (*****)
 
-(** [move_head new_dir st] moves the snake's head from [st.head.pos] one step
-    in the [new_dir] direction, adds a piece of body next to the head and
-    returns the new value for the [st.head] field *)
+(** [move_head new_dir st] moves the snake's head one step in the [new_dir]
+    direction, adds a piece of body next to the head and returns the new values
+    for [st.head] *)
 let move_head new_dir st =
-  let current_pos = st.head.pos in
-  let new_pos = next_to current_pos new_dir in
-  put_cell new_pos Snake_head;
-  put_cell current_pos (Snake_tail(new_dir, opposite_dir st.head.dir));
-  { pos = new_pos; dir = new_dir }
+  let x = st.head.x and y = st.head.y in
+  put_cell x y (Snake_tail(new_dir, opposite_dir st.head.dir));
+  let (x, y) = next_to x y new_dir in
+  put_cell x y Snake_head;
+  { x; y; dir = new_dir }
 
-(** [move_tail st] deletes the snake's tail end from [st.tail.pos] and returns
-    the new value for the [st.tail] field *)
+(** [move_tail st] deletes the snake's tail end and returns the new value for
+    the [st.tail] field *)
 let move_tail st =
-  let tail = st.tail in
-  let pos = tail.pos in
-  match get_cell pos with
+  let x = st.tail.x and y = st.tail.y in
+  match get_cell x y with
   | Snake_tail(a, b) ->
-    let towards_body = if tail.dir = a then b else a in
-    put_cell pos Space;
-    { pos = next_to pos towards_body; dir = opposite_dir towards_body }
+    let towards_body = if st.tail.dir = a then b else a in
+    put_cell x y Space;
+    let (x, y) = next_to x y towards_body in
+    { x; y; dir = opposite_dir towards_body }
   | _ -> failwith "move_tail"
 
 (** [feed_snake st] put a piece of food in a random empty place; if
@@ -186,9 +186,10 @@ let move_tail st =
     you should have filled all the available holes with your long snake ;) *)
 let rec feed_snake st =
   let ok_walls = st.score > params.food_at_wall in
-  let pos = if ok_walls then (rnd 1 38, rnd 1 23) else (rnd 2 37, rnd 2 22) in
-  match get_cell pos with
-  | Space when ok_walls || not (near_wall pos) -> put_cell pos Food
+  let x = if ok_walls then rnd 1 38 else rnd 2 37
+  and y = if ok_walls then rnd 1 23 else rnd 2 22 in
+  match get_cell x y with
+  | Space when ok_walls || not (near_wall x y) -> put_cell x y Food
   | _ -> feed_snake st
 
 (** [put_brick st] chooses a random place and puts a wall brick in it when
@@ -199,10 +200,11 @@ let put_brick =
   let cnt = ref params.bricks_period in fun st ->
     if st.score > params.bricks_score then
       if !cnt > 0 then decr cnt
-      else (let pos = (rnd 2 37, rnd 2 22) in
-            if get_cell pos = Space && dist st.head.pos pos > 5
-               && not (near_wall pos) then
-              (put_cell pos Wall;
+      else (let x = rnd 2 37 and y = rnd 2 22 in
+            if get_cell x y = Space
+               && dist x y st.head.x st.head.y > 5
+               && not (near_wall x y) then
+              (put_cell x y Wall;
                cnt := params.bricks_period))
            
 (** [get_new_dir current_dir] returns the new snake direction entered by the
@@ -219,23 +221,24 @@ let rec get_new_dir ?(pause=false) cur_dir = match action_of_key(get_key()) with
 (** [init ()] performs the game initialization and returns the first game
     status *)
 let init () =
-  let (x, y) = ((40 - params.snake_len) / 2, 12) in
-  let st = { head = { pos = (x, y); dir = Left };
-             tail = { pos = (x + params.snake_len, y); dir = Right };
-             score = 0 } in
-  clear_screen ();
-  set_uppercase ();
+  let x = (40 - params.snake_len) / 2 and y = 12 in
+  let st = {
+      head = { x; y; dir = Left };
+      tail = { x = x + params.snake_len; y; dir = Right };
+      score = 0
+    } in
+  print_string "{CLR}{UCASE}{SWOFF}";
   for x = 0 to 39 do
     let y = 24 * x / 39 in
-    put_cell (x, 0) Wall;       (* top wall *)
-    put_cell (39 - x, 24) Wall; (* bottom wall *)
-    put_cell (0, y) Wall;       (* left wall *)
-    put_cell (39, 24 - y) Wall  (* right wall *)
+    put_cell x 0 Wall;         (* top wall *)
+    put_cell (39 - x) 24 Wall; (* bottom wall *)
+    put_cell 0 y Wall;         (* left wall *)
+    put_cell 39 (24 - y) Wall  (* right wall *)
   done;
   print_score st;
-  put_cell (x, y) Snake_head;
+  put_cell x y Snake_head;
   for i = 1 to params.snake_len do
-    put_cell (x + i, y) (Snake_tail (Left, Right))
+    put_cell (x + i) y (Snake_tail (Left, Right))
   done;
   Random.self_init ();
   feed_snake st;
@@ -245,7 +248,8 @@ let init () =
 let rec game_loop st =
   delay (params.delay_max - st.score * params.delay_step);
   let dir = get_new_dir st.head.dir in
-  match get_cell (next_to st.head.pos dir) with
+  let (x, y) = next_to st.head.x st.head.y dir in
+  match get_cell x y with
   | Space -> game_loop { st with head = move_head dir st; tail = move_tail st }
   | Food ->
     let st = { st with head = move_head dir st; score = succ st.score } in
@@ -260,8 +264,10 @@ let rec game_loop st =
       | _ -> get_answer () in
     print_center 12 " *** you lost! *** ";
     print_center 11 " play again (y/n)? ";
-    if get_answer () then game_loop (init ())
+    if get_answer () then game_loop (init ()) else st.score
 
 ;;
 
-game_loop (init ())
+let score = game_loop (init ()) in
+    print_string "{CLR}{LCASE}{SWON}Your score:";
+    print_int score

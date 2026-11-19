@@ -17,7 +17,6 @@
 ;; ACME command-line arguments:
 ;;   -Dcaml_SHOWMEM=1                Show program memory usage
 ;;   -Dcaml_INTERP=1                 Bytecode interpretation
-;;   -Dcaml_INTERP=1 -Dcaml_DEBUG=1  Debug bytecode interpretation
 ;; -----------------------------------------------------------------------------
 
 !cpu 6502
@@ -300,12 +299,8 @@ caml_init
                 INC+1 @fetch + 1        ; SMC: INC PC
                 BNE +
                 INC+1 @fetch + 2        ; SMC: INC PC+1
-+   !ifndef caml_DEBUG {
                 ASL                     ; C:A = 2 * opcode
                 STA+1 @exec + 1         ; SMC: overwrite JMP() argument
-    } else {
-                JSR caml_debug
-    }
 @exec           JMP (caml_interp_jmptbl); SMC: JMP(A + >jmptbl)
   }
 }
@@ -327,8 +322,8 @@ caml_end
         BNE -
         JSR C64_RESTOR                  ;Restore system vectors.
         JSR C64_IOINIT                  ;Reset I/O devices.
-        LDA C64_CIA2_ICR                ;Acknowledge a pending CIA2 NMI (see Nmi.block).
-        LDA # 0
+        LDA C64_CIA2_ICR                ;Acknowledge a pending CIA2 NMI
+        LDA # 0                         ; (see Nmi.block).
         LDX # $18
 -       STA C64_SID_V1FL,X              ;Reset SID.
         DEX
@@ -516,10 +511,10 @@ caml_syserr
 ;; ----------------------------------------------------------------------------
 ;;      UNCAUGHT EXCEPTIONS
 ;; ----------------------------------------------------------------------------
-;; Arguments: only integer values ​​and blocks with String_tag or Double_tag tags
-;; are printed. Other blocks are printed as "_", except for the ONE argument to
-;; Match_failure, Assert_failure, or Undef_rec_module, which has type (string *
-;; int * int) and is printed in full.
+;; Arguments: only integer values ​​and blocks with String_tag are printed. Other
+;; blocks are printed as "_", except for the ONE argument to Match_failure,
+;; Assert_failure, or Undef_rec_module, which has type (string * int * int) and
+;; is printed in full.
 ;;
 ;; Exception with no arguments:
 ;;   { Object_tag; 2 | { String_tag; n | ASCII_chars } | oid } = EXN_BLOCK
@@ -532,10 +527,10 @@ caml_uncaught_exn
         @fld1   = TMP + 2               ;main routine
         @sz     = TMP + 4               ;main routine
         @arg    = TMP + 2               ;@pr_arg
-        @out    = TMP + 4               ;@pr_arg, @pr_str, @pr_fl
+        @out    = TMP + 4               ;@pr_arg
         @count  = TMP + 6               ;@pr_arg
         LDX # 0
--       LDA @uncaught,X                 ;Print "\rException: "
+-       LDA @uncght,X                   ;Print "\rException: "
         BEQ +
         JSR C64_CHROUT
         INX
@@ -545,10 +540,12 @@ caml_uncaught_exn
         JSR @get_tag_size               ;A:=tag(ACCU); X:=size(ACCU)
         STX @sz    
         CMP # Object_tag                ;if tag(ACCU) = Object_tag
-        BNE @args                       ;then /* no args */
-        JSR @get_ACCU_field0
+        BNE @args                       ;then
+        JSR @get_ACCU_field0            ;  /* no args */
         JSR @pr_exn                     ;  print Field(ACCU,0) /* exn_name */
         JMP caml_end                    ;  exit
+@uncght !text 13, "Exception: ", 0
+
 @args   JSR @get_ACCU_field0            ;else /* one or more args */
         LDY # 0
         JSR @get_field
@@ -571,11 +568,11 @@ caml_uncaught_exn
         JSR @get_ACCU_field0            ;    && is_special_exn(Field(ACCU,0))
         CMP # 1 + >caml_std_exn[caml_exn_no - 1]
         BCS @norm
-@spec   LDA @fld1 + 1                   ;  then
+@spec   LDA @fld1 + 1                   ;  then /* special exn */
         LDX @fld1                       ;    A:X := Field(ACCU,1)
         LDY # 3                         ;    Y := 3
         BNE @pr_arg
-@norm   LDA ACCU                        ;  else
+@norm   LDA ACCU                        ;  else /* normal exn */
         CLC                             ;    A:X := ACCU + 2 = &Field(ACCU,1)
         ADC # 2                         ;    start from field 1
         TAX
@@ -583,50 +580,65 @@ caml_uncaught_exn
         ADC # 0
         LDY @sz    
         DEY                             ;    Y := size(ACCU) - 1
-@pr_arg STA @arg + 1
+
+@pr_arg STA @arg + 1                    ;Print all args:
         STX @arg
         STY @count
-        LDA # '('
+        LDA # '('                       ;Print left paren
         JSR C64_CHROUT
--       LDY # 0
+@loop   LDY # 0                         ;Loop on all args:
         LDA (@arg),Y
         TAX
         INY
         BIT caml_is_block
         BEQ @block
         LDA (@arg),Y
-        JSR @pr_int
-        JMP @next
-@block  LDA (@arg),Y
+@pr_int CMP # $80                       ; Arg is int, print it
+        ROR
+        PHA
+        TXA
+        ROR
+        TAY
+        PLA
+!ifdef caml_basic_rom_overlap {JSR caml_BASROM_on}
+        JSR C64_GIVAYF
+        JSR C64_FOUT
+        JSR C64_STROUT
+!ifdef caml_basic_rom_overlap {JSR caml_BASROM_off}
+        JMP @next                       ;  then process next arg.
+@block  LDA (@arg),Y                    ; Arg is a block, check if string
         STA @out + 1
         STX @out
         JSR @get_tag_size
         CMP # String_tag
-        BNE +
-        LDA # $22                       ;quote
+        BNE @under
+        LDA # $22                       ; String: print quote char;
         JSR C64_CHROUT
-        JSR @pr_str
-        LDA # $22                       ;quote
+        LDY # 0
+@pr_str LDA (@out),Y                    ;  Print the PETSCII string @out until a
+        BEQ +                           ;  0 is encountered. Valid strings can
+        JSR C64_CHROUT                  ;  contain '\000' and non-printable
+        INY                             ;  characters, which should be escaped;
+        BNE @pr_str                     ;  here, however, we keep things short;
+        INC @out + 1
+        BNE @pr_str
++       LDA # $22                       ;  Print quote char;
         JSR C64_CHROUT
-        JMP @next
-+       CMP # Double_tag
-        BNE +
-        JSR @pr_fl
-        JMP @next
-+       LDA # $A4                       ;underscore
-        JSR C64_CHROUT
+        JMP @next                       ;  Process next arg.
+@under  LDA # $A4                       ; Not string: print underscore
+        JSR C64_CHROUT                  ;  then process next arg.
 @next   DEC @count
         BEQ @endl
-        LDA # ','
+        LDA # ','                       ; Print comma
         JSR C64_CHROUT
         INC @arg
         INC @arg
-        BNE -
+        BNE @loop
         INC @arg + 1
-        BNE -
-@endl   LDA # ')'
+        BNE @loop                       ;BNE=JMP, continue loop
+@endl   LDA # ')'                       ;Print right paren
         JSR C64_CHROUT
-        JMP caml_end
+        JMP caml_end                    ;Exit
 
         ;; A := tag(A:X), X := size(A:X), Y := $FE
 @get_tag_size
@@ -634,10 +646,10 @@ caml_uncaught_exn
         DEC @tmp + 1
         STX @tmp
         LDY # -1
-        LDA (@tmp), Y
+        LDA (@tmp),Y
         TAX
         DEY
-        LDA (@tmp), Y
+        LDA (@tmp),Y
         RTS
 
         ;; A:X := Field(ACCU,0), Y := 1
@@ -655,199 +667,29 @@ caml_uncaught_exn
         LDA (@tmp),Y
         RTS
 
-        ;; convert to PETSCII and print the exn name in A:X
+        ;; Convert to PETSCII and print the exn name in A:X
 @pr_exn STX @tmp
         STA @tmp + 1
         LDY # 0
--       LDA (@tmp),Y                ;A := @tmp[Y]
-        BEQ +++                     ;Exit if null
-        CMP # $5F                   ;Underscore conversion.
+-       LDA (@tmp),Y                    ;Loop on all chars, A := @tmp[Y]
+        BEQ +++                         ;Exit if null.
+        CMP # $5F                       ;Underscore conversion.
         BNE +
         LDA # $A4
         BNE ++
-+       CMP # $61                   ;Lowercase letters conversion.
++       CMP # $61                       ;Lowercase letters conversion.
         BCC +
         SBC # $20
         BNE ++
-+       CMP # $41                   ;Uppercase letters conversion.
++       CMP # $41                       ;Uppercase letters conversion.
         BCC ++
         EOR # $80
-++      JSR C64_CHROUT              ;Print converted character.
+++      JSR C64_CHROUT                  ;Print converted character.
         INY
         BNE -
         INC @tmp + 1
-        BNE -                       ;Continue loop until A=0.
+        BNE -                           ;Continue loop until A=0.
 +++     RTS
-
-        ;; Print the integer in A:X
-@pr_int CMP # $80
-        ROR
-        PHA
-        TXA
-        ROR
-        TAY
-        PLA
-!ifdef caml_basic_rom_overlap {JSR caml_BASROM_on}
-        JSR C64_GIVAYF
-        JSR C64_FOUT
-        JSR C64_STROUT
-!ifdef caml_basic_rom_overlap {JSR caml_BASROM_off}
-        RTS
-
-        ;; Print the PETSCII string in @out, until 0 encountered (!)
-        ;; TODO: print all string characters, escaping non-printable ones.
-@pr_str LDY # 0
--       LDA (@out),Y                ;A := @out[Y]
-        BEQ +                       ;Exit if null
-        JSR C64_CHROUT              ;Print @out[Y]
-        INY
-        BNE -
-        INC @out + 1
-        BNE -
-+       RTS
-
-        ;; Print the float in @out
-@pr_fl
-!ifdef caml_basic_rom_overlap {
-        LDY # 4                     ;MOVFM reads its operand with the BASIC ROM
--       LDA (@out),Y                ; on, but the float may be in the RAM under
-        STA TMP + 8,Y               ; it: copy it to the zero page first.
-        DEY
-        BPL -
-        LDA # TMP + 8
-        LDY # 0
-        JSR caml_BASROM_on
-} else {
-        LDA @out
-        LDY @out + 1
-}
-        JSR C64_MOVFM
-        JSR C64_FOUT
-        JSR C64_STROUT
-!ifdef caml_basic_rom_overlap {JSR caml_BASROM_off}
-        RTS
-        
-@uncaught
-        !text 13, "Exception: ", 0
-
-
-;; -----------------------------------------------------------------------------
-;;      TRACING DEBUGGER
-;;      | PC | Opcode | ACCU | SP[0] ... SP[5] | ENV | XARGS |
-;; -----------------------------------------------------------------------------
-
-!ifdef  caml_INTERP { !ifdef caml_DEBUG {
-caml_debug
-        @RevOn  = $12
-        @RevOff = $92
-        @Cyan   = $9F
-        @LBlue  = $9A
-        @CR     = $0D
-        PHP                             ;       [S
-        PHA                             ;       [opc; S
-        ;; print a header every 22 lines
-        DEC @count
-        BPL +
-        LDA # @CR
-        JSR C64_CHROUT
-        LDX # @hdr - @end               ;negative number
--       LDA @end - $100,X
-        JSR C64_CHROUT
-        INX
-        BNE -
-        LDA #21
-        STA @count
-+       ;; print PC
-        LDA PC
-        SEC
-        SBC # 1
-        PHA                             ;       [PC; opc; S
-        LDA PC + 1
-        SBC # 0
-        JSR @pr_hex
-        PLA                             ;A=PC   [opc; S
-        JSR @pr_hex
-        ;; print opcode
-        LDA # @RevOn
-        JSR C64_CHROUT
-        PLA                             ;A=opc  [S
-        PHA                             ;       [opc; S
-        JSR @pr_hex
-        ;; print ACCU
-        LDA # @Cyan
-        JSR C64_CHROUT
-        LDA ACCU + 1
-        JSR @pr_hex
-        LDA ACCU
-        JSR @pr_hex
-        LDA # @RevOff
-        JSR C64_CHROUT
-        ;; print top 6 stack elements
-        LDY # 0
--       TYA
-        PHA                             ;       [Y/4; opc; S
-        LSR
-        LSR
-        LDA # @LBlue
-        JSR C64_CHROUT
-        BCS +                           ;switch Cyan/LBlue
-        LDA # @Cyan
-        JSR C64_CHROUT
-+       PLA                             ;A=Y/4  [opc; S
-        TAY
-        LDA (SP),Y
-        TAX
-        INY
-        LDA (SP),Y
-        JSR @pr_hex                     ;print STACK[i]
-        TXA
-        JSR @pr_hex
-        INY
-        CPY # 12
-        BNE -
-        ;; print ENV
-        LDA # @RevOn
-        JSR C64_CHROUT
-        LDA ENV + 1
-        JSR @pr_hex
-        LDA ENV
-        JSR @pr_hex
-        ;; print XARGS
-        LDA # @RevOff
-        JSR C64_CHROUT
-        LDA XARGS
-        LSR
-        JSR @pr_hex
-        ;; continue fetch-exec
-        PLA                             ;A=opc  [S
-        PLP                             ;S      [
-        ASL
-        LDY # 0
-        RTS
-@count  !byte 0
-@pr_hex PHA                             ;       [A
-        LSR
-        LSR
-        LSR
-        LSR
-        LDX # 2
-        BNE +
--       PLA                             ;A      [
-        AND # $0F
-+       CLC
-        ADC # '0'
-        CMP # '9' + 1
-        BCC +
-        ADC # 6
-+       JSR C64_CHROUT
-        DEX
-        BNE -
-        RTS
-@hdr    !text @RevOn, "addr", @RevOff, "oc",   @Cyan,  "accu", @RevOn, "stk0"
-        !text @LBlue, "   1", @Cyan,   "   2", @LBlue, "   3", @Cyan,  "   4"
-        !text @LBlue, "   5", @RevOff, " env", @RevOn, "xa",   @RevOff
-@end
-}} ;ifdef caml_INTERP & caml_DEBUG
 
 caml_loader_end
 } ;zone caml_LOADER

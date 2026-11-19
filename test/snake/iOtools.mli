@@ -11,11 +11,14 @@
    2, come specificato nel file  LICENZA-it nella cartella principale del
    progetto.
    —————————————————————————————————————————————————————————————————————— *)
-
-type coord = int * int
-val get_key : unit -> char
-val get_char : coord -> int 
-val put_char : coord -> int -> unit
-val print_at : coord -> string -> unit
-val clear_screen : unit -> unit
-val set_uppercase : unit -> unit
+external get_key : unit -> char = "IOtools_get_key"
+external unsafe_get_char : int -> int = "IOtools_videoram_read"
+external unsafe_put_char : int -> int -> unit = "IOtools_videoram_write"
+external unsafe_set_cursor_position : int -> unit
+  = "IOtools_set_cursor_position"
+val range : int -> int -> int -> bool
+val get_char : int -> int -> int
+val put_char : int -> int -> int -> unit
+val set_cursor_position : int -> int -> unit
+val print_at : int -> int -> string -> unit
+val print_center : int -> string -> unit
