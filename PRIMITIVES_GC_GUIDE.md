@@ -1,7 +1,8 @@
 # Writing BreadCaml primitives: heap allocation and GC safety
 
 **Audience:** authors of custom primitives (6502 assembly, ACME). Applies to
-both back-ends (native code and bytecode interpreter).
+both back-ends (native code and bytecode interpreter). Sections 1-7 are about
+heap allocation and GC safety; section 8 is about calling BASIC ROM routines.
 
 BreadCaml uses a **stop-and-copy (Cheney) garbage collector**[^1]. Any call to
 `caml_alloc` may trigger a collection, and a collection **moves every live
@@ -375,6 +376,159 @@ caml_wrap
 - [ ] Initialise the new block's fields before any further allocation.
 - [ ] Put the new block in `ACCU` (`caml_load_newblk`) or on the stack as soon
       as it must survive another allocation.
+
+## 8. Calling BASIC ROM routines (floating point and others)
+
+The floating point primitives rely on the routines of the C64 BASIC ROM
+(`C64_FADDT`, `C64_FMULT`, `C64_EXP`, `C64_FCOMP`, `C64_GIVAYF`, `C64_FOUT`...,
+see `c64defs.asm`). A custom primitive may call them too, but the following
+rules must be observed. (KERNAL routines, e.g. `C64_CHROUT`, are always visible
+and are called with a plain `JSR`: the rules below concern the BASIC ROM only.)
+
+### 8.1 Always call them through `+caml_JSR_BASROM`
+
+```
+        +caml_JSR_BASROM C64_EXP        ;never: JSR C64_EXP
+```
+
+If the program, stack included, reaches `$A000` (`caml_stack_end > C64_BASROM`,
+flag `caml_basic_rom_overlap` set by the loader), the BASIC ROM is kept
+*switched off* and the RAM under it is visible. The macro switches the ROM on
+around the call, using a wrapper in safe memory if the calling code itself
+lies in `$A000-$BFFF`. If there is no overlap it expands to a plain `JSR`.
+In every case `A` and the status flags returned by the ROM routine reach the
+caller unchanged, and `X`, `Y` are not touched by the wrapper. The expansion
+has a size which depends on the address where it is assembled (3, 9 or 15
+bytes): do not assume it in branch distances.
+
+### 8.2 Operands read by the ROM must not be in `$A000-$BFFF`
+
+With the ROM switched on, a ROM routine that *reads* an address in
+`$A000-$BFFF` reads the ROM, not the RAM under it. A float block, or a string,
+passed by address (`MOVFM`, `FADD`/`FSUB`/`FMUL`/`FDIV`/`FCOMP`/`FPWRT` with
+`A`/`Y` = address, `FIN`, `STROUT`...) may be there. Under
+`!ifdef caml_basic_rom_overlap`, copy the operand to the zero page first and
+pass the address of the copy (as `caml_compare_val_double_tag` does for
+`FCOMP`):
+
+```
+!ifdef caml_basic_rom_overlap {
+        LDY # 4                         ;copy the 5 bytes of the float
+-       LDA (.V2),Y                     ; to TMP + 8 .. TMP + 12
+        STA TMP + 8,Y
+        DEY
+        BPL -
+        LDA # TMP + 8                   ;A/Y = address of the copy
+        LDY # 0
+} else {
+        LDY .V2 + 1                     ;A/Y = address of the float
+        LDA .V2
+}
+        +caml_JSR_BASROM C64_FCOMP
+```
+
+Writing is not a problem: stores always go to the RAM (`MOVMF` into a heap block
+is fine). Remember that the GC may move the block: the copy must be made from
+a pointer reloaded from `ACCU`/`SP[i]` (see sections 2-7).
+
+### 8.3 Float operands: use `caml_float_unop` / `caml_float_binop`
+
+A float block is 6 bytes: the 5 bytes of the C64 MFLPT number and a *flag byte*
+(`Float_flag`): 0 finite, `Fl_pinf`, `Fl_ninf`, `Fl_nan` (see `loader.asm`).
+The ROM knows nothing of infinity and nan, so `caml_float_unop` (copy `ACCU` to
+FAC) and `caml_float_binop` (copy `SP[0]` to FAC and `ACCU` to ARG) return
+`C = 1` if an operand is special: the primitive must then handle that case
+without calling the ROM (`JMP caml_float_special1` / `caml_float_special2` for
+the standard operations, or its own code). Skeleton of a unary primitive:
+
+```
+!ifdef caml_PRIM__caml_nonstd_my_exp {
+caml_nonstd_my_exp
+        JSR caml_float_unop             ;FAC := ACCU; C=1 if inf or nan
+        BCC @fin
+        LDX # Fu_EXP                    ;special value: standard behaviour of exp
+        JMP caml_float_special1         ; (or write your own code and RTS)
+@fin    LDX # Fo_EXP                    ;if the ROM overflows: return +infinity
+        STX caml_float_overflow__op
+        +caml_JSR_BASROM C64_EXP
+        JMP caml_float_alloc_result     ;new float := FAC, ACCU := new float
+}
+```
+
+`caml_float_alloc_result` allocates the result and copies FAC into it; the GC
+does not touch FAC/ARG, so allocating between the ROM operation and `MOVMF` is
+safe. Both `unop` and `binop` must be called **directly** from the primitive
+(one `JSR` level): they save the CPU stack pointer that the overflow handler
+will restore (see 8.5), so nothing may be left on the hardware stack between
+that call and the ROM call.
+
+### 8.4 Zero page used by the ROM routines
+
+The FP routines of the ROM clobber, besides FAC/ARG: `$12`, `$22-$2A`, `$47`
+(`FOUT` overwrites it, and `$48`), and the whole area from `TMP + 9` (`$56`)
+to `TMP + 37` (`$72`): `FAC` is at `TMP + 20 .. TMP + 26`, `ARG` at
+`TMP + 28 .. TMP + 34`. The table at the top of `stdlib_floats.asm` lists every
+location. Consequently:
+
+- do not keep anything across a ROM call in `TMP + 9 ... TMP + 37`: `TMP + 0 .. 8`
+  and `TMP + 10 .. 14` are not touched by the arithmetic routines (the
+  PETSCII conversion routines, `FIN`/`FOUT`, use `TMP + 15 .. 19`);
+- the runtime registers (`ACCU`, `SP`, `ENV`, `TRAPSP`, `XARGS`, `GC`, `HEAP`,
+  `BLK`) are not used by the ROM FP routines, with the sole exception of
+  `FOUT`, which overwrites `$47-$48`.
+- `Y = 0` on exit, as in every primitive: the ROM does not preserve `Y`.
+
+### 8.5 Errors raised by the ROM never come back
+
+The loader redirects the BASIC error vector (`C64_IERROR`) to `caml_syserr`.
+If a ROM routine fails, control goes to `caml_syserr` with the error number in
+`X`, and **does not return to the primitive**:
+
+| BASIC error | Result |
+|---|---|
+| DIVISION BY ZERO | `Division_by_zero` |
+| ILLEGAL QUANTITY | `Invalid_argument "ILLEGAL QUANTITY"` |
+| OUT OF MEMORY | `Out_of_memory` |
+| OVERFLOW | see below |
+| any other | `Sys_error` with the BASIC message |
+
+The exception is raised with the CPU stack reset to its value at program start
+(`caml_hw_stack_ptr`): so, before a ROM call, do not leave anything that must be
+undone on the hardware stack or in memory (e.g. an `SEI`, a modified vector, a
+bank switch...).
+
+**OVERFLOW.** If `caml_float_overflow__op` holds a known operation (`Fo_ADD`,
+`Fo_MUL`, `Fo_POW`, `Fo_EXP`, `Fo_STR`), `caml_float_overflow` computes the
+infinity with the right sign, restores the CPU stack pointer saved by
+`caml_float_unop`/`binop` and returns +-infinity *to the caller of the
+primitive*. With `Fo_NONE` it returns to `caml_syserr`, which raises
+`Sys_error "OVERFLOW"`. The contract is:
+
+- `caml_float_unop` and `caml_float_binop` set `caml_float_overflow__op` to
+  `Fo_NONE` and save the stack pointer: a primitive whose operation has no
+  rule for the sign of infinity just calls the ROM (the error is raised);
+- a primitive whose operation matches one of the `Fo_*` rules sets
+  `caml_float_overflow__op` after `unop`/`binop`, as in the skeleton above;
+- a primitive that calls a ROM routine which may overflow **without** going
+  through `unop`/`binop` (nor `float_of_string`) MUST set both
+  `caml_float_overflow__op` (to `Fo_NONE`, normally) and `caml_float_overflow__sp`
+  (`TSX : STX caml_float_overflow__sp`, executed in the primitive itself: the
+  `INX : INX` in `unop`/`binop` account for their own return address).
+  `caml_float_overflow__op` is reset only after an overflow has been handled,
+  not after a normal return: a stale value would make the handler use a stale
+  stack pointer.
+
+## 9. Checklist for ROM calls
+
+- [ ] `+caml_JSR_BASROM`, never a bare `JSR`, for BASIC ROM routines.
+- [ ] Memory operands copied to the zero page under `caml_basic_rom_overlap`,
+      from pointers reloaded after any `caml_alloc`.
+- [ ] Float arguments loaded with `caml_float_unop`/`caml_float_binop`, called
+      directly from the primitive; special values handled when `C = 1`.
+- [ ] `caml_float_overflow__op` set for the operation (or left `Fo_NONE`).
+- [ ] Nothing kept in `TMP + 9 .. TMP + 37`, `$12`, `$22-$2A`, `$47-$48` across
+      the call; nothing on the hardware stack to be undone after it.
+- [ ] `Y = 0` on exit.
 
 [^1]: See the [Cheney's algorithm](https://en.wikipedia.org/wiki/Cheney%27s_algorithm)
 page on Wikipedia.
