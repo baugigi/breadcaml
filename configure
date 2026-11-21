@@ -25,6 +25,8 @@ done
   exit 1
 }
 
+[ -d etc ] || mkdir etc
+
 ##### CONFIG DATA
 
 # Config file
