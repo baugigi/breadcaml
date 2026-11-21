@@ -222,7 +222,7 @@ let mod_float a b =
   match sign n with
   | 1 -> a -. floor n *. b
   | -1 -> a -. ceil n *. b
-  | _ -> 0.
+  | _ -> n                              (* 0. or nan *)
 (* ++*)
 
 external frexp : float -> float * int = "caml_frexp_float"
@@ -233,10 +233,9 @@ external ldexp : (float [@unboxed]) -> (int [@untagged]) -> (float [@unboxed]) =
 external modf : float -> float * float = "caml_modf_float"
 --*)
 (*++ *)
-let modf x = match sign x with
-  | 1 -> let y = floor x in (x -. y, y)
-  | -1 -> let y = ceil x in (x -. y, y)
-  | _ -> 0.0, 0.0
+let modf x =
+  let i = match sign x with 1 -> floor x | -1 -> ceil x | _ -> x in
+  ((if i = x then 0. else x -. i), i)   (* modf nan = (nan, nan), modf inf = (0., inf) *)
 (* ++*)
 
 external float : int -> float = "%floatofint"
@@ -277,40 +276,71 @@ let pi = 3.14159265358979312
 let max_float     = 1.70141183420855150E+38
 let min_float     = 2.93873587705571877E-39
 let epsilon_float = 4.65661287307739258E-10
-let hypot x y = sqrt(x *. x +. y *. y)
+let infinity = 1. /. 0.                 (* see the special values in loader.asm *)
+let neg_infinity = -1. /. 0.
+let nan = 0. /. 0.
+let hypot x y =
+  if abs_float x = infinity || abs_float y = infinity then infinity
+  else sqrt(x *. x +. y *. y)
 let acos x = match sign x with
   | 1 when x <= 1. ->
      (try atan ((sqrt (1. -. x *. x)) /. x) with _ -> pi /. 2.)
   | -1 when -1. <= x ->
      pi +. (try atan ((sqrt (1. -. x *. x)) /. x) with _ -> pi /. 2.)
-  | 0 -> pi /. 2.
-  | _ -> invalid_arg "acos"
+  | 0 -> if x <> x then x else pi /. 2.
+  | _ -> nan                            (* |x| > 1 *)
 let asin x = match sign x with
   | 1 when x <= 1. ->
      (try atan (x /. (sqrt (1. -. x *. x))) with _ -> pi /. 2.)
   | -1 when -1. <= x ->
      (try atan (x /. (sqrt (1. -. x *. x))) with _ -> -.pi /. 2.)
-  | 0 -> 0.
-  | _ -> invalid_arg "asin"
-let atan2 y x = match sign y with
-  | 0 -> (match sign x with
-         | 0 -> invalid_arg "atan2"
-         | 1 -> 0.
-         | _ -> pi)
-  | 1 -> (try 2. *. atan (((hypot x y) -. x) /. y) with _ -> pi)
-  | _ -> (try 2. *. atan (((hypot x y) -. x) /. y) with _ -> -.pi)
-let sinh x = expm1 (2. *. x) /. (2. *. exp x)
-let cosh x = (1. +. exp (2. *. x)) /. (2. *. exp x)
-let tanh x = expm1 (2. *. x) /. (1. +. exp (2. *. x))
-let asinh x = log (x +. sqrt(x *. x +. 1.))
+  | 0 -> x                              (* 0. or nan *)
+  | _ -> nan                            (* |x| > 1 *)
+let atan2 y x =
+  if x <> x || y <> y then nan
+  else match sign y with
+  | 0 -> if sign x < 0 then pi else 0.
+  | s ->
+     if y = infinity || y = neg_infinity then
+       (if x = infinity then float s *. (pi /. 4.)
+        else if x = neg_infinity then float s *. (3. *. pi /. 4.)
+        else float s *. (pi /. 2.))
+     else if x = infinity then 0.
+     else if x = neg_infinity then float s *. pi
+     else if s > 0 then (try 2. *. atan (((hypot x y) -. x) /. y) with _ -> pi)
+     else (try 2. *. atan (((hypot x y) -. x) /. y) with _ -> -.pi)
+let sinh x =
+  let a = abs_float x in
+  let r =
+    if a < 20. then expm1 (2. *. a) /. (2. *. exp a)
+    else exp (a -. 0.693147180559945) in        (* e^a/2, +infinity on overflow *)
+  if x < 0. then -. r else if x <> x then x else r
+let cosh x =
+  let a = abs_float x in
+  if a < 20. then (let e = exp a in (e +. 1. /. e) /. 2.)
+  else exp (a -. 0.693147180559945)
+let tanh x =
+  let a = abs_float x in
+  let r =
+    if a >= 20. then 1. else expm1 (2. *. a) /. (1. +. exp (2. *. a)) in
+  if x < 0. then -. r else if x <> x then x else r
+let asinh x =
+  let a = abs_float x in
+  let r =
+    if a >= 1e9 then log a +. 0.693147180559945
+    else log (a +. sqrt(a *. a +. 1.)) in
+  if x < 0. then -. r else if x <> x then x else r
 let acosh x =
-  if x >= 1. then log (x +. sqrt(x *. x -. 1.))
-  else invalid_arg "acosh"
+  if x >= 1e9 then log x +. 0.693147180559945
+  else if x >= 1. then log (x +. sqrt(x *. x -. 1.))
+  else nan
 let atanh x =
   if -1. < x && x < 1. then log ((1. +. x) /. (1. -. x)) /. 2.
-  else invalid_arg "atanh"
-let modf x =
-  let i = float(truncate x) in (x -. i, i) 
+  else if x = 1. then infinity
+  else if x = -1. then neg_infinity
+  else nan
+(*-- let modf x =
+  let i = float(truncate x) in (x -. i, i) --*)
 (* ++*)
 
 (* String and byte sequence operations -- more in modules String and Bytes *)

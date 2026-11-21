@@ -57,7 +57,6 @@ external abs : float -> float = "%absfloat"
 let zero = 0.
 let one = 1.
 let minus_one = -1.
-(*--
 let infinity = Stdlib.infinity
 let neg_infinity = Stdlib.neg_infinity
 let nan = Stdlib.nan
@@ -65,12 +64,10 @@ let is_finite (x: float) = x -. x = 0.
 let is_infinite (x: float) = 1. /. x = 0.
 let is_nan (x: float) = x <> x
 
+(*--
 let pi = 0x1.921fb54442d18p+1
 --*)
 (*++ *)
-let is_finite (x: float) = true
-let is_infinite (x: float) = false
-let is_nan (x: float) = false
 let pi = 3.14159265358979312
 (* ++*)
 let max_float = Stdlib.max_float
@@ -189,14 +186,14 @@ external floor : float -> float = "caml_floor_float" "floor"
 let trunc x = match sign x with
   | 1 -> floor x
   | -1 -> ceil x
-  | _ -> 0.0
+  | _ -> x                              (* 0. or nan *)
 let round x = match sign x with
   | 1 -> floor (x +. 0.5)
   | -1 -> ceil (x -. 0.5)
-  | _ -> 0.0
+  | _ -> x                              (* 0. or nan *)
 (* ++*)
 
-let is_integer x = x = trunc x (*-- && is_finite x --*)
+let is_integer x = x = trunc x && is_finite x
 
 (*-- ################     DA FARE    ##############
 external next_after : float -> float -> float
@@ -230,7 +227,6 @@ type t = float
 external compare : float -> float -> int = "%compare"
 let equal x y = compare x y = 0
 
-(*--
 let[@inline] min (x: float) (y: float) =
   if y > x || (not(sign_bit y) && sign_bit x) then
     if is_nan y then y else x
@@ -259,15 +255,6 @@ let[@inline] min_max_num (x: float) (y: float) =
   if is_nan x then (y,y)
   else if is_nan y then (x,x)
   else if y > x || (not(sign_bit y) && sign_bit x) then (x,y) else (y,x)
---*)
-(*++ *)
-let[@inline] min (x: float) (y: float) = if y > x then x else y
-let[@inline] max (x: float) (y: float) = if y > x then y else x
-let[@inline] min_max (x: float) (y: float) = if y > x then (x, y) else (y, x)
-let[@inline] min_num (x: float) (y: float) = if y > x then x else y
-let[@inline] max_num (x: float) (y: float) = if y > x then y else x
-let[@inline] min_max_num (x: float) (y: float) = if y > x then (x,y) else (y,x)
-(* ++*)
 
 (*-- ################     DA FARE    ##############
 external seeded_hash_param : int -> int -> int -> float -> int

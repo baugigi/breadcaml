@@ -274,13 +274,28 @@ caml_nonstd_string_of_float
         LDX ACCU + 1
         STA caml_float_loadFAC__addr
         STX caml_float_loadFAC__addr + 1
-        JSR caml_float_loadFAC
-        LDA $47                         ;WARNING: FOUT OVERWRITES $47
+        JSR caml_float_loadFAC          ;.A = flag byte
+        BEQ @fin
+        LDX # 0                         ;Special value: copy "-inf", "inf" or
+        CMP # Fl_ninf                   ; "nan" to $0100 instead of calling
+        BEQ @cp                         ; FOUT.
+        INX
+        CMP # Fl_pinf
+        BEQ @cp
+        LDX # @nan - @strs
+@cp     LDY # 0
+-       LDA @strs,X
+        STA $0100,Y
+        BEQ @len                        ;(copy the final 0 too)
+        INX
+        INY
+        BNE -                           ;BNE=JMP
+@fin    LDA $47                         ;WARNING: FOUT OVERWRITES $47
         PHA                             ;save it
         +caml_JSR_BASROM C64_FOUT       ;0-terminated string in $0100
         PLA                             ;restore $47 value
         STA $47
-        LDX # $FF
+@len    LDX # $FF
 -       INX                             ;count string length (except 0)
         LDA $0100,X
         BNE -                           ;(X = length when loop ends)
@@ -305,6 +320,8 @@ caml_nonstd_string_of_float
         LDA $0100
         STA (BLK),Y
         RTS
+@strs   !text "-inf", 0                 ;"inf" is @strs + 1
+@nan    !text "nan", 0
 }
 
 !ifdef caml_PRIM__caml_nonstd_string_of_int {

@@ -59,14 +59,21 @@ let fail_if cond msg =
   if cond then failwith (msg ^ " in global store.")
 
 (* Return the Commodore 64 MFLP representation of a floating point number,
-   extended with a byte for infinity, neg_infinity and nan.*)
+   extended with a byte for infinity, neg_infinity and nan: 0 for finite
+   numbers, 1 for infinity, 0xFF for neg_infinity, 0x80 for nan (see the
+   description of FLOAT blocks in loader.asm). The mantissa and exponent
+   bytes of the special values are canonical: infinities have the largest
+   magnitude, nan is all zeroes. *)
 let c64float x =
-  let float_class = classify_float x in
-  fail_if (float_class = FP_infinite) "Float.infinity or Float.neg_infinity";
-  fail_if (float_class = FP_nan) "Float.nan";
+  match classify_float x with
+  | FP_infinite ->
+    if x > 0. then [| 0xFF; 0x7F; 0xFF; 0xFF; 0xFF; 0x01 |]
+    else [| 0xFF; 0xFF; 0xFF; 0xFF; 0xFF; 0xFF |]
+  | FP_nan -> [| 0; 0; 0; 0; 0; 0x80 |]
+  | _ ->
   let mantissa, exponent = frexp x in
   fail_if (exponent > 127) "Float out of range";
-  let bytes = [| 0; 0; 0; 0; 0; 0 (* unused *) |] in
+  let bytes = [| 0; 0; 0; 0; 0; 0 (* 0 = finite *) |] in
   let add1 () =
     let rec incr_with_carry i =
       bytes.(i) <- succ bytes.(i) land 0xFF;

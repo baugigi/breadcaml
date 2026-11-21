@@ -200,16 +200,12 @@ external compare : 'a -> 'a -> int = "%compare"
    The [compare] function can be used as the comparison function
    required by the {!Set.Make} and {!Map.Make} functors, as well as
    the {!List.sort} and {!Array.sort} functions.
-
-   {i {b BreadCaml Note} [nan] not implemented, see {!section:fp}.}
  *)
 
 val min : 'a -> 'a -> 'a
 (** Return the smaller of the two arguments.
     The result is unspecified if one of the arguments contains
     the float value [nan].
-
-    {i {b BreadCaml Note} [nan] not implemented, see {!section:fp}.}
  *)
 
 val max : 'a -> 'a -> 'a
@@ -477,11 +473,18 @@ external ( asr ) : int -> int -> int = "%asrint"
 
    {i {b BreadCaml Note} floating-point numbers use the Commodore 64 
     representation (8 bits for the exponent and 32 bits for the signed 
-    mantissa). Special IEEE 754 numbers [infinity], [neg_infinity],
-    [nan], are not implemented; floating-point operations {b do} raise
-    [Failure "overflow"], [Division_by_zero] and [Invalid_argument];
-    when a computation underflows, its result is [0.0] and it propagates
-    through next computations. Note also that most floating-point primitives
+    mantissa), extended with a byte which flags the special IEEE 754 numbers
+    [infinity], [neg_infinity] and [nan]. They are returned by division by
+    zero ([1.0 /. 0.0], [-1.0 /. 0.0], [0.0 /. 0.0]), by overflow
+    (the sign being that of the exact result), by [log 0.0] ([neg_infinity]),
+    by [log], [sqrt], [acos], [asin], [acosh], [atanh] and [( ** )] outside
+    their domain ([nan]), and by operations on special numbers, following
+    the IEEE 754 rules. [Division_by_zero] is never raised by
+    floating-point operations; when a computation underflows, its result is
+    [0.0] and it propagates through next computations. Special numbers have
+    no [-0.0] or subnormal counterparts, and [tan] is the only function
+    which still raises [Sys_error "OVERFLOW"] on overflow. Note also that
+    most floating-point primitives
     rely on C64 routines stored in the BASIC ROM, which are not fully reliable.}
     @see <https://www.c64-wiki.com/wiki/Multiply_bug> C64 Multiply bug
  *)
@@ -596,7 +599,7 @@ val atan2 : float -> float -> float
     and [y] are used to determine the quadrant of the result.
     Result is in radians and is between [-pi] and [pi].
     
-    {i {b BreadCaml Note} [atan2 0.0 0.0] raises [Invalid_argument].}
+    {i {b BreadCaml Note} [atan2 0.0 0.0] is [0.0] (no [-0.0]).}
 *)
 
 (*-- external hypot : float -> float -> float = "caml_hypot_float" "caml_hypot"
@@ -609,8 +612,6 @@ val hypot : float -> float -> float
     [x] and [y], or, equivalently, the distance of the point [(x,y)]
     to origin.  If one of [x] or [y] is infinite, returns [infinity]
     even if the other is [nan].
-    
-    {i {b BreadCaml Note} [nan], [infinity] not implemented, see {!section:fp}.}
     
     @since 4.00.0
  *)
@@ -695,8 +696,7 @@ external copysign : float -> float -> float
     and whose sign is that of [y].  If [x] is [nan], returns [nan].
     If [y] is [nan], returns either [x] or [-. x], but it is not
     specified which.
-    
-    {i {b BreadCaml Note} [nan] not implemented, see {!section:fp}.}
+
 
     @since 4.00.0
 *)
@@ -742,11 +742,8 @@ external int_of_float : float -> int = "%intoffloat"
 (** Truncate the given floating-point number to an integer.
    The result is unspecified if the argument is [nan] or falls outside the
    range of representable integers.
-
-   {i {b BreadCaml Note} [nan] not implemented, see {!section:fp}.}
 *)
 
-(*-- UNIMPLEMENTED
 val infinity : float
 (** Positive infinity. *)
 
@@ -760,7 +757,6 @@ val nan : float
    argument returns [nan] as result.  As for floating-point comparisons,
    [=], [<], [<=], [>] and [>=] return [false] and [<>] returns [true]
    if one or both of their arguments is [nan]. *)
---*)
 
 val max_float : float
 (** The largest positive finite value of type [float]. *)
@@ -887,7 +883,8 @@ val int_of_string_opt: string -> int option
     This conversion can involve a loss of precision. For greater control over
     the manner in which the number is printed, see {!Printf}.
 
-    {i {b BreadCaml Note} Uses the C64 BASIC v2 representation of numbers.}
+    {i {b BreadCaml Note} Uses the C64 BASIC v2 representation of numbers.
+    The special values are printed as [inf], [-inf] and [nan].}
  *)
 
 val float_of_string_opt: string -> float option
@@ -896,6 +893,9 @@ val float_of_string_opt: string -> float option
 
    The format of decimal floating-point numbers is
    [ [-] dd.ddd (e|E) [+|-] dd ], where [d] stands for a decimal digit.
+
+   {i {b BreadCaml Note} The strings [nan], [inf] and [infinity], preceded
+   by an optional sign and written in any case, are also accepted.}
 
    The format of hexadecimal floating-point numbers is
    [ [-] 0(x|X) hh.hhh (p|P) [+|-] dd ], where [h] stands for an

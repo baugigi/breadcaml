@@ -63,3 +63,9 @@
 
  * After identifying the set of all dependencies, the script calculates its
    transitive closure and generates the file with required symbol assignments.
+
+ * depends.asm is included by bcamlc BEFORE loader.asm (see pre_code_includes in
+   src/bcamlc/config.ml.tpl), right after the caml_PRIM__* flags: so loader.asm,
+   too, may test the caml_AUX__* flags with !ifdef. ACME needs this: a symbol
+   which is tested before being defined gives different results in the two
+   passes (e.g. "Symbol already defined" on anonymous labels).

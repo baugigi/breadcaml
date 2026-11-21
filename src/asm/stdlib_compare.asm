@@ -29,6 +29,7 @@
 .LESS    = %10000000			;operator bitmasks
 .GREATER = %00000010
 .EQUAL   = %00000001
+.UNORD   = %00000100                    ;unordered (nan): floats only
 
         ;;
         ;; int
@@ -67,7 +68,9 @@ caml_int_compare
 !ifdef caml_PRIM__caml_float_compare {
 caml_float_compare
         JSR caml_compare_identity_setV2
-        BEQ caml_return_zero
+        BEQ caml_return_zero            ;(compare nan nan = 0: total ordering)
+        LDA # 1
+        STA .COMPARE                    ;total ordering: nan < -inf < x < inf
         JSR caml_compare_val_double_tag
         JMP caml_cmp_res
 }
@@ -197,8 +200,10 @@ caml_lessthan
 !ifdef caml_PRIM__caml_greaterequal {
 caml_greaterequal
         JSR caml_compare_val
-        BPL caml_return_true
         BMI caml_return_false
+        CMP # 2                         ;2 = unordered (nan)
+        BCC caml_return_true
+        BCS caml_return_false
 }
 
 !ifdef caml_PRIM__caml_lessequal {
@@ -214,7 +219,9 @@ caml_greaterthan
         JSR caml_compare_val
         BMI caml_return_false
         BEQ caml_return_false
-        BPL caml_return_true
+        CMP # 2                         ;2 = unordered (nan)
+        BCC caml_return_true
+        BCS caml_return_false
 }
 
 !ifdef caml_PRIM__caml_compare {
@@ -239,30 +246,37 @@ caml_cmp_res
 caml_scmp                               ;{A = mask}
         STA caml_cmp__mask
         JSR caml_compare_identity_setV2
-        BEQ caml_cmp
-        JSR caml_compare_val_string_tag
+        BNE @diff
+        LDA # 0                         ;identical strings: A := 0 (equal)
+        JMP caml_cmp
+@diff   JSR caml_compare_val_string_tag
         JMP caml_cmp
 }
 
 !ifdef caml_AUX__caml_fcmp {
 caml_fcmp                               ;{A = mask}
         STA caml_cmp__mask
-        JSR caml_compare_identity_setV2
-        BEQ caml_cmp
+        LDA (SP),Y                      ;.V2 := SP[0] (no shortcut if v1 == v2:
+        STA .V2                         ; nan <> nan)
+        INY
+        LDA (SP),Y
+        STA .V2 + 1
+        LDA # 0
+        STA .COMPARE                    ;partial ordering: nan is unordered
         JSR caml_compare_val_double_tag
         ;; FALLTHROUGH caml_cmp
 }
 
 !ifdef caml_AUX__caml_cmp {
 caml_cmp
-        TAX                             ;A = -1, 0 or 1
+        TAX                             ;A = -1, 0, 1 or 2 (unordered)
         INX
         LDA .res,X
 caml_cmp__mask = * + 1
         AND # <.dummy                   ;SMC: AND #mask
         BNE caml_return_true
         BEQ caml_return_false
-.res    !byte .LESS, .EQUAL, .GREATER
+.res    !byte .LESS, .EQUAL, .GREATER, .UNORD
 }
 
         ;;
@@ -277,7 +291,7 @@ caml_eq_float
 
 !ifdef caml_PRIM__caml_neq_float {
 caml_neq_float
-        LDA # .LESS | .GREATER
+        LDA # .LESS | .GREATER | .UNORD ;(x <> nan is true)
         BNE caml_fcmp
 }
 
@@ -588,9 +602,17 @@ caml_compare_val
 
 !ifdef caml_AUX__caml_compare_val_double_tag {
 caml_compare_val_double_tag
-        ;; Compare floats in ACCU and SP[0].
+        ;; Compare floats in ACCU (.V1) and .V2.
         ;; Result: A = -1/0/1 according to the OCaml semantics of compare.
         ;; Status byte is set according to A.
+        ;; .COMPARE <> 0: total ordering, nan < -inf < finite numbers < +inf and
+        ;;                nan = nan, else nan is unordered: A = 2 if a nan
+        ;;                is involved.
+        LDY # Float_flag
+        LDA (.V1),Y                     ;flag bytes of both floats: if any is
+        TAX                             ; not 0, a float is inf or nan
+        ORA (.V2),Y
+        BNE @spec
         JSR caml_float_unop             ;copy .V1 to FAC
 !ifdef caml_basic_rom_overlap {
         LDY # 4                         ;FCOMP reads its memory operand with the
@@ -606,6 +628,31 @@ caml_compare_val_double_tag
 }
         +caml_JSR_BASROM C64_FCOMP
         LDY # 0
+        ORA # 0                         ;set status byte according to A
+        RTS
+@spec   LDA .COMPARE                    ;.X = flag of v1, .Y = Float_flag
+        BNE @key
+        CPX # Fl_nan                    ;partial ordering:
+        BEQ @unord                      ; v1 is nan,
+        LDA (.V2),Y
+        CMP # Fl_nan
+        BNE @key
+@unord  LDA # 2                         ; or v2 is nan: unordered
+        BNE @ret                        ;BNE=JMP
+@key    LDA (.V2),Y                     ;flags are signed keys: nan = -128,
+        EOR # $80                       ; -inf = -1, finite = 0, +inf = 1.
+        STA .CMP                        ;Compare them as unsigned, after
+        TXA                             ; inverting bit 7.
+        EOR # $80
+        CMP .CMP
+        BCC @lt
+        BNE @gt
+        LDA # 0                         ;(equal)
+        BEQ @ret                        ;BEQ=JMP
+@gt     LDA # 1
+        BNE @ret                        ;BNE=JMP
+@lt     LDA # -1
+@ret    LDY # 0
         ORA # 0                         ;set status byte according to A
         RTS
 }

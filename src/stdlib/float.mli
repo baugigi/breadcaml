@@ -133,7 +133,6 @@ val pred : float -> float
 external abs : float -> float = "%absfloat"
 (** [abs f] returns the absolute value of [f]. *)
 
-(*--
 val infinity : float
 (** Positive infinity. *)
 
@@ -147,7 +146,7 @@ val nan : float
     argument returns [nan] as result.  As for floating-point comparisons,
     [=], [<], [<=], [>] and [>=] return [false] and [<>] returns [true]
     if one or both of their arguments is [nan]. *)
---*)
+
 val pi : float
 (** The constant pi. *)
 
@@ -165,22 +164,16 @@ val is_finite : float -> bool
 (** [is_finite x] is [true] if and only if [x] is finite i.e., not infinite and
    not {!nan}.
 
-   {i {b BreadCaml Note} [is_finite x] is always [true].}
-   
    @since 4.08.0 *)
 
 val is_infinite : float -> bool
 (** [is_infinite x] is [true] if and only if [x] is {!infinity} or
     {!neg_infinity}.
-    
-    {i {b BreadCaml Note} [is_finite x] is always [false].}
 
     @since 4.08.0 *)
 
 val is_nan : float -> bool
 (** [is_nan x] is [true] if and only if [x] is not a number (see {!nan}).
-    
-    {i {b BreadCaml Note} [is_finite x] is always [false].}
 
     @since 4.08.0 *)
 

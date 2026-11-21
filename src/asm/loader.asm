@@ -143,12 +143,25 @@ caml_loader
 
 ;; FLOAT blocks: C64 MFLP representation, not IEEE!
 ;; .Tag_Sz_*_________._________._________.
-;; |253¦_3_|Expo¦±M_a|_n_t¦_i_s|_s_a¦_??_|      ?? = unused byte
+;; |253¦_3_|Expo¦±M_a|_n_t¦_i_s|_s_a¦_Fl_|      Fl = special value flag
+;;
+;; Byte 5 (Fl) tells whether the float is finite or one of the IEEE special
+;; values. The encoding allows a fast test (LDA/ORA + BNE) and makes the flag
+;; the signed ordering key of the special values (nan < -inf < finite < +inf):
+;;   $00 finite    $01 +infinity    $FF -infinity    $80 nan
+;; Two's complement negation of the flag is the negation of the float (it
+;; swaps +-inf, and keeps $00 and $80 unchanged). Bytes 0-4 of the special
+;; values are canonical, so routines ignoring the flag degrade gracefully:
+;;   +-infinity = largest magnitude ($FF, +-$FFFFFFFF), nan = 0.0 ($00...).
 
         Double_wosize   = 3
+        Float_flag      = 5             ;offset of the flag byte in the block
+        Fl_pinf         = $01
+        Fl_ninf         = $FF
+        Fl_nan          = $80
 
 !macro  caml_move_float .from, .to {     ;Copy float block fields and set Y = 0
-        LDY # 2 * Double_wosize - 2      ; at exit
+        LDY # 2 * Double_wosize - 1      ; at exit
 -       LDA (.from),Y
         STA (.to),Y
         DEY
@@ -452,7 +465,16 @@ caml_syserr
 +       CPX # C64_ERR_OOM
         BNE +
         +caml_raise Out_of_memory
-+       DEX
++
+!ifdef caml_AUX__caml_float_overflow {
+        CPX # C64_ERR_OVF               ;A floating-point primitive overflowed:
+        BNE +                           ; it returns +-infinity (no return here)
+        JSR caml_float_overflow         ; unless it doesn't know how to, and
+        LDY # 0                         ; then Sys_error "OVERFLOW" is raised.
+        LDX # C64_ERR_OVF
++
+}
+        DEX
         TXA
         PHA                             ;Push error no. - 1 on hw stack.
         LDX # 2                         ;Allocate a 0-tagged, 2-field 
