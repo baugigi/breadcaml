@@ -11,9 +11,10 @@
 ;; 2, come specificato nel file  LICENZA-it nella cartella principale del
 ;; progetto.
 ;; ——————————————————————————————————————————————————————————————————————
-;; =============================================================================
+
+;; -----------------------------------------------------------------------------
 ;;                              RUNTIME SUPPORT
-;; =============================================================================
+;; -----------------------------------------------------------------------------
 ;; Indentation matters!
 ;;      XXX...         Code for native code executables (caml_INTERP = <undef>)
 ;;          XXX...     Code for both native code ex. and bytecode interpretation

@@ -11,9 +11,10 @@
 ;; 2, come specificato nel file  LICENZA-it nella cartella principale del
 ;; progetto.
 ;; ——————————————————————————————————————————————————————————————————————
-;; =============================================================================
+
+;; -----------------------------------------------------------------------------
 ;;                                   LOADER
-;; =============================================================================
+;; -----------------------------------------------------------------------------
 ;; ACME command-line arguments:
 ;;   -Dcaml_SHOWMEM=1                Show program memory usage
 ;;   -Dcaml_INTERP=1                 Bytecode interpretation
@@ -25,6 +26,7 @@
 !zone   caml_LOADER {
 .dummy = $1234                          ;dummy arg. for self-modifying
                                         ;code (SMC in comments)
+
 
         * = C64_BASRAM + 1
 
@@ -46,30 +48,32 @@ caml_loader
 
 
 ;; -----------------------------------------------------------------------------
-;;      ZERO-PAGE ALLOCATION
+;;      ZERO-PAGE RESERVED ADDRESSES
 ;; -----------------------------------------------------------------------------
 
-        !addr XARGS             = $02   ;       1 by. extra_args
-        !addr ACCU              = $FB   ;-$FC   2 by. accumulator
-        !addr SP                = $FD   ;-$FE   2 by. stack pointer
-        !addr ENV               = $2B   ;-$2C   2 by. environment
-        !addr TRAPSP            = $2D   ;-$2E   2 by. trap pointer
-!ifdef  caml_INTERP {
-        !addr caml_interp_fetch = $2F   ;-$3D  15 by. FETCH-EXEC LOOP
-        !addr PC                = $30   ;-$31         Program counter
+!addr {
+	ACCU	= C64_FREKZP     	; 	  2 by. Accumulator
+        SP      = C64_FREKZP + 2 	; 	  2 by. Stack Pointer
+        XARGS   = C64_UNUSZP     	; 	  1 by. Extra_args
+        ENV     = $2B 			;-$2C     2 by. Environment
+        TRAPSP  = $2D 			;-$2E     2 by. Trap Pointer
+  !ifdef caml_INTERP {
+        caml_interp_fetch = $2F 	;-$3D    15 by. FETCH-EXEC LOOP
+        PC                = $30 	;-$31           Program Counter
+  }
+        GC      = $3E 			;-$46     9 by. caml_alloc
+					;($47-$48       Used by C64_FOUT)
+        HEAP    = $49 			;-$4A     2 by. Heap Pointer
+        BLK     = $4B 			;-$4C     2 by. caml_alloc: New Block
+        TMP     = $4D 			;Temp.area, towards the BASIC FLPT zone.
+                                	;See stdlib_floats.asm for more info.
+
+;; All ZP memory locations, except for C64_FREKZP (4 by.), C64_UNUSZP (1 by.),
+;; and the FLPT area, must be saved and restored upon exit.
+        .zpbase = $2B		;start
+        .zpend  = $4E		;end + 1
 }
-        !addr GC                = $3E   ;-$45   8 by. caml_alloc
-        !addr HEAP              = $49   ;-$4A   2 by. heap pointer
-        !addr BLK               = $4B   ;-$4C   2 by. caml_alloc: new block
-        !addr TMP               = $4D   ;Temp.area, towards the BASIC FLPT zone
-                                        ;See stdlib_floats.asm for more info.
-
-;; Memory locations $02 and $FB-$FE are not used by either BASIC or the Kernal;
-;; all others, except for the FLPT area, must be saved and restored upon exit.
-        !addr .zpbase = $2B
-        !addr .zpend  = $4E
-
-        
+      
 ;; -----------------------------------------------------------------------------
 ;;      Address symbols set by bcamlc/bcamlopt
 ;; -----------------------------------------------------------------------------
@@ -512,14 +516,16 @@ caml_syserr
 ;;      UNCAUGHT EXCEPTIONS
 ;; ----------------------------------------------------------------------------
 ;; Arguments: only integer values ​​and blocks with String_tag are printed. Other
-;; blocks are printed as "_", except for the ONE argument to Match_failure,
-;; Assert_failure, or Undef_rec_module, which has type (string * int * int) and
-;; is printed in full.
+;; blocks are printed as "_", except for the ONE block argument to the "special"
+;; exceptions Match_failure, Assert_failure, and Undef_rec_module, which has
+;; type (string * int * int) and is printed in full.
 ;;
 ;; Exception with no arguments:
 ;;   { Object_tag; 2 | { String_tag; n | ASCII_chars } | oid } = EXN_BLOCK
 ;; Exception with k>0 arguments:
 ;;   { 0; k | EXN_BLOCK | arg1 | ... | argk }
+;; Special exceptions:
+;;   { 0; 2 | EXN_BLOCK | { 0; 3 | string | int | int } }
 
         ;; Print the uncaught exception in ACCU with its arguments, if any.
 caml_uncaught_exn

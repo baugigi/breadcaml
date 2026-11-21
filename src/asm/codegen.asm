@@ -11,7 +11,6 @@
 ;; 2, come specificato nel file  LICENZA-it nella cartella principale del
 ;; progetto.
 ;; ——————————————————————————————————————————————————————————————————————
-;; Snake test ok!
 
 ;; ----------------------------------------------------------------------------
 ;;      CODE GENERATION

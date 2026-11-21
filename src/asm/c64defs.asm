@@ -11,6 +11,7 @@
 ;; 2, come specificato nel file  LICENZA-it nella cartella principale del
 ;; progetto.
 ;; ——————————————————————————————————————————————————————————————————————
+
 ;; -----------------------------------------------------------------------------
 ;;    ZP ADDRESSES, BASIC V2 & KERNAL REL.3 ROUTINES, VECTORS, POINTERS, ETC.
 ;; -----------------------------------------------------------------------------
@@ -27,7 +28,7 @@ C64_KERROM      = $E000 ;Start address of Kernal ROM
         ;; Zeropage
         ;; Free locations: C64_UNUSZP (1 by.), C64_FREKZP (4 by.)
 C64_D6510       = $00   ;Data Direction register
-C64_R6510       = $01   ;Data buffer (processor port: bits 2-0 = CHAREN|HIRAM|LORAM)
+C64_R6510       = $01   ;Data buffer (CPU port: bits 2-0 = CHAREN|HIRAM|LORAM)
 C64_UNUSZP      = $02   ;UNUSED
 C64_ADRAY1      = $03   ;-$04 Jump Vector: Convert Integer--Floating
 C64_ADRAY2      = $05   ;-$06 Jump Vector: Convert Integer--Floating
@@ -234,8 +235,8 @@ C64_ISAVE       = $0332 ;Vector: Kernal SAVE Routine (default $F5DD)
 C64_TBUFFR      = $033C ;Tape I/O Buffer 
 
         ;; BASIC Floating point routines
-	;; Note: A:Y stands for a 16-bit value, A=hi byte, Y=lo byte
-	
+        ;; Note: A:Y stands for a 16-bit value, A=hi byte, Y=lo byte
+        
         ;; BEWARE: All routines affected by the well-known MULTIPLY BUG
         ;; (https://www.c64-wiki.com/wiki/Multiply_bug) are marked with [!]
 
@@ -514,7 +515,7 @@ C64_SID_V1FL    = $D400 ;(W)    Voice 1 Frequency, lo byte (first SID register)
 C64_SID_V1FH    = $D401 ;(W)    Voice 1 Frequency, hi byte
 C64_SID_V1PWL   = $D402 ;(W)    Voice 1 Pulse Width, lo byte
 C64_SID_V1PWH   = $D403 ;(W)    Voice 1 Pulse Width, hi nibble
-C64_SID_V1CR    = $D404 ;(W)    Voice 1 Control: |NOISE|PULSE|SAW|TRI|TEST|RING|SYNC|GATE|
+C64_SID_V1CR    = $D404 ;(W)    Voice 1 Ctl: |NOI|PUL|SAW|TRI|TST|RNG|SYNC|GATE|
 C64_SID_V1AD    = $D405 ;(W)    Voice 1 Attack/Decay: |ATK3-0|DCY3-0|
 C64_SID_V1SR    = $D406 ;(W)    Voice 1 Sustain/Release: |STN3-0|RLS3-0|
 C64_SID_V2FL    = $D407 ;(W)    Voice 2 Frequency, lo byte
@@ -533,7 +534,7 @@ C64_SID_V3AD    = $D413 ;(W)    Voice 3 Attack/Decay
 C64_SID_V3SR    = $D414 ;(W)    Voice 3 Sustain/Release
 C64_SID_FCL     = $D415 ;(W)    Filter Cutoff Frequency, lo (bits 2-0)
 C64_SID_FCH     = $D416 ;(W)    Filter Cutoff Frequency, hi byte
-C64_SID_RESFLT  = $D417 ;(W)    Resonance/Filter: |RES3-0|FILTEX|FILT3|FILT2|FILT1|
+C64_SID_RESFLT  = $D417 ;(W)    Resonance/Filter: |RES3-0|FLTEX|FLT3|FLT2|FLT1|
 C64_SID_MODVOL  = $D418 ;(W)    Mode/Volume: |3OFF|HP|BP|LP|VOL3-0|
 C64_SID_POTX    = $D419 ;(R)    Paddle X
 C64_SID_POTY    = $D41A ;(R)    Paddle Y
@@ -557,12 +558,12 @@ C64_CIA1_TODSEC = $DC09 ;(R/W)  Time of Day, seconds (BCD)
 C64_CIA1_TODMIN = $DC0A ;(R/W)  Time of Day, minutes (BCD)
 C64_CIA1_TODHR  = $DC0B ;(R/W)  Time of Day, hours (BCD, bit 7 = PM)
 C64_CIA1_SDR    = $DC0C ;(R/W)  Serial shift register
-C64_CIA1_ICR    = $DC0D ;(R/W)  Interrupt Control: R = status (reading clears it), W = mask
+C64_CIA1_ICR    = $DC0D ;(R/W)  IRQ Ctl: R=status (reading clears it), W=mask
 C64_CIA1_CRA    = $DC0E ;(R/W)  Control Register A
 C64_CIA1_CRB    = $DC0F ;(R/W)  Control Register B
 
         ;; CIA 2 (serial bus, RS-232, user port, VIC bank; NMI)
-C64_CIA2_PRA    = $DD00 ;(R/W)  Port A (bits 1-0: VIC bank, inverted; serial bus)
+C64_CIA2_PRA    = $DD00 ;(R/W)  Port A (bits 1-0: VIC bank,inverted; serial bus)
 C64_CIA2_PRB    = $DD01 ;(R/W)  Port B (user port)
 C64_CIA2_DDRA   = $DD02 ;(R/W)  Port A data direction (1 = output)
 C64_CIA2_DDRB   = $DD03 ;(R/W)  Port B data direction (1 = output)
@@ -575,17 +576,16 @@ C64_CIA2_TODSEC = $DD09 ;(R/W)  Time of Day, seconds (BCD)
 C64_CIA2_TODMIN = $DD0A ;(R/W)  Time of Day, minutes (BCD)
 C64_CIA2_TODHR  = $DD0B ;(R/W)  Time of Day, hours (BCD, bit 7 = PM)
 C64_CIA2_SDR    = $DD0C ;(R/W)  Serial shift register
-C64_CIA2_ICR    = $DD0D ;(R/W)  Interrupt Control: R = status (reading clears it), W = mask
+C64_CIA2_ICR    = $DD0D ;(R/W)  NMI Ctl: R=status (reading clears it), W=mask
 C64_CIA2_CRA    = $DD0E ;(R/W)  Control Register A
 C64_CIA2_CRB    = $DD0F ;(R/W)  Control Register B
 }
 
         ;; Processor port mask (not an address)
-C64_R6510_RAM     = %11111000   ;AND mask for C64_R6510: LORAM=HIRAM=0, all RAM visible
-
+C64_R6510_RAM     = %11111000   ;AND mask for C64_R6510: disable all ROMs
         ;; CIA bit masks (same layout in CIA 1 and CIA 2)
         ;; ICR, written: bit 7 = 1 sets the bits given, bit 7 = 0 clears them
-C64_CIA_ICR_SET   = %10000000   ;ICR write: SET/CLEAR flag; ICR read: IR (any int.)
+C64_CIA_ICR_SET   = %10000000   ;ICR write: SET/CLR flg; ICR read: IR (any int.)
 C64_CIA_ICR_TA    = %00000001   ;Timer A underflow
 C64_CIA_ICR_TB    = %00000010   ;Timer B underflow
 C64_CIA_ICR_ALRM  = %00000100   ;Time of Day alarm
@@ -607,7 +607,7 @@ C64_ERR_NIF     = $06 ; NOT INPUT FILE
 C64_ERR_NOF     = $07 ; NOT OUTPUT FILE
 C64_ERR_MFN     = $08 ; MISSING FILE NAME
 C64_ERR_IDN     = $09 ; ILLEGAL DEVICE NUMBER
-	;; BASIC V2.0 error codes
+        ;; BASIC V2.0 error codes
 C64_ERR_NWF     = $0A ; NEXT WITHOUT FOR
 C64_ERR_SYN     = $0B ; SYNTAX
 C64_ERR_RWG     = $0C ; RETURN WITHOUT GOSUB
@@ -634,80 +634,80 @@ C64_ERR_BRK     = $1E ; BREAK
 C64_ERRTAB      = $A328
 
         ;; BASIC V2.0 tokens
-C64_BAS_ABS                     = $B6   ; ABS
-C64_BAS_AND                     = $AF   ; AND
-C64_BAS_ASC                     = $C6   ; ASC
-C64_BAS_ATN                     = $C1   ; ATN
-C64_BAS_CHR                     = $C7   ; CHR$
-C64_BAS_CLOSE                   = $A0   ; CLOSE
-C64_BAS_CLR                     = $9C   ; CLR
-C64_BAS_CMD                     = $9D   ; CMD
-C64_BAS_CONT                    = $9A   ; CONT
-C64_BAS_COS                     = $BE   ; COS
-C64_BAS_DATA                    = $83   ; DATA
-C64_BAS_DEF                     = $96   ; DEF
-C64_BAS_DIM                     = $86   ; DIM
-C64_BAS_END                     = $80   ; END
-C64_BAS_EXP                     = $BD   ; EXP
-C64_BAS_FN                      = $A5   ; FN
-C64_BAS_FOR                     = $81   ; FOR
-C64_BAS_FRE                     = $B8   ; FRE
-C64_BAS_GET                     = $A1   ; GET
-C64_BAS_GO                      = $CB   ; GO
-C64_BAS_GOSUB                   = $8D   ; GOSUB
-C64_BAS_GOTO                    = $89   ; GOTO
-C64_BAS_IF                      = $8B   ; IF
-C64_BAS_INPUT                   = $85   ; INPUT
-C64_BAS_INPUTN                  = $84   ; INPUT#
-C64_BAS_INT                     = $B5   ; INT
-C64_BAS_LEFT                    = $C8   ; LEFT$
-C64_BAS_LEN                     = $C3   ; LEN
-C64_BAS_LET                     = $88   ; LET
-C64_BAS_LIST                    = $9B   ; LIST
-C64_BAS_LOAD                    = $93   ; LOAD
-C64_BAS_LOG                     = $BC   ; LOG
-C64_BAS_MID                     = $CA   ; MID$
-C64_BAS_NEW                     = $A2   ; NEW
-C64_BAS_NEXT                    = $82   ; NEXT
-C64_BAS_NOT                     = $A8   ; NOT
-C64_BAS_ON                      = $91   ; ON
-C64_BAS_OPEN                    = $9F   ; OPEN
-C64_BAS_OR                      = $B0   ; OR
-C64_BAS_PEEK                    = $C2   ; PEEK
-C64_BAS_POKE                    = $97   ; POKE
-C64_BAS_POS                     = $B9   ; POS
-C64_BAS_PRINT                   = $99   ; PRINT
-C64_BAS_PRINTN                  = $98   ; PRINT#
-C64_BAS_PI                      = $FF   ; Pi constant
-C64_BAS_READ                    = $87   ; READ
-C64_BAS_REM                     = $8F   ; REM
-C64_BAS_RESTORE                 = $8C   ; RESTORE
-C64_BAS_RETURN                  = $8E   ; RETURN
-C64_BAS_RIGHT                   = $C9   ; RIGHT$
-C64_BAS_RND                     = $BB   ; RND
-C64_BAS_RUN                     = $8A   ; RUN
-C64_BAS_SAVE                    = $94   ; SAVE
-C64_BAS_SGN                     = $B4   ; SGN
-C64_BAS_SIN                     = $BF   ; SIN
-C64_BAS_SPC                     = $A6   ; SPC(
-C64_BAS_SQR                     = $BA   ; SQR
-C64_BAS_STEP                    = $A9   ; STEP
-C64_BAS_STOP                    = $90   ; STOP
-C64_BAS_STR                     = $C4   ; STR$
-C64_BAS_SYS                     = $9E   ; SYS
-C64_BAS_TAB                     = $A3   ; TAB(
-C64_BAS_TAN                     = $C0   ; TAN
-C64_BAS_THEN                    = $A7   ; THEN
-C64_BAS_TO                      = $A4   ; TO
-C64_BAS_USR                     = $B7   ; USR
-C64_BAS_VAL                     = $C5   ; VAL
-C64_BAS_VERIFY                  = $95   ; VERIFY
-C64_BAS_WAIT                    = $92   ; WAIT
-C64_BAS_ADD                     = $AA   ; + operator
-C64_BAS_SUB                     = $AB   ; - operator
-C64_BAS_MUL                     = $AC   ; * operator
-C64_BAS_DIV                     = $AD   ; / operator
-C64_BAS_POW                     = $AE   ; UpArrow operator
-C64_BAS_GT                      = $B1   ; > operator
-C64_BAS_EQ                      = $B2   ; = operator
-C64_BAS_LT                      = $B3   ; < operator
+C64_BAS_ABS     = $B6   ; ABS
+C64_BAS_AND     = $AF   ; AND
+C64_BAS_ASC     = $C6   ; ASC
+C64_BAS_ATN     = $C1   ; ATN
+C64_BAS_CHR     = $C7   ; CHR$
+C64_BAS_CLOSE   = $A0   ; CLOSE
+C64_BAS_CLR     = $9C   ; CLR
+C64_BAS_CMD     = $9D   ; CMD
+C64_BAS_CONT    = $9A   ; CONT
+C64_BAS_COS     = $BE   ; COS
+C64_BAS_DATA    = $83   ; DATA
+C64_BAS_DEF     = $96   ; DEF
+C64_BAS_DIM     = $86   ; DIM
+C64_BAS_END     = $80   ; END
+C64_BAS_EXP     = $BD   ; EXP
+C64_BAS_FN      = $A5   ; FN
+C64_BAS_FOR     = $81   ; FOR
+C64_BAS_FRE     = $B8   ; FRE
+C64_BAS_GET     = $A1   ; GET
+C64_BAS_GO      = $CB   ; GO
+C64_BAS_GOSUB   = $8D   ; GOSUB
+C64_BAS_GOTO    = $89   ; GOTO
+C64_BAS_IF      = $8B   ; IF
+C64_BAS_INPUT   = $85   ; INPUT
+C64_BAS_INPUTN  = $84   ; INPUT#
+C64_BAS_INT     = $B5   ; INT
+C64_BAS_LEFT    = $C8   ; LEFT$
+C64_BAS_LEN     = $C3   ; LEN
+C64_BAS_LET     = $88   ; LET
+C64_BAS_LIST    = $9B   ; LIST
+C64_BAS_LOAD    = $93   ; LOAD
+C64_BAS_LOG     = $BC   ; LOG
+C64_BAS_MID     = $CA   ; MID$
+C64_BAS_NEW     = $A2   ; NEW
+C64_BAS_NEXT    = $82   ; NEXT
+C64_BAS_NOT     = $A8   ; NOT
+C64_BAS_ON      = $91   ; ON
+C64_BAS_OPEN    = $9F   ; OPEN
+C64_BAS_OR      = $B0   ; OR
+C64_BAS_PEEK    = $C2   ; PEEK
+C64_BAS_POKE    = $97   ; POKE
+C64_BAS_POS     = $B9   ; POS
+C64_BAS_PRINT   = $99   ; PRINT
+C64_BAS_PRINTN  = $98   ; PRINT#
+C64_BAS_PI      = $FF   ; Pi constant
+C64_BAS_READ    = $87   ; READ
+C64_BAS_REM     = $8F   ; REM
+C64_BAS_RESTORE = $8C   ; RESTORE
+C64_BAS_RETURN  = $8E   ; RETURN
+C64_BAS_RIGHT   = $C9   ; RIGHT$
+C64_BAS_RND     = $BB   ; RND
+C64_BAS_RUN     = $8A   ; RUN
+C64_BAS_SAVE    = $94   ; SAVE
+C64_BAS_SGN     = $B4   ; SGN
+C64_BAS_SIN     = $BF   ; SIN
+C64_BAS_SPC     = $A6   ; SPC(
+C64_BAS_SQR     = $BA   ; SQR
+C64_BAS_STEP    = $A9   ; STEP
+C64_BAS_STOP    = $90   ; STOP
+C64_BAS_STR     = $C4   ; STR$
+C64_BAS_SYS     = $9E   ; SYS
+C64_BAS_TAB     = $A3   ; TAB(
+C64_BAS_TAN     = $C0   ; TAN
+C64_BAS_THEN    = $A7   ; THEN
+C64_BAS_TO      = $A4   ; TO
+C64_BAS_USR     = $B7   ; USR
+C64_BAS_VAL     = $C5   ; VAL
+C64_BAS_VERIFY  = $95   ; VERIFY
+C64_BAS_WAIT    = $92   ; WAIT
+C64_BAS_ADD     = $AA   ; + operator
+C64_BAS_SUB     = $AB   ; - operator
+C64_BAS_MUL     = $AC   ; * operator
+C64_BAS_DIV     = $AD   ; / operator
+C64_BAS_POW     = $AE   ; UpArrow operator
+C64_BAS_GT      = $B1   ; > operator
+C64_BAS_EQ      = $B2   ; = operator
+C64_BAS_LT      = $B3   ; < operator
