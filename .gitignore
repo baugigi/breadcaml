@@ -1,4 +1,5 @@
 misc/
 test/claude/build/
 etc/uninstall.sh
+etc/Makefile.conf
 
