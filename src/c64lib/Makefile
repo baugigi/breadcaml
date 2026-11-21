@@ -47,7 +47,7 @@ all: lib man doc
 lib_tgt := c64.cmi c64.cmo c64lib.cma libc64lib.a
 lib:
 	@$(MAKE) -q $(lib_tgt) 2> /dev/null || \
-	  echo '$(call message,COMPILE: ,C64 library)'
+	  $(call message,COMPILE: ,C64 library)
 	$(MAKE) $(lib_tgt)
 
 c64.cmi: c64.mli
@@ -61,7 +61,7 @@ c64lib.cma: c64.cmo
 
 libc64lib.a: $(LIBRUN)
 	rm -f $@
-	ar rs $@ $^
+	ar rsc $@ $^
 
 # C prototypes for non-standard primitives
 $(CPROTO): $(ASMSRC)
@@ -74,7 +74,7 @@ $(CPROTO): $(ASMSRC)
 man: .man_timestamp
 
 .man_timestamp: c64.mli
-	@echo '$(call message,GENERATE:,C64 library man pages)'
+	@$(call message,GENERATE:,C64 library man pages)
 	mkdir -p man3
 	$(OCAMLDOC) -hide-warnings -nostdlib -I $(STDLIBDIR) -d man3 \
 	  -t "The BreadCaml Project" -man -man-mini -man-suffix $(MAN3EXT) \
@@ -85,7 +85,7 @@ man: .man_timestamp
 doc: .doc_timestamp
 
 .doc_timestamp: c64.mli
-	@echo '$(call message,GENERATE:,C64 library HTML documentation)'
+	@$(call message,GENERATE:,C64 library HTML documentation)
 	mkdir -p html
 	$(OCAMLDOC) -hide-warnings -nostdlib -I $(STDLIBDIR) -d html \
 	  -html -charset utf-8 -colorize-code -sort \
