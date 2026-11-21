@@ -92,6 +92,11 @@ Fb_POW = 4
 
 ;; Operations which may overflow (stored in caml_float_overflow__op, see there)
 Fo_NONE = $FF                           ;unknown: overflow raises Sys_error
+;; Contract: a primitive that calls a ROM routine which may overflow must set
+;; caml_float_overflow__op (and caml_float_overflow__sp, which caml_float_unop/
+;; binop do) before the call. caml_float_overflow__op is reset to Fo_NONE only
+;; after an overflow has been handled, so a primitive that does not follow the
+;; contract after a successful float operation may find a stale value.
 Fo_ADD  = 0                             ;(add and sub: same sign rule)
 Fo_MUL  = 1                             ;(mul and div: same sign rule)
 Fo_POW  = 2
@@ -1217,7 +1222,10 @@ caml_float_overflow
 @pos    LDA # Ft_PINF
         BNE @res                        ;BNE=JMP
 @neg    LDA # Ft_NINF
-@res    LDX caml_float_overflow__sp     ;restore the CPU stack pointer
+@res    LDX # Fo_NONE                   ;The overflow is handled: reset the op, so
+        STX caml_float_overflow__op     ; that a later overflow raised by a ROM
+        LDX caml_float_overflow__sp     ; routine which doesn't set it is an error.
+                                        ;Restore the CPU stack pointer:
         TXS
         JMP caml_float_ret_tpl          ;return the result to the caller
 caml_float_overflow__sp  !byte 0
