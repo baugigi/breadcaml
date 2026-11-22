@@ -310,6 +310,94 @@ caml_APPLY
             +caml_JMP_CODEPTR @PC
 }                                       ;{Y = 0}
 
+;; Direct calls (-otime). The callee is statically known and its arity equals n:
+;;  - APPLYD/APPTERMD: the callee is the enclosing function itself (ENV is
+;;    already right);
+;;  - APPLYG/APPTERMG: the callee is the closure in ACCU (ENV := ACCU), whose
+;;    code address is known at compile time.
+;; The code pointer is not read and GRAB is skipped (so XARGS := Val_Int(0)
+;; for APPLY, XARGS unchanged for APPTERM). The macro is JSR routine : JMP .t,
+;; so the frame's return address is that of the JSR + 4 (over the JMP).
+!macro caml_applyd_body .setenv {       ;{Y = 2n-1, n <= 3}
+            @SP = TMP
+            @N2M1 = TMP + 2
+            STY @N2M1
+            LDA SP                      ;Save current SP value
+            STA @SP
+            LDA SP + 1
+            STA @SP + 1
+            +caml_grow_stack 3
+-           LDA (@SP),Y                 ;Slide n arguments by 3 slots
+            STA (SP),Y
+            DEY
+            BPL -
+            LDY @N2M1
+            INY
+            TSX                         ;peek return address on hw stack
+            LDA $0101,X
+            CLC
+            ADC # 4                     ;over JMP .t (3 bytes) + 1 (JSR)
+            STA (SP),Y                  ;STACK[n] := return address
+            INY
+            LDA $0102,X
+            ADC # 0
+            STA (SP),Y
+            INY
+            LDA ENV                     ;STACK[n+1] := ENV
+            STA (SP),Y
+            INY
+            LDA ENV + 1
+            STA (SP),Y
+            INY
+            LDA XARGS                   ;STACK[n+2] := XARGS
+            STA (SP),Y
+  !if .setenv {
+            LDA ACCU                    ;ENV := ACCU (closure)
+            STA ENV
+            LDA ACCU + 1
+            STA ENV + 1
+  }
+            LDA # 1
+            STA XARGS                   ;XARGS := Val_Int(0) (GRAB skipped)
+            LDY # 0
+            RTS                         ;to JMP .t   {Y = 0}
+}
+
+!macro caml_apptrmd_body .setenv {      ;{X = 2(s-n), Y = 2n-1}
+            LDA SP
+            STA TMP
+            LDA SP + 1
+            STA TMP + 1                 ;save stack pointer
+            TXA
+            CLC
+            ADC SP                      ;Pop s elements, push n
+            STA SP
+            BCC +
+            INC SP + 1
++:-         LDA (TMP),Y                 ;move n elements from old top
+            STA (SP),Y                  ;to new one
+            DEY
+            BNE -
+            LDA (TMP),Y
+            STA (SP),Y
+  !if .setenv {
+            LDA ACCU                    ;ENV := ACCU (closure)
+            STA ENV
+            LDA ACCU + 1
+            STA ENV + 1
+  }
+            RTS                         ;to JMP .t   {Y = 0}
+}
+
+caml_APPLYD
+!ifdef caml_gen_APPLYD { +caml_applyd_body 0 }
+caml_APPLYG
+!ifdef caml_gen_APPLYG { +caml_applyd_body 1 }
+caml_APPTRMD
+!ifdef caml_gen_APPTRMD { +caml_apptrmd_body 0 }
+caml_APPTRMG
+!ifdef caml_gen_APPTRMG { +caml_apptrmd_body 1 }
+
 caml_APPTRMN
 !ifdef caml_gen_APPTRMN {
   !ifdef caml_INTERP {
@@ -1436,19 +1524,35 @@ caml_MULINT
             @P      = TMP + 2           ;P+1:P:ACCU+1:ACCU=Product
             STY @P
             STY @P + 1
-            LSR ACCU + 1                ;ACCU := Val_Int(m) >> 1
-            ROR ACCU
-            LDA (SP),Y
-            AND # $FE                   ;N := Val_Int(n) - 1
+            LDA (SP),Y                  ;pop the stack operand into N
             STA @N
-            INC SP                      ;pop lo byte
+            INC SP
             LDA (SP),Y
             STA @N + 1
-            INC SP                      ;pop hi byte
+            INC SP
             BNE +
             INC SP + 1
++
+!ifndef caml_osize {                    ;-otime: make ACCU the smaller operand
+            CMP ACCU + 1                ;(A = high byte of the stack operand)
+            BCS +
+            LDX ACCU                    ;swap ACCU <-> N
+            LDA @N
+            STA ACCU
+            STX @N
+            LDX ACCU + 1
+            LDA @N + 1
+            STA ACCU + 1
+            STX @N + 1
++
+}
+            LDA @N
+            AND # $FE                   ;N := Val_Int(n) - 1
+            STA @N
+            LSR ACCU + 1                ;ACCU := Val_Int(m) >> 1
+            ROR ACCU
             ;; Compute only the two least significative bytes of the product
-+           LSR ACCU + 1                ;prepare ACCU_0 test
+            LSR ACCU + 1                ;prepare ACCU_0 test
             ROR ACCU
             LDX # 8                     ;repeat 8 times {
 -           BCC +                       ;       if ACCU_0 was 1
@@ -1465,7 +1569,18 @@ caml_MULINT
             ROR ACCU
             DEX
             BNE -                       ;}
-            LDX # 8                     ;repeat 8 times {
+!ifndef caml_osize {                    ;-otime: multiplier < 256: done
+            BCS @full
+            LDA ACCU
+            BNE @full
+            LDA ACCU + 1                ;product = P_lo:ACCU+1
+            LDX @P
+            STX ACCU + 1
+            STA ACCU
+            INC ACCU                    ;Add 1 (set LSB)
+            +caml_NEXT                  ;{Y = 0}
+}
+@full       LDX # 8                     ;repeat 8 times {
 -           BCC +                       ;       if ACCU_0 was 1
             CLC                         ;       then    Plo += Nlo
             LDA @P
@@ -1539,6 +1654,29 @@ caml_DIVMOD
         ;; Division routine: 15 bits, start from dividend's MSB
 @divide     STX @SIGNS                  ;save flags in S.
             LDX # 15
+!ifndef caml_osize {                    ;-otime: divisor <= 255, 8-bit remainder
+            LDA @DSR + 1                ;(about 2x faster per iteration)
+            BNE @slow
+-           ASL ACCU                    ;skip all initial 0s of dividend
+            ROL ACCU + 1
+            BCS +
+            DEX
+            BNE -
+            BRK                         ;NOT REACHED as ACCU <> Val_zero
+-           ASL ACCU                    ;ACCU_0 := 0
+            ROL ACCU + 1
++           ROL                         ;A = remainder, C = bit 8 of it
+            BCS @sub                    ;>= 256 => surely >= divisor
+            CMP @DSR
+            BCC +
+@sub        SBC @DSR                    ;C = 1 here
+            INC ACCU                    ;record a 1 in the quotient
++           DEX
+            BNE -
+            STA .REM                    ;.REM+1 = 0 already (Y = 0)
+            JMP @fin
+}
+@slow
 -           ASL ACCU                    ;shortcut: skip all initial 0s
             ROL ACCU + 1                ; of dividend
             BCS +                       ;first 1 found: enter div loop
@@ -1561,7 +1699,7 @@ caml_DIVMOD
             INC ACCU                    ;   and record a 1 in ACCU
 +           DEX
             BNE -                       ;Continue loop
-            LDY # 0                     ;reset Y
+@fin        LDY # 0                     ;reset Y
             BIT @SIGNS                  ;return N = Q sign, V = R sign,
             SEC                         ;C = 1 (Dividend <> 0),
             RTS                         ;{.REM=|Remainder|, CNV=flags, Y=0,

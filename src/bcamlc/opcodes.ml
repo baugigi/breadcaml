@@ -106,9 +106,9 @@ let str_of_arg = function
 
 let str_of_lbl label = Printf.sprintf lbl_fmt label
 
-let emit_asm oc label instr args =
+let emit_op oc label opcode args =
   let args_str = String.concat arg_sep (List.map str_of_arg args) in
-  let cmd = Printf.sprintf opc_fmt (opc_of instr)
+  let cmd = Printf.sprintf opc_fmt opcode
             ^ if args_str = "" then "" else cmdarg_sep ^ args_str in
   let len_cmd = String.length cmd in
   match label with
@@ -123,6 +123,96 @@ let emit_asm oc label instr args =
     else (output_string oc ("\n" ^ "" ^... cmd);
           col := tab + len_cmd)
 
+let emit_asm oc label instr args = emit_op oc label (opc_of instr) args
+
+(* -otime: direct calls.
+   The following sequences, whose callee is known at compile time and whose
+   arity is exactly the number of arguments, are replaced by the native-only
+   opcodes 0xa0-0xa3 (see codegen.asm), which skip the closure's code pointer
+   read and the callee's GRAB:
+     PUSHOFFSETCLOSURE0; APPLYn          -> PUSH; APPLYD n,t
+     PUSHOFFSETCLOSURE0; APPTERMn s      -> PUSH; APPTERMD n,s,t
+     [PUSH]GETGLOBAL g; APPLYn           -> ...; APPLYG n,t
+     [PUSH]GETGLOBAL g; APPTERMn s       -> ...; APPTERMG n,s,t
+   where t is the callee's entry, past its GRAB. A global g is a known function
+   when its only SETGLOBAL immediately follows the CLOSURE (or the one-function
+   CLOSUREREC) that builds it. *)
+let direct_calls = ref false
+
+let find_direct_calls code is_ptr =
+  let n = Array.length code in
+  let is_entry = Array.make n false in
+  let mark p = if 0 <= p && p < n then is_entry.(p) <- true in
+  Array.iter (function
+      | CLOSURE (_, p) -> mark p
+      | CLOSUREREC (_, _, o, t) -> mark o; Array.iter mark t
+      | _ -> ()) code;
+  (* encl.(i) = entry of the function that contains instruction i *)
+  let encl = Array.make n (-1) in
+  let cur = ref (-1) in
+  Array.iteri (fun i _ -> if is_entry.(i) then cur := i; encl.(i) <- !cur) code;
+  let setcount = Hashtbl.create 64 in
+  Array.iter (function
+      | SETGLOBAL g ->
+        Hashtbl.replace setcount g
+          (1 + (try Hashtbl.find setcount g with Not_found -> 0))
+      | _ -> ()) code;
+  let gfun = Hashtbl.create 64 in
+  let add_gfun g e =
+    if Hashtbl.find_opt setcount g = Some 1 then Hashtbl.replace gfun g e in
+  for i = 0 to n - 2 do
+    if not (is_ptr (i + 1)) then
+      match code.(i), code.(i + 1) with
+      | CLOSURE (_, e), SETGLOBAL g -> add_gfun g e
+      | CLOSUREREC (1, _, e, [||]), ACC0
+        when i + 2 < n && not (is_ptr (i + 2)) ->
+        (match code.(i + 2) with SETGLOBAL g -> add_gfun g e | _ -> ())
+      | _ -> ()
+  done;
+  (* Where to enter the callee e when called with the given arity *)
+  let target e arity =
+    if e < 0 || e >= n then None
+    else match code.(e) with
+      | GRAB m -> if m = arity - 1 && e + 1 < n then Some (e + 1) else None
+      | _ -> if arity = 1 then Some e else None in
+  let call_of = function
+    | APPLY1 -> Some (1, None) | APPLY2 -> Some (2, None)
+    | APPLY3 -> Some (3, None)
+    | APPTERM1 s -> Some (1, Some s) | APPTERM2 s -> Some (2, Some s)
+    | APPTERM3 s -> Some (3, Some s)
+    | _ -> None in
+  let repl = Hashtbl.create 64 in
+  let extra = ref [] in
+  for i = 0 to n - 2 do
+    if not (is_ptr (i + 1)) then
+      match call_of code.(i + 1) with
+      | None -> ()
+      | Some (arity, tail) ->
+        let site = match code.(i) with
+          | PUSHOFFSETCLOSURE0 when encl.(i) >= 0 -> Some (encl.(i), true)
+          | GETGLOBAL g | PUSHGETGLOBAL g ->
+            (match Hashtbl.find_opt gfun g with
+             | Some e -> Some (e, false)
+             | None -> None)
+          | _ -> None in
+        match site with
+        | None -> ()
+        | Some (e, self) ->
+          match target e arity with
+          | None -> ()
+          | Some t ->
+            extra := t :: !extra;
+            if self then Hashtbl.replace repl i (opc_of PUSH, []);
+            let opc = match self, tail with
+              | true, None -> 0xa0 | true, Some _ -> 0xa1
+              | false, None -> 0xa2 | false, Some _ -> 0xa3 in
+            let args = match tail with
+              | None -> [Num arity; Ptr t]
+              | Some s -> [Num arity; Num s; Ptr t] in
+            Hashtbl.replace repl (i + 1) (opc, args)
+  done;
+  repl, !extra
+
 let export oc code =
   let module AdrSet = Set.Make(Int) in
   let pointers =
@@ -130,8 +220,17 @@ let export oc code =
     let add_ptrs instr =
       List.fold_left #% AdrSet.add (get_ptrs instr) in
     Array.fold_left #% add_ptrs code init in
+  let repl, extra =
+    if !direct_calls
+    then find_direct_calls code (fun adr -> AdrSet.mem adr pointers)
+    else Hashtbl.create 1, [] in
+  let pointers = List.fold_left (fun set adr -> AdrSet.add adr set)
+      pointers extra in
   let export_lbl_instr adr instr =
     let label = if AdrSet.mem adr pointers then Some adr else None in
+    match Hashtbl.find_opt repl adr with
+    | Some (opcode, args) -> emit_op oc label opcode args
+    | None ->
     match instr with
     | ACC n | APPLY n | ASSIGN n | CONSTINT n | ENVACC n | GETFIELD n
     | GETFLOATFIELD n | GETGLOBAL n | GRAB n | OFFSETCLOSURE n

@@ -197,6 +197,38 @@
 !macro  i25 .s  {+i24 1,.s}                     ;APPTERMi s -> APPTERM i s
 !macro  i26 .s  {+i24 2,.s}
 !macro  i27 .s  {+i24 3,.s}
+!macro  ia0 .n, .t {                            ;APPLYD n: direct self-call
+        +caml_range 1, .n, 3, "APPLYD n: n"     ;(emitted by bcamlopt -otime)
+        !set    caml_gen_APPLYD = 1
+        LDY # 2 * .n - 1
+        JSR caml_APPLYD                         ;builds the frame, then RTS
+        JMP .t                                  ;enters the callee past its GRAB
+}
+!macro  ia1 .n, .s, .t {                        ;APPTERMD n s: direct self tail-call
+        +caml_range 1, .n, 3, "APPTERMD n s: n"
+        +caml_range .n, .s, $7F, "APPTERMD n s: s"
+        !set    caml_gen_APPTRMD = 1
+        LDX # 2 * (.s - .n)
+        LDY # 2 * .n - 1
+        JSR caml_APPTRMD
+        JMP .t
+}
+!macro  ia2 .n, .t {                            ;APPLYG n: direct call of ACCU
+        +caml_range 1, .n, 3, "APPLYG n: n"
+        !set    caml_gen_APPLYG = 1
+        LDY # 2 * .n - 1
+        JSR caml_APPLYG
+        JMP .t
+}
+!macro  ia3 .n, .s, .t {                        ;APPTERMG n s: direct tail-call
+        +caml_range 1, .n, 3, "APPTERMG n s: n"
+        +caml_range .n, .s, $7F, "APPTERMG n s: s"
+        !set    caml_gen_APPTRMG = 1
+        LDX # 2 * (.s - .n)
+        LDY # 2 * .n - 1
+        JSR caml_APPTRMG
+        JMP .t
+}
 !macro  i28 .n {                                ;RETURN n
         +caml_range 0, .n, $7F, "RETURN n: n"
         !set    caml_gen_RETURN = 1

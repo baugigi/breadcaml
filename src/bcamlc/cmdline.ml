@@ -73,6 +73,15 @@ let anon_fun arg = match Filename.extension arg with
 (* Treat all options following '--' as ACME_OPTIONS *)
 let rest_all args = acme_opts := !acme_opts @ args
 
+(* -osize, -otime: only for the native code compiler *)
+let osize_flag, otime_flag = ref false, ref false
+let osize () =
+  osize_flag := true;
+  if comp_desc = "native code" then acme_opts := !acme_opts @ ["-Dcaml_osize=1"]
+let otime () =
+  otime_flag := true;
+  if comp_desc = "native code" then Opcodes.direct_calls := true
+
 (* -where, -ocamlc, -acme, -version: the early bird gets the worm. *)
 let show info () = match !show_opt with
   | None -> show_opt := Some info
@@ -126,6 +135,14 @@ let speclist =
     ^ " Define the stack size, in 256-byte pages."
     ^ nl_tab (Printf.sprintf "Default: %d pages." !stack_arg)
     ;
+    "-osize", Unit osize,
+    " Optimize for size: omit the speed-oriented fast paths of the runtime"
+    ^ nl_tab "(native code only; incompatible with -otime)."
+    ;
+    "-otime", Unit otime,
+    " Optimize for speed: direct calls to functions known at compile time,"
+    ^ nl_tab "at the cost of 3 bytes per call (native code only)."
+    ;
     "-showmem", Set showmem,
     " Show information on memory allocation."
     ;
@@ -178,6 +195,7 @@ let check_args () =
       !input_files <> [], "no input file specified.";
       missing = [], "file(s) ‘" ^ String.concat "’, ‘" missing ^ "’ not found.";
       !stack_arg > 0, "-stack argument must be greater than 0.";
+      not (!osize_flag && !otime_flag), "options -osize and -otime are incompatible.";
       0x1000 <= !mem_arg && !mem_arg < 0xD000, "-mem argument out of range.";
       !compile_only => not !asm, ".asm files not allowed with the -c option.";
       !compile_only => not !cmo, ".cmo files not allowed with the -c option.";
