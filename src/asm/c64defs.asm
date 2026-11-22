@@ -596,6 +596,8 @@ C64_CIA_ICR_ALL   = %01111111   ;Written without SET: disable all sources
 C64_CIA_CR_START  = %00000001   ;Start timer (0 = stop)
 C64_CIA_CR_ONESHOT= %00001000   ;One-shot mode (0 = continuous)
 C64_CIA_CR_LOAD   = %00010000   ;Force load latch into the counter (strobe)
+C64_CIA_CR_PBON   = %00000010   ;Timer output on PB6 (CRA) / PB7 (CRB)
+C64_CIA_CR_TOGGLE = %00000100   ;PBON: toggle (1) or one cycle pulse (0)
 
         ;; Kernal error codes
 C64_ERR_TMF     = $01 ; TOO MANY FILES

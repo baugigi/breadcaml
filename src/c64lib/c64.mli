@@ -139,6 +139,50 @@ module Hw : sig
     val poke : int -> int -> unit
   end
 
+  (** User port (CIA 2 port B, PA2, /FLAG2). The pins PB0..PB7 are the port B
+      bits; PB6 and PB7 can also be driven by the CIA 2 timers (see
+      {!Mcu.Tone}). Pin masks are 8 bit (bit [n] = PB[n]); values are masked.
+      Direction bits: 1 = output. Reset state: all inputs.
+
+      {b Hardware warning.} The user port is wired DIRECTLY to CIA 2 (a
+      6526, no longer made, often soldered, which also drives the IEC bus and
+      the VIC bank through port A): there is no buffering, no current limiting
+      and no ESD protection. Pins are 5 V TTL/CMOS levels, sink/source only a
+      few mA, and must never see a voltage below 0 V or above ~5.25 V. Never
+      connect the 9 V AC pins to anything. Read the "User port: hardware
+      safety" notes (userport.md) before connecting anything; use series
+      resistors, buffers and level shifters, plug only with the power off.
+
+      {b Caveats.} The bit operations ([set_bits], [clear_bits], [toggle_bits],
+      [dir_out], [dir_in]) are read-modify-write: [set_bits] etc. read the
+      {e pins}, so a heavily loaded output can read back wrong and corrupt the
+      other bits. PA2 shares port A with the VIC bank and the serial bus: only
+      bit 2 is ever modified. [flag2] reads the CIA 2 interrupt register, which
+      clears {e all} its flags and is incompatible with {!Nmi.block}.
+      The timing primitives of {!Mcu} use timer B (the tone generator and UART
+      use timer A and PB6/PB7): do not mix them with {!Nmi.block} or
+      {!Cia2.poke} on the timer registers. *)
+  module Userport : sig
+    val read : unit -> int          (** pins PB0..PB7 *)
+    val write : int -> unit         (** output latch of port B *)
+    val ddr : unit -> int           (** direction register *)
+    val set_ddr : int -> unit
+
+    val set_bits : int -> unit      (** [PRB <- PRB lor mask] *)
+    val clear_bits : int -> unit    (** [PRB <- PRB land (lnot mask)] *)
+    val toggle_bits : int -> unit   (** [PRB <- PRB lxor mask] *)
+    val dir_out : int -> unit       (** the pins in [mask] become outputs *)
+    val dir_in : int -> unit        (** the pins in [mask] become inputs *)
+
+    val pa2_read : unit -> bool     (** level of PA2 *)
+    val pa2_write : bool -> unit    (** output latch of PA2 *)
+    val pa2_output : bool -> unit   (** direction of PA2: [true] = output *)
+
+    val flag2 : unit -> bool
+    (** [true] if a negative edge arrived on /FLAG2 since the last read of the
+        CIA 2 interrupt register (this call clears all the flags). *)
+  end
+
   (** Color RAM, base [$D800]: offsets 0..999; [peek] returns the low nybble. *)
   module Color : sig
     val peek : int -> int
@@ -464,4 +508,165 @@ module Sound : sig
   val modulate : source -> dest -> base:int -> depth:int -> unit
   (** Writes [base + (sample - 128) * depth / 128] (clamped to the range of
       [dest]). [depth] in -16383..16383. *)
+end
+
+(** {1 Microcontroller layer}
+
+    Arduino-like services built on {!Hw.Userport}: GPIO, delays, pulses, SPI,
+    serial (UART), I2C and tone generation. Pins are numbered [0..7] = PB0..PB7
+    and [8] = PA2 (GPIO only; every other service needs a PB pin). The pins
+    have passive pull-ups; the levels are 3.3-5 V CMOS/TTL and the CIA can only
+    source/sink a few mA: use buffers for anything but logic signals.
+
+    {b Time.} Durations are in CPU cycles (or us, converted with the video
+    standard found in [$02A6], 0 = NTSC / 1 = PAL: 1 us = 1.0227 / 0.9852
+    cycles). OCaml integers are 15 bit: a single wait/pulse is at most 16383
+    cycles (~16 ms). The loops of the bit-banging services run in assembly;
+    calls from OCaml add their own overhead (about 100-300 cycles).
+
+    {b Timers.} {!Time}, {!Pulse} and the receive timeouts use CIA 2 timer B;
+    {!Uart} and {!Tone} (PB6) use timer A; [Tone] on PB7 uses timer B.
+    [Sound.frame_cycles] uses timer B as well. They are not reentrant and are
+    incompatible with {!Hw.Nmi.block}.
+
+    {b Interrupts.} A UART frame is sent/received with interrupts disabled
+    (about 1 ms at 9600 baud); there is no buffering, so the sender must wait
+    for the receiver. *)
+module Mcu : sig
+
+  (** General purpose I/O. *)
+  module Gpio : sig
+    type mode = Input | Output
+
+    val mode : int -> mode -> unit
+    val write : int -> bool -> unit
+    val read : int -> bool
+    val toggle : int -> unit
+    (** All raise [Invalid_argument] on a pin outside [0..8]. [write] only
+        changes the latch: set the mode first (the latch of a pin that has
+        never been written is 0). *)
+
+    val read_port : unit -> int      (** PB0..PB7 as one byte. *)
+    val write_port : int -> unit     (** All 8 latches at once. *)
+  end
+
+  (** Delays and a free running clock. *)
+  module Time : sig
+    val cycles_of_us : int -> int
+    (** Microseconds to cycles for the current video standard (no range check:
+        the result is only valid up to 16383). *)
+
+    val cycles_of_rate : int -> int
+    (** [cycles_of_rate hz]: cycles in a period at [hz] Hz, exactly rounded;
+        [-1] if [hz = 0] or the result exceeds 16383 (hz < 61 PAL / 63 NTSC). *)
+
+    val delay_cycles : int -> unit
+    (** [delay_cycles n] waits about [n + 45] cycles (0 <= n <= 16383). *)
+
+    val delay_us : int -> unit
+    val delay_ms : int -> unit
+    (** Long delays are split in chunks of 10 ms; each chunk adds the call
+        overhead (a few tenths of per cent). *)
+
+    val clock_start : unit -> unit
+    (** Starts the clock (timer B, free running). *)
+
+    val clock_ticks : unit -> int
+    (** Ticks since {!clock_start}: 1 tick = 4 cycles (~4 us); 0..16383, then
+        it wraps (~64 ms). *)
+
+    val ticks_per_ms : unit -> int   (** 250 (PAL: 246, NTSC: 256). *)
+  end
+
+  (** Single pulses. [pin] is a PB pin, already an output for [out]. *)
+  module Pulse : sig
+    val out : ?level:bool -> int -> us:int -> unit
+    (** [out pin ~us] drives [pin] to [level] (default [true]) for [us] us
+        (about 60 us to 16 ms; the fixed overhead is compensated), then to the
+        opposite level. *)
+
+    val width : ?level:bool -> ?timeout_ms:int -> int -> int
+    (** [width pin] waits for the next complete pulse at [level] (default
+        [true]) on the input [pin] and measures its width in us (resolution
+        ~12 cycles). Returns [-1] if it does not arrive within [timeout_ms]
+        (default 100, max 4000) or lasts more than ~16 ms. *)
+  end
+
+  (** SPI master (bit banged, MSB first). Chip select is up to the caller
+      ({!Gpio}). A bit takes about 50-100 cycles (about 10 kHz) at [delay = 0];
+      each unit of [delay] adds 10 cycles per bit. *)
+  module Spi : sig
+    type t
+
+    val create : ?sck:int -> ?mosi:int -> ?miso:int -> ?mode:int ->
+      ?delay:int -> unit -> t
+    (** Defaults: [sck] = PB0, [mosi] = PB1, [miso] = PB2 ([-1]: no input,
+        reads return 0), [mode] 0..3 (CPOL * 2 + CPHA), [delay] 0..255.
+        Sets the pin directions. @raise Invalid_argument on bad arguments. *)
+
+    val transfer : t -> int -> int
+    (** Sends a byte (0..255), returns the byte received. *)
+
+    val write : t -> int -> unit
+    val read : t -> int     (** Sends 0xFF. *)
+
+    val transfer_bytes : t -> ?pos:int -> ?len:int -> bytes -> unit
+    (** Full duplex, in place: the bytes are replaced by the bytes received.
+        @raise Invalid_argument if the range is invalid. *)
+  end
+
+  (** Serial port, 8N1, bit banged with timer A (no flow control, no buffer).
+      Best up to 9600 baud. Bytes are sent as they are: a string literal is
+      PETSCII (see the BreadCaml preprocessor). *)
+  module Uart : sig
+    type t
+
+    val create : ?tx:int -> ?rx:int -> int -> t
+    (** [create baud] with [tx] (default PB2, idle high) and [rx] (default
+        PB3). Baud: 250..14000. @raise Invalid_argument *)
+
+    val write_byte : t -> int -> unit
+    val write_string : t -> string -> unit
+
+    val read_byte : ?timeout_ms:int -> t -> int
+    (** Waits (default 100 ms, max 4000) for a start bit and returns the byte;
+        [-1] on timeout, [-2] on framing error (stop bit low). Characters
+        arriving while the CPU is busy elsewhere are lost. *)
+  end
+
+  (** I2C master, bit banged over open drain pins (pin low = driven low,
+      high = input): add external pull-ups (4.7k to +5V) for reliable use.
+      Slow (a few kHz). Addresses are 7 bit. *)
+  module I2c : sig
+    type t
+
+    val create : ?sda:int -> ?scl:int -> unit -> t   (** Default PB4, PB5. *)
+
+    val start : t -> unit
+    val stop : t -> unit
+    val write_byte : t -> int -> bool    (** [true] if acknowledged. *)
+    val read_byte : t -> ack:bool -> int
+
+    val probe : t -> int -> bool
+    (** [probe i2c addr]: a device answers at [addr]. *)
+
+    val write_reg : t -> int -> int -> int -> bool
+    (** [write_reg i2c addr reg v]: start, addr+W, reg, v, stop. *)
+
+    val read_reg : t -> int -> int -> int
+    (** [read_reg i2c addr reg]: write [reg], repeated start, read one byte;
+        [-1] if the device does not answer. *)
+  end
+
+  (** Square wave by hardware: PB6 (timer A) or PB7 (timer B), 8..16383 Hz
+      (the resolution is 1 cycle of the half period). *)
+  module Tone : sig
+    val start : ?pin:int -> int -> bool
+    (** [start ~pin hz] (pin 6 by default) returns [false] if the arguments
+        are invalid. The wave keeps running while the program does something
+        else, until {!stop}. *)
+
+    val stop : ?pin:int -> unit -> unit
+    (** The pin returns to its port B latch value. *)
+  end
 end
