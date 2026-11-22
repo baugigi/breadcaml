@@ -102,13 +102,13 @@ done
     echo ";; Generated $(date) by $0"
     echo
     for ROUT in $(printf "%s\n" ${!DEPS[@]}|sort); do
-        [[ ${TRCLOS[$ROUT]} ]] && {
+        if [[ ${TRCLOS[$ROUT]} ]]; then
             echo "!ifdef caml_${TYPE[$ROUT]}__$ROUT {"
             for DEP in $(printf "%s\n" ${TRCLOS[$ROUT]}|sort); do
                 echo "  !set caml_${TYPE[$DEP]}__$DEP=1"
             done
             echo "}"
             echo ""
-        }
+        fi
     done
 } > "$OUTFILE"

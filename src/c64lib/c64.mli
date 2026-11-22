@@ -623,7 +623,7 @@ module Mcu : sig
 
     val create : ?tx:int -> ?rx:int -> int -> t
     (** [create baud] with [tx] (default PB2, idle high) and [rx] (default
-        PB3). Baud: 250..14000. @raise Invalid_argument *)
+        PB3). Baud: 250..14000. @raise Invalid_argument on bad arguments. *)
 
     val write_byte : t -> int -> unit
     val write_string : t -> string -> unit
