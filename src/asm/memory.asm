@@ -54,9 +54,50 @@ caml_memory
 .OTH_START      !word .hs + .halfsz     ;other half of the heap
 .OTH_END        !word .hs + .halfsz * 2 ;end of other half
 
-        ;; Initialize the heap pointer. Called by caml_init.
+.PRISTINE       !word .hs, .hs + .halfsz, .hs + .halfsz, .hs + .halfsz * 2
+
+        ;; Initialize the heap pointer and the semi-space variables, which a
+        ;; previous run may have swapped. Called by caml_init.
 caml_heap_init
-        LDA # <caml_glob_end
+        LDX # 7
+-       LDA .PRISTINE,X
+        STA .CUR_START,X
+        DEX
+        BPL -
+        ;; A previous run left in the global table pointers to its heap, that
+        ;; the GC would take as roots: reset them to Val_unit.
+        LDA # <caml_glob_table
+        STA TMP
+        LDA # >caml_glob_table
+        STA TMP + 1
+        LDY # 0
+@next   LDA TMP                         ;end of table?
+        CMP # <caml_glob_data
+        LDA TMP + 1
+        SBC # >caml_glob_data
+        BCS @done
+        LDA (TMP),Y                     ;lo byte
+        TAX
+        LSR
+        BCS @skip                       ;odd: integer
+        INY
+        LDA (TMP),Y                     ;hi byte
+        DEY
+        CPX # <caml_glob_end            ;address >= caml_glob_end?
+        SBC # >caml_glob_end
+        BCC @skip
+        LDA # <Val_unit                 ;yes (heap pointer): reset it
+        STA (TMP),Y
+        INY
+        LDA # >Val_unit
+        STA (TMP),Y
+        DEY
+@skip   INC TMP
+        INC TMP
+        BNE @next
+        INC TMP + 1
+        BNE @next                       ;BNE = JMP
+@done   LDA # <caml_glob_end
         STA HEAP
         LDA # >caml_glob_end
         STA HEAP + 1
