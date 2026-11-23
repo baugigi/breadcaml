@@ -140,8 +140,7 @@ caml_neg_float
         BCC @fin
         LDX # Fu_NEG
         JMP caml_float_special1
-@fin
-        +caml_JSR_BASROM C64_NEGOP
+@fin    +caml_JSR_BASROM C64_NEGOP
         JMP caml_float_alloc_result
 }
 
@@ -151,8 +150,7 @@ caml_abs_float
         BCC @fin
         LDX # Fu_ABS
         JMP caml_float_special1
-@fin
-        +caml_JSR_BASROM C64_ABS
+@fin    +caml_JSR_BASROM C64_ABS
         JMP caml_float_alloc_result
 }
 
@@ -201,8 +199,7 @@ caml_log1p_float
         BCC @fin
         LDX # Fu_LOG
         JMP caml_float_special1
-@fin
-        LDA # <C64_ONE
+@fin    LDA # <C64_ONE
         LDY # >C64_ONE
         +caml_JSR_BASROM C64_FADD
         LDX # 0                         ;log1p (-1.0) = -infinity, ... = nan
@@ -243,8 +240,7 @@ caml_sin_float
         BCC @fin
         LDX # Fu_TRIG
         JMP caml_float_special1
-@fin
-        +caml_JSR_BASROM C64_SIN
+@fin    +caml_JSR_BASROM C64_SIN
         JMP caml_float_alloc_result
 }
 
@@ -254,8 +250,7 @@ caml_cos_float
         BCC @fin
         LDX # Fu_TRIG
         JMP caml_float_special1
-@fin
-        +caml_JSR_BASROM C64_COS
+@fin    +caml_JSR_BASROM C64_COS
         JMP caml_float_alloc_result
 }
 
@@ -265,8 +260,7 @@ caml_tan_float
         BCC @fin
         LDX # Fu_TRIG
         JMP caml_float_special1
-@fin
-        +caml_JSR_BASROM C64_TAN
+@fin    +caml_JSR_BASROM C64_TAN
         JMP caml_float_alloc_result
 }
 
@@ -288,8 +282,7 @@ caml_atan_float
         BCC @fin
         LDX # Fu_ATAN
         JMP caml_float_special1
-@fin
-        +caml_JSR_BASROM C64_ATN
+@fin    +caml_JSR_BASROM C64_ATN
         JMP caml_float_alloc_result
 }
 
@@ -299,8 +292,7 @@ caml_floor_float
         BCC @fin
         LDX # Fu_FLOOR
         JMP caml_float_special1
-@fin
-        +caml_JSR_BASROM C64_INT
+@fin    +caml_JSR_BASROM C64_INT
         JMP caml_float_alloc_result
 }
 
@@ -311,8 +303,7 @@ caml_ceil_float
         BCC @fin
         LDX # Fu_FLOOR
         JMP caml_float_special1
-@fin
-        +caml_JSR_BASROM C64_NEGOP
+@fin    +caml_JSR_BASROM C64_NEGOP
         +caml_JSR_BASROM C64_INT
         +caml_JSR_BASROM C64_NEGOP
         JMP caml_float_alloc_result
@@ -491,15 +482,22 @@ caml_float_of_string
         STX caml_float_overflow__sp     ; caml_float_overflow
         LDA # Fo_STR
         STA caml_float_overflow__op
-        LDA C64_CHRPTR
+        LDA C64_CHRPTR                  ;Save the current CHRPTR value
         STA TMP
         LDA C64_CHRPTR + 1
         STA TMP + 1
+        LDA ACCU + 1
+        LDX ACCU
 !ifdef caml_basic_rom_overlap {
         ;; FIN reads the string with the BASIC ROM on, but the string may be in
         ;; the RAM under it ($A000-$BFFF): copy it (0-terminated, max 80 chars)
         ;; to the BASIC input buffer and convert the copy.
-        LDY # 0
+        CMP # > (C64_BASROM - 79)       ;If the first 80 characters of the
+        BCC @setptr                     ; string are below $A000, skip the copy
+        BNE @setptr                     ; and set the pointer to ACCU;
+        CPX # < (C64_BASROM - 79)
+        BCC @setptr
+        LDY # 0                         ;else copy the string to the buffer
 -       LDA (ACCU),Y
         STA C64_BUF,Y
         BEQ +
@@ -508,19 +506,14 @@ caml_float_of_string
         BCC -
         LDA # 0
         STA C64_BUF,Y
-+       LDA # <C64_BUF
-        STA C64_CHRPTR
-        LDA # >C64_BUF
-        STA C64_CHRPTR + 1
-} else {
-        LDA ACCU
-        STA C64_CHRPTR
-        LDA ACCU + 1
-        STA C64_CHRPTR + 1
++       LDA # >C64_BUF                  ; and set the pointer to it.
+        LDX # <C64_BUF
 }
+@setptr STA C64_CHRPTR + 1              ;CHRPTR := A:X
+        STX C64_CHRPTR
         JSR C64_CHRGOT                  ;not a BASIC ROM routine
-        +caml_JSR_BASROM C64_FIN
-        LDA TMP
+        +caml_JSR_BASROM C64_FIN        ;String to float conversion routine
+        LDA TMP                         ;Restore the previous value of CHRPTR
         STA C64_CHRPTR
         LDA TMP + 1
         STA C64_CHRPTR + 1
@@ -655,8 +648,7 @@ caml_add_float
         BCC @fin
         LDX # Fb_ADD
         JMP caml_float_special2
-@fin
-        LDX # Fo_ADD                        ;(overflow: +-infinity)
+@fin    LDX # Fo_ADD                        ;(overflow: +-infinity)
         STX caml_float_overflow__op
         +caml_JSR_BASROM C64_FADDT
         JMP caml_float_alloc_result
@@ -668,8 +660,7 @@ caml_sub_float
         BCC @fin
         LDX # Fb_SUB
         JMP caml_float_special2
-@fin
-        LDX # Fo_ADD                        ;(overflow: +-infinity)
+@fin    LDX # Fo_ADD                        ;(overflow: +-infinity)
         STX caml_float_overflow__op
         +caml_JSR_BASROM C64_FSUBT
         JMP caml_float_alloc_result
@@ -681,8 +672,7 @@ caml_mul_float
         BCC @fin
         LDX # Fb_MUL
         JMP caml_float_special2
-@fin
-        LDX # Fo_MUL                        ;(overflow: +-infinity)
+@fin    LDX # Fo_MUL                        ;(overflow: +-infinity)
         STX caml_float_overflow__op
         +caml_JSR_BASROM C64_FMULT
         JMP caml_float_alloc_result
@@ -962,7 +952,6 @@ caml_float_special2
         LDX # Ft_NAN
 @tpl    TXA
         JMP caml_float_ret_tpl
-
 @n2     CPX # Fb_POW                    ;MUL, DIV, POW:
         BEQ @pow                        ;(pow: x^0=1 and 1^y=1 even if nan)
         LDA TMP + 2
@@ -1015,16 +1004,12 @@ caml_float_special2
         BMI @ninf
 @dsg    LDA TMP + 2                     ;(flag $01 or $FF)
         BPL @pinf
-        BMI @ninf
-
-@ninf
-        LDA # Ft_NINF
+       ;BMI @ninf
+@ninf   LDA # Ft_NINF
         BNE @tpl2
-@nan
-        LDA # Ft_NAN
+@nan    LDA # Ft_NAN
         BNE @tpl2
-@pinf
-        LDA # Ft_PINF
+@pinf   LDA # Ft_PINF
 @tpl2   JMP caml_float_ret_tpl
 
         ;; ---- x ^ y
@@ -1070,7 +1055,6 @@ caml_float_special2
         CMP # 2                         ;  integer, else +inf
         BCS @ninf
         BCC @pinf
-
 @cmp1   LDY # 0                         ;compare |ACCU| with 1.0 (finite)
         LDA (ACCU),Y                    ; return .A=$FF if |x|<1, 0 if |x|=1,
         CMP # $81                       ; 1 if |x|>1 (flags set by .A)
@@ -1222,14 +1206,15 @@ caml_float_overflow
 @pos    LDA # Ft_PINF
         BNE @res                        ;BNE=JMP
 @neg    LDA # Ft_NINF
-@res    LDX # Fo_NONE                   ;The overflow is handled: reset the op, so
-        STX caml_float_overflow__op     ; that a later overflow raised by a ROM
-        LDX caml_float_overflow__sp     ; routine which doesn't set it is an error.
-                                        ;Restore the CPU stack pointer:
-        TXS
+@res    LDX # Fo_NONE                   ;Handle overflow: reset op, so that a
+        STX caml_float_overflow__op     ; later overflow raised by a ROM routine
+        LDX caml_float_overflow__sp     ; which doesn't set it is an error.
+        TXS                             ;Restore the CPU stack pointer
         JMP caml_float_ret_tpl          ;return the result to the caller
-caml_float_overflow__sp  !byte 0
-caml_float_overflow__op  !byte Fo_NONE
+caml_float_overflow__sp
+        !byte 0
+caml_float_overflow__op
+        !byte Fo_NONE
 }
 
 }      ;; !zone caml_FLOATS

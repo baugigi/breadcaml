@@ -176,11 +176,11 @@ caml_alloc
         STA .b
         STX .a
 }
-        +.swap .OTH_END, .CUR_END
-        +.swap .OTH_START, .CUR_START
+        +.swap  .OTH_END,       .CUR_END
+        +.swap  .OTH_START,     .CUR_START
         STA HEAP
-        +.swap .OTH_END + 1, .CUR_END + 1
-        +.swap .OTH_START + 1, .CUR_START + 1
+        +.swap  .OTH_END + 1,   .CUR_END + 1
+        +.swap  .OTH_START + 1, .CUR_START + 1
         STA HEAP + 1
 
         ;; === STEP 2 ===
@@ -266,18 +266,21 @@ caml_alloc
 !ifndef caml_globals_on_heap {          ;Patch for globals
 @switch CLC                             ;SMC: CLC=heap scan, SEC=glob scan
         BCC @heap
+
         ;; --- glob ---
         CMP # <caml_glob_end
         LDA @PTR + 1
         SBC # >caml_glob_end
-        BCS +++
         BCC @go
+        RTS
 }
         ;; --- heap ---
 @heap   CMP HEAP
         LDA @PTR + 1
         SBC HEAP + 1
-        BCS +++                         ;Exit loop if @PTR reached the end addr
+        BCC @go
+        RTS                             ;Exit loop if @PTR reached the end addr
+
 @go     LDA (@PTR),Y                    ; Load tag (Y=0 here)
         TAX                             ; Save it in X
         INC @PTR                        ; Safe, @PTR is even before INC
@@ -319,7 +322,7 @@ caml_alloc
 +       DEC @CNT                        ;  Decrement loop counter
         BNE -                           ; End of loop: scan fields.
         BEQ --                          ;End of loop: scan blocks.
-+++     RTS
+        RTS
 
 .caml_gc_scnroots
         ;; Scan all roots in a contiguous memory area (starting from the address
@@ -384,12 +387,7 @@ caml_alloc
         DEY                             ;  Y := $FE
         LDA (@SCN),Y                    ;  A := tag
         CMP # Infix_tag                 ;  is it an infix block?
-        BEQ @infix                      ;  yes: skip to proper section. An infix
-                                        ;  block is NOT marked as visited: its
-                                        ;  size is the offset from the main
-                                        ;  block, needed by any other pointer
-                                        ;  to it (only the main block is copied
-                                        ;  and gets a forward pointer).
+        BEQ @infix                      ;  yes: skip to proper section.
         INY                             ;  no: mark this block as visited,
         LDA # 0                         ;    setting its size = 0
         STA (@SCN),Y
@@ -446,11 +444,14 @@ caml_alloc
         STA (@SCN),Y                    ;  and write it in field(0),lo
         SEC                             ;  set carry before exit
         RTS                             ;  RETURN (X:A=fwdptr, Y=0)
-@infix  TXA                             ;A:=X=size=dist.from main blk
+        ;;  An infix block is NOT marked as visited: its size is the offset from
+        ;;  the main block, needed by any other pointer to it (only the main
+        ;;  block is copied and gets a forward pointer).
+@infix  TXA                             ;A := X = size = dist.from main blk
         STX @dst + 1                    ;save it for later
         ASL                             ;C:A := 2*dist.
         STA @dst2lo + 1                 ;write next SBC's arg.
-        BCC +                           ;perform @SCN:=@SCN-.DST:
+        BCC +                           ;perform @SCN := @SCN - .DST:
         DEC @SCN + 1                    ;  decr @SCN_hi if C set
 +       LDA @SCN                        ;  load @SCN_lo
         SEC
@@ -470,7 +471,7 @@ caml_alloc
         BCC +
         INX                             ;  adjust X
 +       SEC                             ;set carry before exit
-        RTS                             ;RETURN(X:A=infix forward ptr)
+        RTS                             ;RETURN (X:A = infix forward ptr)
 
 caml_shrink_latest_alloc
         ;; Reduce the size of the latest allocated block; new size MUST BE less
@@ -503,7 +504,7 @@ caml_shrink_latest_alloc
         STA HEAP + 1                    ;Store new value, hi byte
         RTS                             ;Return.
 
-	;; Copy BLK to ACCU.
+        ;; Copy BLK to ACCU.
 caml_load_newblk
         LDA BLK + 1
         STA ACCU + 1
