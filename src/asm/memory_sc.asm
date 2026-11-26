@@ -13,14 +13,11 @@
 ;; ——————————————————————————————————————————————————————————————————————
 
 ;; -----------------------------------------------------------------------------
-;;           MEMORY MANAGEMENT - HEAP ALLOCATION AND GARBAGE COLLECTION
+;;      MEMORY MANAGEMENT - HEAP ALLOCATION AND GARBAGE COLLECTION
+;;      STOP-AND-COPY GARBAGE COLLECTOR
 ;; -----------------------------------------------------------------------------
-                                                
-!zone caml_MEMORY {
-caml_memory
 
-.dummy = $1234                          ;dummy operand for self-modifying
-                                        ;code (SMC in comments)
+!ifndef caml_gc_stop_and_copy !eof
 
 ;; GLOBALS - Two possible strategies:
 ;; caml_globals_on_heap = 1
@@ -38,6 +35,11 @@ caml_memory
 ;;   globals between the two semi-spaces and frees up G/2 bytes of heap space
 ;;   (where G is the size of the globals).
 
+!zone caml_MEMORY {
+caml_memory
+
+.dummy = $1234                          ;dummy operand for self-modifying
+                                        ;code (SMC in comments)
 
 !ifndef caml_globals_on_heap {
   .hs = caml_glob_end
@@ -473,37 +475,6 @@ caml_alloc
 +       SEC                             ;set carry before exit
         RTS                             ;RETURN (X:A = infix forward ptr)
 
-caml_shrink_latest_alloc
-        ;; Reduce the size of the latest allocated block; new size MUST BE less
-        ;; than the original one (no check) and NO GARBAGE COLLECTION occurred
-        ;; since the block allocation. Params: X=size>0, Y=0, BLK=address.
-        ;; Shrinking is done by updating the new size in the block's header and
-        ;; the HEAP pointer. Return: A=X=size, Y=0.
-@SZ     = GC                            ;2 by - block size in bytes
-        DEC BLK + 1                     ;Prepare access to the 'size'
-        DEY                             ; byte in block's header
-        LDA (BLK),Y                     ;Read original size from header
-        STA @SZ                         ; and save it
-        TXA                             ;A := new size
-        STA (BLK),Y                     ;Write new size into header
-        INC BLK + 1                     ;Restore block pointer
-        INY                             ; and Y register
-        EOR # $FF                       ;Do an inverse subtraction:
-        SEC                             ; A := @SZ - A
-        ADC @SZ                         ;    = orig.size - new size
-        ASL                             ;Compute 2 * A
-        STA @SZ                         ;Store result, lo byte, in @SZ
-        STY @SZ + 1                     ;Set @SZ + 1 to 0
-        ROL @SZ + 1                     ;Store result, MSB, in @SZ + 1
-        LDA HEAP                        ;Recover unused block bytes by
-        SEC                             ; decrementing the heap pointer
-        SBC @SZ                         ; by 2 * (orig.size - new size)
-        STA HEAP                        ;Store new value, lo byte
-        LDA HEAP + 1
-        SBC @SZ + 1
-        STA HEAP + 1                    ;Store new value, hi byte
-        RTS                             ;Return.
-
         ;; Copy BLK to ACCU.
 caml_load_newblk
         LDA BLK + 1
@@ -519,6 +490,37 @@ caml_mkatom0
         LDA # > caml_atom0
         STA ACCU + 1
         RTS
+
+caml_shrink_latest_alloc
+        ;; Reduce the size of the latest allocated block; new size MUST BE less
+        ;; than the original one (no check) and NO GARBAGE COLLECTION occurred
+        ;; since the block allocation. Params: X=size>0, Y=0, BLK=address.
+        ;; Shrinking is done by updating the new size in the block's header and
+        ;; the HEAP pointer. Return: A=X=size, Y=0.
+        @SZ2 = GC                       ;2 by - block size in bytes
+        DEC BLK + 1                     ;Prepare access to the 'size'
+        DEY                             ; byte in block's header
+        LDA (BLK),Y                     ;Read original size from header
+        STA @SZ2                        ; and save it
+        TXA                             ;A := new size
+        STA (BLK),Y                     ;Write new size into header
+        INC BLK + 1                     ;Restore block pointer
+        INY                             ; and Y register
+        EOR # $FF                       ;Do an inverse subtraction:
+        SEC                             ; A := @SZ2 - A
+        ADC @SZ2                        ;    = orig.size - new size
+        ASL                             ;Compute 2 * A
+        STA @SZ2                        ;Store result, lo byte, in @SZ2
+        STY @SZ2 + 1                    ;Set @SZ2 + 1 to 0
+        ROL @SZ2 + 1                    ;Store result, MSB, in @SZ2 + 1
+        LDA HEAP                        ;Recover unused block bytes by
+        SEC                             ; decrementing the heap pointer
+        SBC @SZ2                        ; by 2 * (orig.size - new size)
+        STA HEAP                        ;Store new value, lo byte
+        LDA HEAP + 1
+        SBC @SZ2 + 1
+        STA HEAP + 1                    ;Store new value, hi byte
+        RTS                             ;Return.
 
 caml_memory_end
 } ;!zone caml_MEMORY

@@ -60,7 +60,7 @@ install: all
 	@$(call message,INSTALL: ,Binaries)
 	$(call inst_and_rec,bin/bcamlc,$(BINDIR),755)
 	$(call inst_and_rec,bin/bcamlppx,$(BINDIR),755)
-	strip bin/bcaml{c,ppx}
+	#strip bin/bcaml{c,ppx}
 	ln -fsT $(BINDIR)/bcamlc $(BINDIR)/bcamlopt
 	echo "FILE:$(BINDIR)/bcamlopt" >> "$(UNINST)"
 	@$(call message,INSTALL: ,Assembly routines)

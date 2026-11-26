@@ -11,12 +11,14 @@
    2, come specificato nel file  LICENZA-it nella cartella principale del
    progetto.
    —————————————————————————————————————————————————————————————————————— *)
+
 open OByteLib.Instr
 
+(* [opc_of i] is the opcode of the bytecode instruction [i] *)
 let opc_of = function
   (* stack *)
   | ACC0 -> 0 | ACC1 -> 1 | ACC2 -> 2 | ACC3 -> 3 | ACC4 -> 4 | ACC5 -> 5
-  | ACC6 -> 6 | ACC7 -> 7 | ACC _ -> 8 | PUSH -> 9  | POP _ -> 19
+  | ACC6 -> 6 | ACC7 -> 7 | ACC _ -> 8 | PUSH -> 9 | POP _ -> 19
   | ASSIGN _ -> 20
   (* environment *)
   | ENVACC1 -> 21 | ENVACC2 -> 22 | ENVACC3 -> 23 | ENVACC4 -> 24
@@ -34,11 +36,11 @@ let opc_of = function
   | MAKEBLOCK2 _ -> 64 | MAKEBLOCK3 _ -> 65 | GETFIELD0 -> 67 | GETFIELD1 -> 68
   | GETFIELD2 -> 69 | GETFIELD3 -> 70 | GETFIELD _ -> 71 | SETFIELD0 -> 73
   | SETFIELD1 -> 74 | SETFIELD2 -> 75 | SETFIELD3 -> 76 | SETFIELD _ -> 77
-  (* arrays *)
+  (* blocks: arrays *)
   | VECTLENGTH -> 79 | GETVECTITEM -> 80 | SETVECTITEM -> 81
-  (* float arrays *)
+  (* blocks: float arrays *)
   | MAKEFLOATBLOCK _ -> 66 | GETFLOATFIELD _ -> 72 | SETFLOATFIELD _ -> 78
-  (* bytes/strings *)
+  (* blocks: bytes/strings *)
   | GETBYTESCHAR -> 82 | SETBYTESCHAR -> 83 | GETSTRINGCHAR -> 148
   (* exceptions *)
   | PUSHTRAP _ -> 89 | POPTRAP -> 90 | RAISE -> 91 | RERAISE -> 146
@@ -46,7 +48,7 @@ let opc_of = function
   (* externals *)
   | C_CALL1 _ -> 93 | C_CALL2 _ -> 94 | C_CALL3 _ -> 95 | C_CALL4 _ -> 96
   | C_CALL5 _ -> 97 | C_CALLN (_, _) -> 98
-  (* constants *)
+  (* int constants *)
   | CONST0 -> 99 | CONST1 -> 100 | CONST2 -> 101 | CONST3 -> 102
   | CONSTINT _ -> 103
   (* arithm.-logical *)
@@ -73,14 +75,16 @@ let opc_of = function
   | PUSHGETGLOBALFIELD (_, _) -> 56 | PUSHATOM0 -> 60 | PUSHATOM _ -> 61
   | PUSHCONST0 -> 104 | PUSHCONST1 -> 105 | PUSHCONST2 -> 106
   | PUSHCONST3 -> 107 | PUSHCONSTINT _ -> 108
-  (* halt/debug/misc. *)
+  (* halt/debug/misc *)
   | CHECK_SIGNALS -> 92 | STOP -> 143 | EVENT -> 144 | BREAK -> 145
 
+(* Type for the arguments of bytecode instructions *)
 type instr_arg =
   | Num of int
   | Ptr of int
   | Ptrs of int array
 
+(* Constants for pretty printing assembly code fragments *)
 let lbl_fmt = format_of_string "caml_%04x"
 let opc_fmt = format_of_string "+i%02x"
 let arg_fmt = format_of_string "%d"
@@ -91,12 +95,15 @@ let tab = 10
 let max_col = 80
 let col = ref 0
 
-let (~%) f x y = f y x
-let (#%) fold f = ~%(fold ~%f)
+(* Sugar to make using [List.fold_left], etc. sweeter *)
+let ( #% ) fold_fun f = Fun.flip (fold_fun (Fun.flip f))
+
+(* Concatenate with spaces in between to align the 2nd string at column [tab] *)
 let (^...) str1 str2 =
   let spaces = String.(make (max 1 (tab - length str1)) ' ') in
   str1 ^ spaces ^ str2
 
+(* Convert an instruction argument to a string *)
 let str_of_arg = function
   | Num n -> Printf.sprintf arg_fmt n
   | Ptr p -> Printf.sprintf lbl_fmt p
@@ -104,161 +111,178 @@ let str_of_arg = function
     let args = Array.(to_list (map (Printf.sprintf lbl_fmt) ps)) in
     "[" ^ String.concat arg_sep args ^ "]"
 
-let str_of_lbl label = Printf.sprintf lbl_fmt label
+(* Convert an instruction label to a string *)
+let str_of_lbl label =
+  Printf.sprintf lbl_fmt label
 
-let emit_op oc label opcode args =
+(* Emit to [oc] an assembly fragment for given [label], [opcode] and [arg] *)
+let emit_asm oc label opcode args =
   let args_str = String.concat arg_sep (List.map str_of_arg args) in
   let cmd = Printf.sprintf opc_fmt opcode
             ^ if args_str = "" then "" else cmdarg_sep ^ args_str in
   let len_cmd = String.length cmd in
   match label with
   | Some lbl ->
-    output_string oc ("\n" ^ str_of_lbl lbl ^... cmd);
-    col := tab + len_cmd
+     output_string oc ("\n" ^ str_of_lbl lbl ^... cmd);
+     col := tab + len_cmd
   | None ->
-    let new_col = !col + String.length arg_sep + len_cmd in
-    if new_col <= max_col
-    then (output_string oc (cmd_sep ^ cmd);
-          col := new_col)
-    else (output_string oc ("\n" ^ "" ^... cmd);
-          col := tab + len_cmd)
+     let new_col = !col + String.length arg_sep + len_cmd in
+     if new_col <= max_col then
+       (output_string oc (cmd_sep ^ cmd);
+        col := new_col)
+     else
+       (output_string oc ("\n" ^ "" ^... cmd);
+        col := tab + len_cmd)
 
-let emit_asm oc label instr args = emit_op oc label (opc_of instr) args
+(* ___________________________ Direct calls _________________________________ *)
+(* OPTIMIZATION OF KNOWN FUNCTIONS (bcamlopt -otime).  A global g is a known
+   function when its only SETGLOBAL g immediately follows the CLOSURE (or the
+   one-function CLOSUREREC) that builds it.  The following sequences, whose
+   callee is known at compile time and whose arity is exactly the number of
+   arguments, are replaced by specific opcodes 0xA0-0xA3 which jump straight to
+   the closure's code, skipping the code pointer read and the callee's GRAB:
+     PUSHOFFSETCLOSURE0; APPLYn      ->  PUSH; APPLYD n,t
+     PUSHOFFSETCLOSURE0; APPTERMn s  ->  PUSH; APPTERMD n,s,t
+     [PUSH]GETGLOBAL g;  APPLYn      ->  ...;  APPLYG n,t
+     [PUSH]GETGLOBAL g;  APPTERMn s  ->  ...;  APPTERMG n,s,t
+   where t is the callee's entry, past its GRAB.
+ *)
 
-(* -otime: direct calls.
-   The following sequences, whose callee is known at compile time and whose
-   arity is exactly the number of arguments, are replaced by the native-only
-   opcodes 0xa0-0xa3 (see codegen.asm), which skip the closure's code pointer
-   read and the callee's GRAB:
-     PUSHOFFSETCLOSURE0; APPLYn          -> PUSH; APPLYD n,t
-     PUSHOFFSETCLOSURE0; APPTERMn s      -> PUSH; APPTERMD n,s,t
-     [PUSH]GETGLOBAL g; APPLYn           -> ...; APPLYG n,t
-     [PUSH]GETGLOBAL g; APPTERMn s       -> ...; APPTERMG n,s,t
-   where t is the callee's entry, past its GRAB. A global g is a known function
-   when its only SETGLOBAL immediately follows the CLOSURE (or the one-function
-   CLOSUREREC) that builds it. *)
-let direct_calls = ref false
+let direct_calls = ref false (* bcamlopt -otime sets it to true *)
 
-let find_direct_calls code is_ptr =
+type dc_t = APPLYD | APPTERMD | APPLYG | APPTERMG
+
+let opc_of_dc = function
+  | APPLYD   -> 0xA0
+  | APPTERMD -> 0xA1
+  | APPLYG   -> 0xA2
+  | APPTERMG -> 0xA3
+
+(* Return (repl. table, targets) to optimize code, given test is_pointed *)
+let find_direct_calls code is_pointed =
   let n = Array.length code in
+  (* is_entry.(p) is true iif p is an entry of a function *)
   let is_entry = Array.make n false in
   let mark p = if 0 <= p && p < n then is_entry.(p) <- true in
   Array.iter (function
       | CLOSURE (_, p) -> mark p
       | CLOSUREREC (_, _, o, t) -> mark o; Array.iter mark t
       | _ -> ()) code;
-  (* encl.(i) = entry of the function that contains instruction i *)
+
+  (* encl.(i) is the entry of the function that encloses instruction i *)
   let encl = Array.make n (-1) in
-  let cur = ref (-1) in
-  Array.iteri (fun i _ -> if is_entry.(i) then cur := i; encl.(i) <- !cur) code;
+  let j = ref (-1) in
+  Array.iteri (fun i _ -> (if is_entry.(i) then j := i); encl.(i) <- !j) code;
+
+  (* The key in setcount is a global g; the value is the no. of SETGLOBAL g *)
   let setcount = Hashtbl.create 64 in
   Array.iter (function
-      | SETGLOBAL g ->
-        Hashtbl.replace setcount g
-          (1 + (try Hashtbl.find setcount g with Not_found -> 0))
+      | SETGLOBAL g -> let c = try Hashtbl.find setcount g with Not_found -> 0
+                       in Hashtbl.replace setcount g (c + 1)
       | _ -> ()) code;
-  let gfun = Hashtbl.create 64 in
-  let add_gfun g e =
-    if Hashtbl.find_opt setcount g = Some 1 then Hashtbl.replace gfun g e in
-  for i = 0 to n - 2 do
-    if not (is_ptr (i + 1)) then
-      match code.(i), code.(i + 1) with
-      | CLOSURE (_, e), SETGLOBAL g -> add_gfun g e
-      | CLOSUREREC (1, _, e, [||]), ACC0
-        when i + 2 < n && not (is_ptr (i + 2)) ->
-        (match code.(i + 2) with SETGLOBAL g -> add_gfun g e | _ -> ())
-      | _ -> ()
+
+  (* The key in known is a known function; the value is its entry *)
+  let known = Hashtbl.create 64 in
+  let add_known g e =
+    if Hashtbl.find_opt setcount g = Some 1 then Hashtbl.replace known g e in
+  for i = 0 to n - 3 do
+    match code.(i), code.(i + 1), code.(i + 2) with
+    | CLOSURE (_, e), SETGLOBAL g, _
+      when not (is_pointed (i + 1)) -> add_known g e
+    | CLOSUREREC (1, _, e, [||]), ACC0, SETGLOBAL g
+      when not (is_pointed (i + 1) || is_pointed (i + 2)) -> add_known g e
+    | _ -> ()
   done;
-  (* Where to enter the callee e when called with the given arity *)
-  let target e arity =
-    if e < 0 || e >= n then None
-    else match code.(e) with
-      | GRAB m -> if m = arity - 1 && e + 1 < n then Some (e + 1) else None
-      | _ -> if arity = 1 then Some e else None in
+
+  (* Function calls: arity, tail *)
   let call_of = function
-    | APPLY1 -> Some (1, None) | APPLY2 -> Some (2, None)
+    | APPLY1 -> Some (1, None)
+    | APPLY2 -> Some (2, None)
     | APPLY3 -> Some (3, None)
-    | APPTERM1 s -> Some (1, Some s) | APPTERM2 s -> Some (2, Some s)
+    | APPTERM1 s -> Some (1, Some s)
+    | APPTERM2 s -> Some (2, Some s)
     | APPTERM3 s -> Some (3, Some s)
     | _ -> None in
-  let repl = Hashtbl.create 64 in
-  let extra = ref [] in
-  for i = 0 to n - 2 do
-    if not (is_ptr (i + 1)) then
-      match call_of code.(i + 1) with
-      | None -> ()
-      | Some (arity, tail) ->
-        let site = match code.(i) with
-          | PUSHOFFSETCLOSURE0 when encl.(i) >= 0 -> Some (encl.(i), true)
-          | GETGLOBAL g | PUSHGETGLOBAL g ->
-            (match Hashtbl.find_opt gfun g with
-             | Some e -> Some (e, false)
-             | None -> None)
-          | _ -> None in
-        match site with
-        | None -> ()
-        | Some (e, self) ->
-          match target e arity with
-          | None -> ()
-          | Some t ->
-            extra := t :: !extra;
-            if self then Hashtbl.replace repl i (opc_of PUSH, []);
-            let opc = match self, tail with
-              | true, None -> 0xa0 | true, Some _ -> 0xa1
-              | false, None -> 0xa2 | false, Some _ -> 0xa3 in
-            let args = match tail with
-              | None -> [Num arity; Ptr t]
-              | Some s -> [Num arity; Num s; Ptr t] in
-            Hashtbl.replace repl (i + 1) (opc, args)
-  done;
-  repl, !extra
 
+  (* Target address for callee i when called with arity args: i+1 if i is a GRAB
+     matching arity; i if not GRAB and arity=1; else none. *)
+  let get_target i arity =
+    if i < 0 || i >= n then None else
+      match code.(i) with
+      | GRAB m -> if arity = m + 1 && i + 1 < n then Some (i + 1) else None
+      | _ -> if arity = 1 then Some i else None in
+
+  (* Build the replacement table and the list of targets *)
+  let (repl, targets) = Hashtbl.create 64, ref [] in
+  for i = 0 to n - 2 do
+    match call_of code.(i + 1) with
+    | Some (arity, tail) when not (is_pointed (i + 1)) ->
+       let optimize ~caller ~target ~self =
+         let (instr, args) = match self, tail with
+           | true,  None   -> APPLYD,   [Num arity; Ptr target]
+           | true,  Some s -> APPTERMD, [Num arity; Num s; Ptr target]
+           | false, None   -> APPLYG,   [Num arity; Ptr target]
+           | false, Some s -> APPTERMG, [Num arity; Num s; Ptr target] in
+         targets := target :: !targets;
+         if self then Hashtbl.replace repl caller (opc_of PUSH, []);
+         Hashtbl.replace repl (caller + 1) (opc_of_dc instr, args) in
+       (match code.(i) with
+        | PUSHOFFSETCLOSURE0 when encl.(i) >= 0 ->
+           (match get_target encl.(i) arity with
+            | Some target -> optimize ~caller:i ~target ~self:true
+            | None -> ())
+        | GETGLOBAL g | PUSHGETGLOBAL g ->
+           (match get_target (Hashtbl.find known g) arity with
+            | Some target -> optimize ~caller:i ~target ~self:false
+            | None | exception Not_found -> ())
+        | _ -> ())
+    | _ -> ()
+  done;
+  (repl, !targets)
+(* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ *)
+
+(* Export to oc the assembly fragment for the given code *)
 let export oc code =
   let module AdrSet = Set.Make(Int) in
   let pointers =
     let init = AdrSet.add 0 AdrSet.empty in
-    let add_ptrs instr =
-      List.fold_left #% AdrSet.add (get_ptrs instr) in
+    let add_ptrs instr = List.fold_left #% AdrSet.add (get_ptrs instr) in
     Array.fold_left #% add_ptrs code init in
-  let repl, extra =
-    if !direct_calls
-    then find_direct_calls code (fun adr -> AdrSet.mem adr pointers)
-    else Hashtbl.create 1, [] in
-  let pointers = List.fold_left (fun set adr -> AdrSet.add adr set)
-      pointers extra in
+(* ___________________________ Direct calls _________________________________ *)
+  let (repl, targets) =
+    if !direct_calls then
+      find_direct_calls code (Fun.flip AdrSet.mem pointers)
+    else Hashtbl.create 0, [] in
+  let pointers = List.fold_left #% AdrSet.add targets pointers in
+(* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ *)
   let export_lbl_instr adr instr =
     let label = if AdrSet.mem adr pointers then Some adr else None in
-    match Hashtbl.find_opt repl adr with
-    | Some (opcode, args) -> emit_op oc label opcode args
-    | None ->
-    match instr with
-    | ACC n | APPLY n | ASSIGN n | CONSTINT n | ENVACC n | GETFIELD n
-    | GETFLOATFIELD n | GETGLOBAL n | GRAB n | OFFSETCLOSURE n
-    | OFFSETINT n | OFFSETREF n | POP n | PUSHACC n | PUSHCONSTINT n
-    | PUSHENVACC n | PUSHGETGLOBAL n | PUSHOFFSETCLOSURE n | RETURN n
-    | SETFIELD n | SETFLOATFIELD n | SETGLOBAL n | APPTERM1 n
-    | APPTERM2 n | APPTERM3 n | ATOM n | MAKEBLOCK1 n | MAKEBLOCK2 n
-    | MAKEBLOCK3 n | PUSHATOM n | MAKEFLOATBLOCK n | C_CALL1 n
-    | C_CALL2 n | C_CALL3 n | C_CALL4 n | C_CALL5 n ->
-      emit_asm oc label instr [Num n]
-    | BRANCH ptr | BRANCHIF ptr | BRANCHIFNOT ptr | PUSHTRAP ptr
-    | PUSH_RETADDR ptr ->
-      emit_asm oc label instr [Ptr ptr]
-    | BEQ (n, ptr) | BGEINT (n, ptr) | BGTINT (n, ptr) | BLEINT (n, ptr)
-    | BLTINT (n, ptr) | BNEQ (n, ptr) | BUGEINT (n, ptr) | BULTINT (n, ptr)
-    | CLOSURE (n, ptr) ->
-      emit_asm oc label instr [Num n; Ptr ptr]
-    | APPTERM (n, m) | MAKEBLOCK (n, m) | C_CALLN (n, m)
-    | GETGLOBALFIELD (n, m) | PUSHGETGLOBALFIELD (n, m) ->
-      emit_asm oc label instr [Num n; Num m]
-    | GETPUBMET (tag, _) ->
-      emit_asm oc label instr [Num (tag land 0x7FFF)]
-    | SWITCH (n, ptrs) ->
-      emit_asm oc label instr [Num (n land 0xFFFF); Ptrs ptrs]
-    | CLOSUREREC (f, v, o, t) ->
-      emit_asm oc label instr [Num f; Num v; Ptr o; Ptrs t]
-    | _instr_with_no_args_ ->
-      emit_asm oc label instr [] in
+    let (opc, args) =
+(* ___________________________ Direct calls _________________________________ *)
+      try Hashtbl.find repl adr with Not_found ->
+(* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ *)
+      (opc_of instr,
+       match instr with
+       | ACC n | APPLY n | ASSIGN n | CONSTINT n | ENVACC n | GETFIELD n
+         | GETFLOATFIELD n | GETGLOBAL n | GRAB n | OFFSETCLOSURE n
+         | OFFSETINT n | OFFSETREF n | POP n | PUSHACC n | PUSHCONSTINT n
+         | PUSHENVACC n | PUSHGETGLOBAL n | PUSHOFFSETCLOSURE n | RETURN n
+         | SETFIELD n | SETFLOATFIELD n | SETGLOBAL n | APPTERM1 n | APPTERM2 n
+         | APPTERM3 n | ATOM n | MAKEBLOCK1 n | MAKEBLOCK2 n | MAKEBLOCK3 n
+         | PUSHATOM n | MAKEFLOATBLOCK n | C_CALL1 n | C_CALL2 n | C_CALL3 n
+         | C_CALL4 n | C_CALL5 n -> [Num n]
+       | BRANCH ptr | BRANCHIF ptr | BRANCHIFNOT ptr | PUSHTRAP ptr
+         | PUSH_RETADDR ptr -> [Ptr ptr]
+       | BEQ (n, ptr) | BGEINT (n, ptr) | BGTINT (n, ptr) | BLEINT (n, ptr)
+         | BLTINT (n, ptr) | BNEQ (n, ptr) | BUGEINT (n, ptr) | BULTINT (n, ptr)
+         | CLOSURE (n, ptr) -> [Num n; Ptr ptr]
+       | APPTERM (n, m) | MAKEBLOCK (n, m) | C_CALLN (n, m)
+         | GETGLOBALFIELD (n, m) | PUSHGETGLOBALFIELD (n, m) -> [Num n; Num m]
+       | GETPUBMET (tag, _) -> [Num (tag land 0x7FFF)]
+       | SWITCH (n, ptrs) -> [Num (n land 0xFFFF); Ptrs ptrs]
+       | CLOSUREREC (f, v, o, t) -> [Num f; Num v; Ptr o; Ptrs t]
+       | _instr_with_no_args -> []) in
+    emit_asm oc label opc args in
   output_string oc "\ncaml_program\n";
   Array.iteri export_lbl_instr code;
   output_string oc "\ncaml_program_end\n"

@@ -103,8 +103,7 @@ let list_rev_split n l =
   in f [] n l
 
 (* Sugar to make using |> with List.fold_left, etc. sweeter *)
-let ( #% ) fold_fun f =
-  let swap f a b = f b a in swap(fold_fun (swap f))
+let ( #% ) fold_fun f = Fun.flip (fold_fun (Fun.flip f))
 
 (* Add a global value to the collection *)
 let rec add_global value globals = match value with

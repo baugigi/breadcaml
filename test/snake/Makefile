@@ -18,7 +18,7 @@ TARGET := snake.prg
 SOURCE := iOtools snake
 EXTLIB := iOtools
 COMP = bcamlopt #bcamlc
-FLAGS = -otime -verbose -db snake.db
+FLAGS = -otime -verbose -db snake.db -gc stop_and_copy -showmem
 ASMFLAGS = #-r snake.rep -Dcaml_globals_on_heap=1
 
 $(TARGET): $(EXTLIB:=.asm) $(EXTLIB:=.c) $(SOURCE:=.cmo)
