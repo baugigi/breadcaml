@@ -64,6 +64,15 @@
 ;;              is replaced by .newaddr(pointer).
 ;;  4. SLIDE    live blocks are moved down, in address order.
 ;;
+;; MARKING PROTOCOL (pointer reversal). While a block is being scanned, FP is
+;; the field under examination, BP/X its BAM bit, PP the chain of the "parent
+;; fields" (the fields through which we descended). When a field points to an
+;; unmarked child, the field is overwritten with the old PP (so it now points
+;; to the parent's parent field), PP := that field and the child is scanned.
+;; When the child's header (a 0 bit) is reached the child is done: the original
+;; pointer is restored in the field PP designates, PP is popped and the scan of
+;; the parent resumes from the field before it. The root has no parent (PP=0).
+;;
 ;; ZERO PAGE: GC .. GC+8, BLK, HEAP and $47-$48 are used as scratch (HEAP is
 ;; restored at the end); TMP is NOT touched.
 
@@ -159,12 +168,12 @@ caml_heap_init
         LDA TMP + 1
         SBC # >caml_glob_data
         BCS @done_caml_heap_init
-        LDA (TMP),Y                     ;lo byte
+        LDA (TMP),Y
         TAX
         LSR
         BCS @skip_caml_heap_init        ;odd: integer
         INY
-        LDA (TMP),Y                     ;hi byte
+        LDA (TMP),Y
         DEY
         CPX # <caml_glob_end            ;address >= caml_glob_end?
         SBC # >caml_glob_end
@@ -188,31 +197,35 @@ caml_heap_init
         STA HEAP + 1
         RTS
 
-        ;; Allocate a block (NOT FOR ATOMS!); params: A=tag, X=size>0
-        ;; Return BLK=block's address, A=X=size, Y=0; or raise Out_of_memory
-        ;; C = 1 iif a GC occurred
+        ;; Allocate a block (NOT FOR ATOMS!); params: A=tag, X=size>0.
+        ;; Return BLK=address of field 0, A=X=size, Y=0; or raise
+        ;; Out_of_memory. C=1 iff a GC occurred.
+        ;; Bump allocation: when the heap is full the old HEAP is restored,
+        ;; the GC runs once and the allocation is retried; a second failure
+        ;; raises Out_of_memory. The "GC already done" flag travels in C on
+        ;; the hw stack.
 caml_alloc
         CLC
         STX .ASZ
         STA .ATAG
 @retry_caml_alloc
-        PHP                             ;save GC-done flag on HW stack
+        PHP                             ;save the GC-done flag (C)
         LDA HEAP
         STA BLK
         LDA HEAP + 1
         STA BLK + 1
-        INX                             ;perform HEAP:=HEAP+2*(size+1):
-        BNE +                           ;  if size + 1 = 256
-        INC HEAP + 1                    ;  then incr. HEAPh
-        INC HEAP + 1                    ;    twice (512 bytes)
-        BNE @limits_caml_alloc                     ;    BNE=JMP
-+       TXA                             ;  else
-        ASL                             ;    C:A := 2*(size+1),
-        BCC +                           ;    if carry set then
-        INC HEAP + 1                    ;      add it to HEAPh,
+        INX                             ;HEAP := HEAP + 2 * (size + 1)
+        BNE +                           ;size + 1 = 256 words: 512 bytes
+        INC HEAP + 1
+        INC HEAP + 1
+        BNE @limits_caml_alloc
++       TXA
+        ASL
+        BCC +
+        INC HEAP + 1
         CLC
-+       ADC HEAP                        ;    add 2*(size+1)
-        STA HEAP                        ;    to HEAPl
++       ADC HEAP
+        STA HEAP
         BCC @limits_caml_alloc
         INC HEAP + 1
         ;; If there's enough room, write tag and size into the header and exit
@@ -222,15 +235,15 @@ caml_alloc
         LDA # >.DE
         SBC HEAP + 1                    ;.DE < HEAP?
         BCC @gctry_caml_alloc           ;yes: try a garbage collection
-        LDA .ATAG                       ;no: write tag and size
+        LDA .ATAG                       ;room: write the header (tag, size)
         LDY # 0
-        STA (BLK),Y                     ;  header's 1st by. := tag
-        INC BLK                         ;  (safe, BLK is even)
+        STA (BLK),Y
+        INC BLK
         LDA .ASZ
-        STA (BLK),Y                     ;  header's 2nd by. := size
+        STA (BLK),Y
         INC BLK
         BNE +
-        INC BLK + 1                     ;  BLK=address of field(0)
+        INC BLK + 1                     ;BLK = address of field 0
 +       PLP                             ;  pop GC-done flag
         TAX                             ;  RETURN A=X=size, BLK=addr,
         RTS                             ;    C=GC-done flag.
@@ -253,8 +266,11 @@ caml_alloc
 ;;      GARBAGE COLLECTION
 ;; -----------------------------------------------------------------------------
 
+        ;; Entry point of the collector, called by caml_alloc when the heap
+        ;; is full. USED := the true end of the heap; then the four phases
+        ;; (see above).
 .caml_garbage_collect
-        LDA HEAP                        ;save the end of the used heap
+        LDA HEAP
         STA .USED
         LDA HEAP + 1
         STA .USED + 1
@@ -266,18 +282,20 @@ caml_alloc
 
 ;; -------------------------------- UTILITIES ----------------------------------
 
-        ;; .bamloc: WP = address within the data; return EBP = BAM byte address
-        ;; and X = bit index of its word. Clobbers A, T1, T2. Y unchanged.
+        ;; Map the heap address in WP to its BAM bit: EBP = address of the
+        ;; BAM byte, X = bit index in it (0 = MSB = lowest address). BAM byte
+        ;; = (addr >> 4) + K, bit = (addr >> 1) AND 7. Clobbers A, T1, T2; Y
+        ;; unchanged.
 .bamloc LDA .WP
         LSR
         AND # 7
-        TAX                             ;X := bit index = (lo >> 1) & 7
+        TAX
         LDA .WP + 1
         LSR
         LSR
         LSR
         LSR
-        STA .T2                         ;T2 := hi >> 4
+        STA .T2
         LDA .WP + 1
         ASL
         ASL
@@ -289,7 +307,7 @@ caml_alloc
         LSR
         LSR
         LSR
-        ORA .T1                         ;A := low byte of (addr >> 4)
+        ORA .T1
         CLC
         ADC # <.K
         STA .EBP
@@ -298,23 +316,24 @@ caml_alloc
         STA .EBP + 1
         RTS
 
-        ;; .mark_range: set to 1 the N (1..255) bits starting at EBP, X.
-        ;; Return EBP, X = location of the last bit set. Y = 0. Clobbers A, T1-3
+        ;; Set to 1 the N (1..255) consecutive BAM bits starting at (EBP, X):
+        ;; partial first byte, whole middle bytes, partial last byte. Return
+        ;; EBP, X = location of the last bit set, Y = 0. Clobbers A, T1-T3.
 .mark_range
-        STX .T1                         ;T1 := first bit index
+        STX .T1
         LDA .N
         SEC
         SBC # 1
         CLC
-        ADC .T1                         ;A := first + N - 1 (9 bits with C)
+        ADC .T1
         STA .T2
         ROR
         LSR
         LSR
-        STA .T3                         ;T3 := byte offset of the last bit
+        STA .T3
         LDA .T2
         AND # 7
-        STA .T2                         ;T2 := bit index of the last bit
+        STA .T2
         LDY # 0
         LDA .T3
         BNE @multi_mark_range
@@ -365,6 +384,10 @@ caml_alloc
 
 ;; ----------------------------------- MARK ------------------------------------
 
+        ;; Phase 1. Clear the BAM, then mark everything reachable from the
+        ;; roots: ACCU, ENV, the live part of the stack, the global table and
+        ;; the fields of the global data blocks (outside the heap, never
+        ;; moved).
 .mark_all
         ;; clear the BAM
         LDA # <.BAMS
@@ -430,16 +453,16 @@ caml_alloc
         SBC # >caml_glob_end
         BCS @gdone_mark_all
         LDY # 0
-        LDA (.RP),Y                     ;tag
+        LDA (.RP),Y
         TAX
         INY
-        LDA (.RP),Y                     ;size
+        LDA (.RP),Y
         STA .N
         INC .RP
-        INC .RP                         ;(RP even)
+        INC .RP
         BNE +
         INC .RP + 1
-+       LDA .N                          ;AREAHI := RP + 2 * size
++       LDA .N                          ;AREAHI := end of the block's fields
         ASL
         STA .AREAHI
         LDA # 0
@@ -497,7 +520,9 @@ caml_alloc
 @ret_rootwd
         RTS
 
-        ;; Mark everything reachable from the pointer in WP (in the heap).
+        ;; Mark everything reachable from the heap pointer in WP:
+        ;; depth-first, with pointer reversal instead of a stack (see MARKING
+        ;; PROTOCOL).
 .traverse
         JSR .enter
         BCS +
@@ -514,6 +539,10 @@ caml_alloc
         LDA .EBP + 1
         STA .BP + 1
         ;; FALLTHROUGH .scan (X = bit index)
+        ;; Scan loop, from the last field to the first. A 0 bit means we have
+        ;; gone past the first field onto the block's header: the block is
+        ;; finished. Otherwise, if the field is a pointer to an unmarked
+        ;; block of the heap, descend into it.
 .scan   LDY # 0
         LDA (.BP),Y
         AND .BIT,X
@@ -530,7 +559,9 @@ caml_alloc
         STX .BX
         JSR .enter
         BCC @back_scan                  ;leaf or already marked
-        ;; descend: invert the pointer, new parent chain
+        ;; Descend: the field takes the old PP (it now points to the parent's
+        ;; parent field), PP := this field, and the scan continues from the
+        ;; child's last field.
         LDY # 0
         LDA .PP
         STA (.FP),Y
@@ -553,13 +584,13 @@ caml_alloc
 @back_scan
         LDX .BX
 @next_scan
-        LDA .FP                         ;FP := FP - 2
+        LDA .FP                         ;go to the previous field
         SEC
         SBC # 2
         STA .FP
         BCS +
         DEC .FP + 1
-+       DEX                             ;previous bit
++       DEX
         BPL .scan
         LDX # 7
         LDA .BP
@@ -567,14 +598,15 @@ caml_alloc
         DEC .BP + 1
 +       DEC .BP
         JMP .scan
-        ;; the bit of FP is 0: FP is the header of the block, or the header of
-        ;; the infix through which the block was entered.
+        ;; Bit 0: FP is the header of the finished block, or the header of
+        ;; the infix through which a closure was entered (skipped: it is not
+        ;; a field).
 @hdr_scan
-        LDA (.FP),Y                     ;tag
+        LDA (.FP),Y
         CMP # Infix_tag
-        BEQ @next_scan                  ;infix header: skip
+        BEQ @next_scan
         STA .TAG
-        LDA .FP                         ;WP := block address
+        LDA .FP                         ;WP := pointer to the finished block
         CLC
         ADC # 2
         STA .WP
@@ -584,28 +616,30 @@ caml_alloc
         LDA .TAG
         CMP # Closure_tag
         BNE @up_scan
-        JSR .findinfix                  ;WP := the pointer to restore
+        JSR .findinfix                  ;closure: WP := infix pointer, if any
 @up_scan
         LDA .PP                         ;no parent: done
         ORA .PP + 1
         BNE @ascend_scan
         RTS
+        ;; Ascend: pop PP, put the original pointer back in the parent field
+        ;; and resume the scan of the parent from the field before it.
 @ascend_scan
-        LDA .PP                         ;FP := parent field
+        LDA .PP
         STA .FP
         LDA .PP + 1
         STA .FP + 1
         LDY # 0
-        LDA (.FP),Y                     ;PP := the saved chain
+        LDA (.FP),Y
         STA .PP
         LDA .WP
-        STA (.FP),Y                     ;restore the pointer
+        STA (.FP),Y
         INY
         LDA (.FP),Y
         STA .PP + 1
         LDA .WP + 1
         STA (.FP),Y
-        LDA .FP                         ;FP := FP - 2, and its BAM bit
+        LDA .FP
         SEC
         SBC # 2
         STA .FP
@@ -621,15 +655,18 @@ caml_alloc
         STA .BP + 1
         JMP .scan
 
-        ;; The closure at WP (header at FP, BAM bit of FP at BP, X) ends: if it
-        ;; was entered through an infix, the BAM bit of the infix header is 0:
-        ;; WP := address of the code pointer after it.
+        ;; End of a closure: if it was entered through an infix, the BAM bit
+        ;; of that infix header was cleared on entry. Find it (the only 0
+        ;; among the fields) and set WP to the infix pointer (address of the
+        ;; code pointer after the header), so that the parent field gets its
+        ;; original value back. No 0 bit: the closure was entered directly
+        ;; and WP is unchanged.
 .findinfix
         LDA .BP
         STA .EBP
         LDA .BP + 1
         STA .EBP + 1
-        INX                             ;bit of the block's first field
+        INX
         CPX # 8
         BNE +
         LDX # 0
@@ -657,9 +694,9 @@ caml_alloc
 @found_findinfix
         LDA .SIZE
         SEC
-        SBC .N                          ;A := word index of the infix header
+        SBC .N
         CLC
-        ADC # 1                         ;the code pointer follows it
+        ADC # 1
         ASL
         STA .T1
         LDA # 0
@@ -674,10 +711,13 @@ caml_alloc
         STA .WP + 1
         RTS
 
-        ;; Mark the block the pointer in WP points to, unless already marked.
-        ;; Return C=1 if the block has to be scanned: WP = address of its last
-        ;; field, EBP, X = its BAM location. Return C=0 if nothing to scan.
-        ;; FP, BP, PP are not modified.
+        ;; Visit the block pointed to by WP. Already marked: nothing to do.
+        ;; Otherwise mark all its fields in the BAM (the header bit stays 0).
+        ;; A pointer to an infix block marks the whole enclosing closure and
+        ;; clears the bit of the infix header (see INFIX). Return C=1 if the
+        ;; fields have to be scanned (WP = last field, (EBP, X) = its BAM
+        ;; bit), C=0 for already marked or pointer-free (tag >= No_scan_tag)
+        ;; blocks. FP, BP, PP are untouched.
 .enter  JSR .bamloc
         STX .CX
         LDY # 0
@@ -703,7 +743,7 @@ caml_alloc
         CMP # No_scan_tag
         BCS @no_enter                   ;no fields to scan
 @last_enter
-        LDA .SIZE                       ;WP := WP + 2 * (SIZE - 1)
+        LDA .SIZE
         SEC
         SBC # 1
         ASL
@@ -719,14 +759,17 @@ caml_alloc
 @no_enter
         CLC
         RTS
+        ;; Pointer to an infix block: its size is the distance from the start
+        ;; of the closure. Find the closure, mark it all, clear the infix
+        ;; header's bit.
 @infix_enter
-        LDA .EBP                        ;save the location of the infix bit
+        LDA .EBP
         STA .IBP
         LDA .EBP + 1
         STA .IBP + 1
         LDX .CX
         STX .IX
-        LDA .SIZE                       ;WP := WP - 2 * SIZE: the closure
+        LDA .SIZE
         ASL
         STA .T1
         LDA # 0
@@ -739,7 +782,7 @@ caml_alloc
         LDA .WP + 1
         SBC .T2
         STA .WP + 1
-        DEC .WP + 1                     ;closure's size
+        DEC .WP + 1
         LDY # $FF
         LDA (.WP),Y
         STA .SIZE
@@ -748,10 +791,10 @@ caml_alloc
         JSR .bamloc
         LDA .SIZE
         STA .N
-        JSR .mark_range                 ;mark all the closure
-        STX .CX                         ;(bit index of the last field)
-        LDX .IX                         ;clear the bit of the infix header,
-        BNE +                           ; that is the one before the infix's
+        JSR .mark_range
+        STX .CX
+        LDX .IX
+        BNE +
         LDA .IBP
         BNE ++
         DEC .IBP + 1
@@ -767,8 +810,11 @@ caml_alloc
 
 ;; ---------------------------------- TABLE ------------------------------------
 
-        ;; TBL[k] := number of live words before chunk k, bit 15 = last BAM
-        ;; bit before the chunk. A chunk is 2 BAM bytes.
+        ;; Phase 2. One pass over the BAM. For each chunk (2 BAM bytes =
+        ;; .CHUNK bytes of data) store the number of live words before it;
+        ;; bit 15 holds the last BAM bit before the chunk. Per byte:
+        ;; .LV[byte], minus 1 when a run of 1s continues across the byte
+        ;; boundary (the 0->1 step is not there). Table end: .TBLE.
 .build_table
         LDA # <.BAMS
         STA .BP
@@ -785,13 +831,13 @@ caml_alloc
         STA .BCNT
         LDY # 0
 @loop_build_table
-        LDA .BCNT                       ;table entry at the chunk start
+        LDA .BCNT                       ;start of a chunk: store its entry
         BNE @byte_build_table
         LDA .ACC
         STA (.IBP),Y
         INY
         LDA .ACC + 1
-        ORA .PREV                       ;($80 iff the last bit before is 1)
+        ORA .PREV
         STA (.IBP),Y
         DEY
         INC .IBP
@@ -813,8 +859,8 @@ caml_alloc
         BCC +
         INC .ACC + 1
 +       LDA .T3
-        AND .PREV                       ;previous bit 1 and first bit 1:
-        BPL +                           ; the 0->1 step was not there
+        AND .PREV                       ;run of 1s continues across bytes:
+        BPL +                           ;no 0->1 step, undo the +1 of .LV
         LDA .ACC
         BNE ++
         DEC .ACC + 1
@@ -823,12 +869,12 @@ caml_alloc
         LSR
         LDA # 0
         ROR
-        STA .PREV                       ;$80 iff the last bit is 1
+        STA .PREV
         JMP @adv_build_table
 @zero_build_table
-        STA .PREV                       ;A=0
+        STA .PREV
 @adv_build_table
-        LDA .BCNT                       ;BCNT := 1 - BCNT
+        LDA .BCNT
         EOR # 1
         STA .BCNT
         INC .BP
@@ -842,17 +888,20 @@ caml_alloc
         BNE @loop_build_table
         RTS
 
-        ;; WP := new address of the live word at address WP.
-        ;; Clobbers WP, EBP, IBP, A, X, Y, T1-T3, ACC, PREV.
+        ;; New address of the live block pointed to by WP, after the slide:
+        ;; DS + 2 * (live words up to the pointer's own bit - 1). The count
+        ;; starts from the chunk's table entry and adds the (at most 2) BAM
+        ;; bytes up to the target. Clobbers WP, EBP, IBP, A, X, Y, T1-T3,
+        ;; ACC, PREV.
 .newaddr
-        LDA .WP                         ;off := WP - DS (T1:T2)
+        LDA .WP
         SEC
         SBC # <.DS
         STA .T1
         LDA .WP + 1
         SBC # >.DS
         STA .T2
-        LDA .T1                         ;WP := n = off >> 4 = BAM byte index
+        LDA .T1
         LSR
         LSR
         LSR
@@ -871,18 +920,18 @@ caml_alloc
         LSR
         LSR
         STA .WP + 1
-        LDA .T1                         ;T1 := bit index of the target
+        LDA .T1
         LSR
         AND # 7
         STA .T1
-        LDA .WP                         ;EBP := BAMS + n
+        LDA .WP
         CLC
         ADC # <.BAMS
         STA .EBP
         LDA .WP + 1
         ADC # >.BAMS
         STA .EBP + 1
-        LDA .WP                         ;IBP := TBL + (n AND NOT 1)
+        LDA .WP
         AND # $FE
         CLC
         ADC # <.TBL
@@ -891,8 +940,8 @@ caml_alloc
         ADC # >.TBL
         STA .IBP + 1
         LDY # 0
-        LDA (.IBP),Y                    ;ACC := TBL[k] AND $7FFF,
-        STA .ACC                        ;PREV := bit 15
+        LDA (.IBP),Y
+        STA .ACC
         INY
         LDA (.IBP),Y
         TAX
@@ -902,10 +951,10 @@ caml_alloc
         AND # $80
         STA .PREV
         LDY # 0
-        LDA .WP                         ;n odd: the first byte of the chunk
-        LSR                             ; comes before the target byte
+        LDA .WP                         ;odd n: the chunk's first byte
+        LSR                             ;comes before the target one
         BCC @target_newaddr
-        LDA .EBP                        ;EBP := EBP - 1
+        LDA .EBP
         BNE +
         DEC .EBP + 1
 +       DEC .EBP
@@ -920,6 +969,7 @@ caml_alloc
         AND .MTO,X
         JSR .addbyte
         ;; WP := (DS - 2) + 2 * ACC   (-2 = -1 word: the target's own bit)
+        ;; (-2: the target's own word is counted but must not be)
         LDA .ACC
         ASL
         STA .WP
@@ -935,8 +985,8 @@ caml_alloc
         STA .WP + 1
         RTS
 
-        ;; ACC := ACC + live words in byte A (PREV=$80 iff the bit before is 1)
-        ;; PREV := ($80 iff the last bit of A is 1). Preserves Y.
+        ;; ACC += live words in byte A, given PREV (bit before: $80 if 1);
+        ;; then PREV := last bit of A. Preserves Y.
 .addbyte
         TAX
         BEQ @zero_addbyte
@@ -960,11 +1010,14 @@ caml_alloc
         STA .PREV
         RTS
 @zero_addbyte
-        STX .PREV                       ;X=0
+        STX .PREV
         RTS
 
 ;; ---------------------------------- UPDATE -----------------------------------
 
+        ;; Phase 3. Rewrite every pointer into the heap with .newaddr: the
+        ;; same roots as the mark phase, then the fields of the live heap
+        ;; blocks. Global data are updated in place (they never move).
 .update_all
         ;; roots: ACCU, ENV
         LDA # ACCU
@@ -1007,16 +1060,16 @@ caml_alloc
         SBC # >caml_glob_end
         BCS @gdone_update_all
         LDY # 0
-        LDA (.RP),Y                     ;tag
+        LDA (.RP),Y
         TAX
         INY
-        LDA (.RP),Y                     ;size
+        LDA (.RP),Y
         STA .N
         INC .RP
-        INC .RP                         ;RP -> field(0)
+        INC .RP
         BNE +
         INC .RP + 1
-+       LDA .N                          ;AREAHI := RP + 2 * size
++       LDA .N
         ASL
         STA .AREAHI
         LDA # 0
@@ -1042,6 +1095,7 @@ caml_alloc
 @gdone_update_all
         JMP .upd_heap                   ;live blocks of the heap
 
+        ;; Update the pointers in the words [RP, AREAHI).
 .updarea
 -       LDA .RP
         CMP .AREAHI
@@ -1057,7 +1111,8 @@ caml_alloc
 @end_updarea
         RTS
 
-        ;; Update the word at (RP) if it is a pointer into the heap. Keeps RP.
+        ;; Update the word at (RP) if it is a pointer into the heap. Keeps
+        ;; RP.
 .updwd  LDY # 0
         LDA (.RP),Y
         AND # 1
@@ -1078,15 +1133,16 @@ caml_alloc
 @ret_updwd
         RTS
 
-        ;; Position (BP, X, PP) on the next 1 bit at or after the current one,
-        ;; where PP is the address of the word of the bit. A sentinel 1 bit
-        ;; stands at USED: if it is reached, C=1. Y=0.
+        ;; Move (BP, X, PP) to the next 1 bit at or after the current one,
+        ;; i.e. to field 0 of the next live block (PP = address of the bit's
+        ;; word). Dead areas are skipped a BAM byte at a time. A sentinel 1
+        ;; bit at USED ends the search: C=1 when reached. Y=0.
 .find1  LDY # 0
         LDA (.BP),Y
         AND .MFROM,X
         BNE @got_find1
         ;; no 1 in the rest of this byte: next byte
-        TXA                             ;PP += 2 * (8 - X)
+        TXA
         EOR # 7
         CLC
         ADC # 1
@@ -1119,7 +1175,7 @@ caml_alloc
 -       INX
         ASL
         BPL -
-        TXA                             ;PP += 2 * X
+        TXA
         ASL
         CLC
         ADC .PP
@@ -1152,7 +1208,8 @@ caml_alloc
 +       LSR
         JMP -
 
-        ;; Advance (BP, X, PP) by A words (A = 1..255)
+        ;; Advance (BP, X, PP) by A words (A = 1..255): jump over a block's
+        ;; fields.
 .advance
         STA .T1
         ASL
@@ -1169,17 +1226,17 @@ caml_alloc
         STA .PP + 1
         TXA
         CLC
-        ADC .T1                         ;bit idx + words (9 bits)
+        ADC .T1
         PHP
         TAX
         LSR
         LSR
         LSR
-        STA .T1                         ;bytes to add
+        STA .T1
         PLP
         BCC +
         LDA .T1
-        ADC # 31                        ;(C=1: + 32 bytes = 256 bits)
+        ADC # 31
         STA .T1
 +       TXA
         AND # 7
@@ -1193,7 +1250,9 @@ caml_alloc
 +       LDY # 0
         RTS
 
-        ;; Update the pointers in the fields of all live blocks of the heap.
+        ;; Walk the live blocks in address order and update the pointers in
+        ;; their fields; pointer-free blocks (tag >= No_scan_tag) are
+        ;; skipped.
 .upd_heap
         LDA # <.BAMS
         STA .BP
@@ -1244,8 +1303,7 @@ caml_alloc
         LDA .AREAHI + 1
         ADC .RP + 1
         STA .AREAHI + 1
-        JSR .updarea                    ;(newaddr clobbers neither BP, PP
-                                        ; nor BX)
+        JSR .updarea                    ;(preserves BP, PP, BX)
 @skip_upd_heap
         LDX .BX
         LDA .SIZE
@@ -1268,6 +1326,9 @@ caml_alloc
 
 ;; ----------------------------------- SLIDE -----------------------------------
 
+        ;; Phase 4. Slide the live blocks down to DS, in address order (FP =
+        ;; destination; blocks already in place are not copied). Headers
+        ;; travel with their blocks.
 .slide
         LDA # <.BAMS
         STA .BP
@@ -1278,7 +1339,7 @@ caml_alloc
         LDA # >.DS
         STA .PP + 1
         LDX # 0
-        LDA # <.DS                      ;FP := destination
+        LDA # <.DS
         STA .FP
         LDA # >.DS
         STA .FP + 1
@@ -1287,7 +1348,7 @@ caml_alloc
         BCC @go_slide
         JMP @done_slide
 @go_slide
-        LDA .PP                         ;source: header at PP-2
+        LDA .PP                         ;source: the block's header is at PP - 2
         SEC
         SBC # 2
         STA .WP
@@ -1296,7 +1357,7 @@ caml_alloc
         STA .WP + 1
         LDY # 1
         LDA (.WP),Y
-        STA .SIZE                       ;size
+        STA .SIZE
         STX .BX
         ;; bytes to move: n = 2*(size+1)
         LDA .WP
@@ -1308,17 +1369,19 @@ caml_alloc
 @move_slide
         LDA .SIZE
         CLC
-        ADC # 1                         ;words (1..256)
+        ADC # 1
         PHP
         ASL
-        STA .T1                         ;n lo
+        STA .T1
         LDA # 0
         ROL
-        STA .T2                         ;n hi (0..1)
+        STA .T2
         PLP
         BCC +
-        INC .T2                         ;(size=255 -> 256 words -> 512 bytes)
         INC .T2
+        INC .T2
+        ;; copy n = 2 * (size + 1) bytes, up to 512: whole pages, then the
+        ;; tail
 +       LDA .WP
         STA .EBP
         LDA .WP + 1
@@ -1347,6 +1410,7 @@ caml_alloc
         CPY .T1
         BNE -
 @nomove_slide
+        ;; next destination: FP += n
         ;; FP += n = 2*(size+1)
         LDA .SIZE
         CLC
@@ -1359,7 +1423,7 @@ caml_alloc
         STA .T2
         PLP
         BCC +
-        INC .T2                         ;(size=255: 512 bytes)
+        INC .T2
         INC .T2
 +       LDA .FP
         CLC
