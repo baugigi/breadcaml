@@ -191,8 +191,13 @@ caml_nonstd_fmt_float
 @neg    !byte 0
 @cnt    !byte 0
 @n      !byte 0
-@x      !fill 5
-@q      !fill 5
+;; Operands of the BASIC ROM routines (FSUB, MOVFM read them, MOVMF writes them).
+;; They must not be in the code area: if it overlaps the BASIC ROM, the ROM
+;; routines would read the ROM instead of our data.  Page 1 is used instead
+;; (as for the digits at $0120 and the result at $0100, which does not reach
+;; $0110 before x and q are no longer needed).
+@x      = $0110                         ;5 bytes
+@q      = $0115                         ;5 bytes
 }
 
 } ;!zone caml_FORMAT

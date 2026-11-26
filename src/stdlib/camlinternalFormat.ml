@@ -158,6 +158,11 @@ let string_of_formatting_lit formatting_lit = match formatting_lit with
   | Magic_size (str, _)  -> str
   | Escaped_at           -> "@@"
   | Escaped_percent      -> "@%"
+  (* "@" followed by any other char, e.g. "user@host": printed as is. *)
+  | Scan_indic c         ->
+    let s = Bytes.create 2 in
+    Bytes.unsafe_set s 0 '@'; Bytes.unsafe_set s 1 c;
+    Bytes.unsafe_to_string s
 
 (******************************************************************************)
                               (* Conversions *)

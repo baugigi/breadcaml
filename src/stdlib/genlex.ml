@@ -61,7 +61,9 @@ let make_lexer keywords =
     match Stream.peek strm__ with
       Some (' ' | '\010' | '\013' | '\009' | '\026' | '\012') ->
         Stream.junk strm__; next_token strm__
-    | Some ('A'..'Z' | 'a'..'z' | '_' | '\192'..'\255' as c) ->
+    (* The PETSCII code of '|' is 221: it must not be taken as a letter. *)
+    | Some ('A'..'Z' | 'a'..'z' | '_' | '\192'..'\220' | '\222'..'\255'
+            as c) ->
         Stream.junk strm__;
         let s = strm__ in reset_buffer (); store c; ident s
     | Some
@@ -92,7 +94,8 @@ let make_lexer keywords =
   and ident (strm__ : _ Stream.t) =
     match Stream.peek strm__ with
       Some
-        ('A'..'Z' | 'a'..'z' | '\192'..'\255' | '0'..'9' | '_' | '\'' as c) ->
+        ('A'..'Z' | 'a'..'z' | '\192'..'\220' | '\222'..'\255' | '0'..'9' | '_'
+         | '\'' as c) ->
         Stream.junk strm__; let s = strm__ in store c; ident s
     | _ -> Some (ident_or_keyword (get_string ()))
   and ident2 (strm__ : _ Stream.t) =
