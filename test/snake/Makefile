@@ -17,8 +17,8 @@ SHELL := /bin/bash
 TARGET := snake.prg
 SOURCE := snake
 COMP = bcamlopt
-FLAGS = -O time -gc stop_and_copy -mem 0xBFFF -showmem
-ASMFLAGS = -r snake.rep -Dcaml_OSIZE=1
+FLAGS = -O time -gc stop_and_copy -showmem
+ASMFLAGS = -r snake.rep
 
 $(TARGET): $(SOURCE:=.cmo)
 	$(COMP) $(FLAGS) -o $@ c64lib.cma $^ -- $(ASMFLAGS)

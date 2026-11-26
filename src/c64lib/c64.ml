@@ -567,7 +567,8 @@ module Sound = struct
 
   (* s in -128..127, d any int in +-16383: s * d / 128 without overflow *)
   let scale s d = s * (d asr 7) + ((s * (d land 127)) asr 7)
-  let clamp lo hi x = if x < lo then lo else if x > hi then hi else x
+  (* the annotation avoids the polymorphic caml_lessthan/caml_greaterthan *)
+  let clamp lo hi (x : int) = if x < lo then lo else if x > hi then hi else x
 
   let modulate src dst ~base ~depth =
     let d = scale (sample src - 128) depth in

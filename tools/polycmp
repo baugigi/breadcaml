@@ -1,0 +1,33 @@
+#!/bin/sh
+# polycmp - list the polymorphic comparisons (calls to caml_compare & co) that
+# the compiler generates for the given .ml files, so they can be avoided with
+# type annotations (a polymorphic comparison links caml_compare_val, about 1 KB).
+#
+# Usage:  tools/polycmp [-C dir] file.ml...
+# Env:    BCAMLC  compiler command        (default: bcamlc)
+#         FLAGS   extra compiler options  (e.g. -nopervasives for the stdlib)
+#
+# It compiles each file with -dlambda (output discarded) and shows the lines
+# where the lambda code uses one of the generic primitives; comparisons that
+# the type checker specialized (int, char, ...) don't appear.
+#
+# Note: bcamlc must be able to compile the files from the current directory
+# (use -C dir to cd there first).
+
+BCAMLC=${BCAMLC:-bcamlc}
+if [ "$1" = "-C" ]; then cd "$2" || exit 1; shift 2; fi
+[ $# -gt 0 ] || { echo "Usage: $0 [-C dir] file.ml..." >&2; exit 2; }
+PAT='caml_\(compare\|equal\|notequal\|lessthan\|lessequal\|greaterthan\|greaterequal\)'
+tmp=${TMPDIR:-/tmp}/polycmp.$$
+trap 'rm -f "$tmp"' EXIT
+for f in "$@"; do
+  # -c produces .cmo/.cmi next to the source: compile a copy in a scratch dir
+  d=${tmp}.d; rm -rf "$d"; mkdir "$d"; cp "$f" "$d/"
+  b=$(basename "$f")
+  ( cd "$d" && $BCAMLC -c $FLAGS -dlambda "$b" 2>&1 ) > "$tmp"
+  if grep -q "$PAT" "$tmp"; then
+    echo "== $f"
+    grep -n "$PAT" "$tmp" | sed 's/^/   /'
+  fi
+  rm -rf "$d"
+done
