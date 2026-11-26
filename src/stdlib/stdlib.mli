@@ -1437,6 +1437,8 @@ type ('a,'b) result = Ok of 'a | Error of 'b
   indications available, read the documentation of modules {!Scanf},
   {!Printf} and {!Format}.
 *)
+--*)
+(*++ *)
 
 (** Format strings have a general and highly polymorphic type
     [('a, 'b, 'c, 'd, 'e, 'f) format6].
@@ -1510,6 +1512,8 @@ val ( ^^ ) :
   [f1], then results from [f2].
   Right-associative operator, see {!Ocaml_operators} for more information.
 *)
+(* ++*)
+(*--
 
 (** {1 Program termination} *)
 
@@ -1680,7 +1684,7 @@ module Option       = Stdlib__option
 (* removed: module Parsing *)
 (* removed: module Pervasives *)
 module Printexc     = Stdlib__printexc
-(* removed: module Printf *)
+module Printf       = Stdlib__printf
 module Queue        = Stdlib__queue
 module Random       = Stdlib__random
 module Result       = Stdlib__result

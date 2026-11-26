@@ -295,31 +295,7 @@ caml_nonstd_string_of_float
         +caml_JSR_BASROM C64_FOUT       ;0-terminated string in $0100
         PLA                             ;restore $47 value
         STA $47
-@len    LDX # $FF
--       INX                             ;count string length (except 0)
-        LDA $0100,X
-        BNE -                           ;(X = length when loop ends)
-        LDA # 1                         ;add a final 1 for padding; it
-        STA $0101,X                     ;won't be copied if len is odd
-        TXA                             ;A := length
-        LSR
-        TAX                             ;X := length / 2
-        INX                             ;X := length/2+1=blk size (wo.)
-        LDA # String_tag
-        LDY # 0
-        JSR caml_alloc                  ;allocate the new block
-        JSR caml_load_newblk            ;ACCU := new string
-        TXA
-        ASL
-        TAY                             ;Y := 2 * size
-        DEY
--       LDA $0100,Y                     ;copy string and 0/01 padding
-        STA (BLK),Y                     ;to the new block
-        DEY
-        BNE -
-        LDA $0100
-        STA (BLK),Y
-        RTS
+@len    JMP caml_string_from_0100
 @strs   !text "-inf", 0                 ;"inf" is @strs + 1
 @nan    !text "nan", 0
 }
@@ -399,6 +375,37 @@ caml_nonstd_string_of_int
         ;;
         ;; AUX
         ;;
+
+!ifdef caml_AUX__caml_string_from_0100 {
+caml_string_from_0100
+        ;; Make a string with the characters at $0100, ended by a 0 (255 at
+        ;; most): ACCU := the new string.
+        LDX # $FF
+-       INX                             ;count string length (except 0)
+        LDA $0100,X
+        BNE -                           ;(X = length when loop ends)
+        LDA # 1                         ;add a final 1 for padding; it
+        STA $0101,X                     ;won't be copied if len is odd
+        TXA                             ;A := length
+        LSR
+        TAX                             ;X := length / 2
+        INX                             ;X := length/2+1=blk size (wo.)
+        LDA # String_tag
+        LDY # 0
+        JSR caml_alloc                  ;allocate the new block
+        JSR caml_load_newblk            ;ACCU := new string
+        TXA
+        ASL
+        TAY                             ;Y := 2 * size
+        DEY
+-       LDA $0100,Y                     ;copy string and 0/01 padding
+        STA (BLK),Y                     ;to the new block
+        DEY
+        BNE -
+        LDA $0100
+        STA (BLK),Y
+        RTS
+}
 
 !ifdef caml_AUX__caml_string_index_y {
 caml_string_index_y

@@ -824,7 +824,8 @@ module LargeFile =
     external pos_in : in_channel -> int64 = "caml_ml_pos_in_64"
     external in_channel_length : in_channel -> int64 = "caml_ml_channel_size_64"
   end
-
+--*)
+(*++ *)
 
 (* Formats *)
 
@@ -846,6 +847,8 @@ external format_of_string :
 let ( ^^ ) (Format (fmt1, str1)) (Format (fmt2, str2)) =
   Format (CamlinternalFormatBasics.concat_fmt fmt1 fmt2,
           str1 ^ "%," ^ str2)
+(* ++*)
+(*--
 
 (* Miscellaneous *)
 
@@ -979,7 +982,7 @@ module Option       = Stdlib__option
 (* removed: module Parsing *)
 (* removed: module Pervasives *)
 module Printexc     = Stdlib__printexc
-(* removed: module Printf *)
+module Printf       = Stdlib__printf
 module Queue        = Stdlib__queue
 module Random       = Stdlib__random
 module Result       = Stdlib__result

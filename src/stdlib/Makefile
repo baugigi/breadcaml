@@ -32,10 +32,9 @@ STDLIB_MODULE_BASENAMES := camlinternalFormatBasics camlinternalAtomic stdlib \
   bigarray in_channel out_channel std_exit
 
 # Modules removed in BreadCaml
-REMOVED := atomic bigarray callback camlinternalAtomic camlinternalFormat    \
-  camlinternalFormatBasics camlinternalOO digest ephemeron filename format    \
-  gc in_channel lexing marshal nativeint oo out_channel parsing           \
-  pervasives printf scanf uchar weak
+REMOVED := atomic bigarray callback camlinternalAtomic camlinternalOO       \
+  digest ephemeron filename format gc in_channel lexing marshal nativeint oo  \
+  out_channel parsing pervasives scanf uchar weak
 
 BASENAMES := $(filter-out $(REMOVED),$(STDLIB_MODULE_BASENAMES))
 
@@ -76,18 +75,18 @@ stdlib.cma: $(CMO)
 stdlib.cmo: stdlib.ml stdlib.cmi
 	$(OCAMLC) $(PPX) -absname -no-alias-deps -nostdlib -nopervasives -c -w -49 $<
 
-stdlib.cmi: stdlib.mli #camlinternalFormatBasics.cmi
+stdlib.cmi: stdlib.mli camlinternalFormatBasics.cmi
 	$(OCAMLC) -absname -no-alias-deps -nostdlib -nopervasives -c -w -49 $<
 
 libcamlrun.a: $(CMI) $(CMO) $(LIBRUN) stdlib.cma
 	cp $(OCAMLSTDLIB)/$@ .
 	ar rs $@ $^
 
-#camlinternalFormatBasics.cmo: camlinternalFormatBasics.ml camlinternalFormatBasics.cmi
-#	$(OCAMLC) -nostdlib -nopervasives -c $<
+camlinternalFormatBasics.cmo: camlinternalFormatBasics.ml camlinternalFormatBasics.cmi
+	$(OCAMLC) -nostdlib -nopervasives -c $<
 
-#camlinternalFormatBasics.cmi: camlinternalFormatBasics.mli
-#	$(OCAMLC) -nostdlib -nopervasives -c $<
+camlinternalFormatBasics.cmi: camlinternalFormatBasics.mli
+	$(OCAMLC) -nostdlib -nopervasives -c $<
 
 camlinternal%.cmo: camlinternal%.ml camlinternal%.cmi
 	$(OCAMLC_UNSAFE) $(PPX) -absname -nostdlib -c $<
