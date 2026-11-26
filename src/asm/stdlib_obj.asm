@@ -35,18 +35,18 @@ caml_obj_tag
         BIT caml_is_block
         BNE @int
         LDX ACCU + 1
-        CPX # > caml_glob_end           ; = heap start address
-        BCC @ooh
+        CPX # > caml_glob_data          ; static data and heap: real tag
+        BCC @chkat
         BNE +
-        CMP # < caml_glob_end
-        BCC @ooh
+        CMP # < caml_glob_data
+        BCC @chkat
 +       CPX # > caml_stack_start        ; = heap end address + 1
-        BCC +
+        BCC @tag
         BNE @ooh
         CMP # < caml_stack_start
         BCS @ooh
         ;; Val_int(tag(ACCU))
-+       LDY # -2
+@tag    LDY # -2
         DEC ACCU + 1
         LDA (ACCU),Y
         SEC
@@ -55,6 +55,15 @@ caml_obj_tag
         LDY # 0
         STY ACCU + 1
         ROL ACCU + 1
+        RTS
+@chkat  CMP # < caml_atom0              ;atom(0) lies in the loader area:
+        BNE @ooh                        ; its tag is 0
+        CPX # > caml_atom0
+        BNE @ooh
+        LDA # < Val_zero
+        STA ACCU
+        LDA # > Val_zero
+        STA ACCU + 1
         RTS
 @ooh    +Val_Int ~@oohtag, 1001         ;Out_of_heap_tag
         LDA # > @oohtag
