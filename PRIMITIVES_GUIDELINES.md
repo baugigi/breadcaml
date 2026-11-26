@@ -118,8 +118,7 @@ valid pointer, nor an out-of-heap value.
 Each example is a small, self-contained primitive. In all of them the Caml
 arguments follow the usual convention: first argument in `ACCU`, the others on
 the Caml stack (`SP[0]`, `SP[1]`, ...), popped by `CCALL` **after** the
-primitive returns. `Y = 0` on entry; on exit `Y` can have any value: `CCALL`
-resets it (and clears the decimal flag).
+primitive returns. `Y = 0` on entry.
 
 ### 5.1: clone a block (header access via hi-byte decrement of `ACCU`)
 
@@ -498,9 +497,6 @@ location. Consequently:
 - the runtime registers (`ACCU`, `SP`, `ENV`, `TRAPSP`, `XARGS`, `GC`, `HEAP`,
   `BLK`) are not used by the ROM FP routines, with the sole exception of
   `FOUT`, which overwrites `$47-$48`.
-- the ROM does not preserve `Y`: a primitive does not need to restore it, as
-  `CCALL` sets `Y = 0` when the primitive returns (but see `Y = 0` where you
-  *use* it as an offset after a call: reload it).
 
 ### 8.5 Errors raised by the ROM never come back
 
