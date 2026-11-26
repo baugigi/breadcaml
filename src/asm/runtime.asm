@@ -1538,7 +1538,7 @@ caml_MULINT
             BNE +
             INC SP + 1
 +
-        ;; FAST PATH - NOT ASSEMBLED FOR 'bcamlc' AND 'bcamlopt -osize'
+        ;; FAST PATH - NOT ASSEMBLED FOR 'bcamlc' AND 'bcamlopt -O size'
         ;; make ACCU the smaller operand
 !ifndef caml_OSIZE { !ifndef caml_INTERP {
         CMP ACCU + 1                    ;(A = high byte of the stack operand)
@@ -1576,7 +1576,7 @@ caml_MULINT
             ROR ACCU
             DEX
             BNE -                       ;}
-        ;; FAST PATH - NOT ASSEMBLED FOR 'bcamlc' AND 'bcamlopt -osize'
+        ;; FAST PATH - NOT ASSEMBLED FOR 'bcamlc' AND 'bcamlopt -O size'
         ;; exit if multiplier < 256
 !ifndef caml_OSIZE { !ifndef caml_INTERP {
         BCS @full
@@ -1662,7 +1662,7 @@ caml_DIVMOD
         ;; Division routine: 15 bits, start from dividend's MSB
 @divide     STX @SIGNS                  ;save flags in S.
             LDX # 15
-        ;; FAST PATH - NOT ASSEMBLED FOR 'bcamlc' AND 'bcamlopt -osize'
+        ;; FAST PATH - NOT ASSEMBLED FOR 'bcamlc' AND 'bcamlopt -O size'
         ;; divisor <= 255, 8-bit remainder (about 2x faster per iteration)
 !ifndef caml_OSIZE { !ifndef caml_INTERP {
         LDA @DSR + 1
