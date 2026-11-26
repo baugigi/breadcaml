@@ -43,7 +43,7 @@ let data = function
    [input]: the buffer holds one char at a time (so that a keyboard channel
    does not wait for more than the char that is needed). *)
 let fill_buff b =
-  b.len <- (try Bytes.set b.buff 0 (b.ic ()); 1 with End_of_file -> 0);
+  b.len <- (try Bytes.set b.buff 0 (input_char b.ic); 1 with End_of_file -> 0);
   b.ind <- 0
 (* ++*)
 
@@ -215,14 +215,17 @@ let lsing f = Some {count = 0; data = Slazy (lazy(Scons (f (), Sempty)))}
 let sempty = None
 let slazy f = Some {count = 0; data = Slazy (lazy(data (f ())))}
 
-(* For debugging use *)
+(* For debugging use.
+   Note: PETSCII has no braces, and '{' in a string literal starts a special
+   token ({CLR}, {HOME}...) for the bcamlppx: square brackets are printed
+   instead of the braces of the original [dump]. *)
 
 let rec dump : type v. (v -> unit) -> v t -> unit = fun f s ->
-  print_string "{count = ";
+  print_string "[count = ";
   print_int (count s);
   print_string "; data = ";
   dump_data f (data s);
-  print_string "}";
+  print_string "]";
   print_newline ()
 and dump_data : type v. (v -> unit) -> v data -> unit = fun f ->
   function
