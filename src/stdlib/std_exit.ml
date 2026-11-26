@@ -40,3 +40,6 @@
 (*--
 let _ = do_at_exit()
 --*)
+(*++ *)
+let _ = do_at_exit()
+(* ++*)

@@ -238,7 +238,7 @@ val current : int ref
     {!Arg.parse} uses the initial value of {!Arg.current} as the index of
     argument 0 (the program name) and starts parsing arguments
     at the next element. *)
-
+(*--
 val read_arg: string -> string array
 (** [Arg.read_arg file] reads newline-terminated command line arguments from
     file [file].
@@ -260,3 +260,4 @@ val write_arg0: string -> string array -> unit
 (** Identical to {!Arg.write_arg} but uses the null character for terminator
     instead of newline.
     @since 4.05.0 *)
+--*)

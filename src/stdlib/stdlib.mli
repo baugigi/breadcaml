@@ -1540,7 +1540,20 @@ val exit : int -> 'a
     byte in location 780 (the accumulator) and high byte in location 781
     (the X register), so BASIC can read it with [PEEK(780)] and [PEEK(781)].
     Normal termination returns 0; an uncaught exception returns 2.
-    There is no [at_exit]: no function is run at termination. *)
+    The functions registered with [at_exit] are run first. *)
+
+val at_exit : (unit -> unit) -> unit
+(** Register the given function to be called at program termination time,
+    in 'last in, first out' order.  The functions are called when the program
+    executes {!Stdlib.exit} or terminates normally, but not when it
+    terminates because of an uncaught exception. *)
+
+(**/**)
+
+val do_at_exit : unit -> unit
+(* The above is for system use only (Std_exit). Do not call directly. *)
+
+(**/**)
 (* ++*)
 
 (**/**)

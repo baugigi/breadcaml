@@ -788,9 +788,27 @@ let input_line (ic : in_channel) =
 
 (* Program termination.  There is no operating system to return to, but BASIC
    can read the exit code (16 bits) in PEEK(780) (low byte) and PEEK(781)
-   (high byte) after the SYS call.  [at_exit] is not available. *)
+   (high byte) after the SYS call.
+   [at_exit] functions are run by [exit] and, through Std_exit, when the
+   program ends normally; they are NOT run if it ends with an uncaught
+   exception.  (The original uses CamlinternalAtomic, which is removed.) *)
 external sys_exit : int -> 'a = "caml_sys_exit"
-let exit retcode = sys_exit retcode
+
+let exit_function = ref flush_all
+
+let at_exit f =
+  let f_yet_to_run = ref true in
+  let old_exit = !exit_function in
+  exit_function :=
+    (fun () ->
+       if !f_yet_to_run then begin f_yet_to_run := false; f () end;
+       old_exit ())
+
+let do_at_exit () = !exit_function ()
+
+let exit retcode =
+  do_at_exit ();
+  sys_exit retcode
 (* ++*)
 
 (*--
