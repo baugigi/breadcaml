@@ -1,8 +1,10 @@
-# Writing BreadCaml primitives: heap allocation and GC safety
+# Writing BreadCaml primitives: guidelines
 
 **Audience:** authors of custom primitives (6502 assembly, ACME). Applies to
 both back-ends (native code and bytecode interpreter). Sections 1-7 are about
-heap allocation and GC safety; section 8 is about calling BASIC ROM routines.
+heap allocation and GC safety; sections 8-9 are about calling BASIC ROM
+routines (including where to copy the data passed to them); section 10 collects
+the remaining conventions (integers, primitive table, purity, exit).
 
 BreadCaml uses a **stop-and-copy (Cheney) garbage collector**[^1]. Any call to
 `caml_alloc` may trigger a collection, and a collection **moves every live
@@ -81,6 +83,10 @@ heap range.
 ```
 
 * It clobbers the 8 zero-page bytes starting at `GC` ($3E-$45).
+* `Y` is **not** required to be 0 on entry (e.g. `CLOSURE` calls it with `Y` =
+  high byte of the code pointer): `caml_alloc` loads `Y = 0` before starting a
+  collection, because the collector's loops rely on it. Anything *you* call
+  that is not `caml_alloc` follows its own contract.
 * If there is no room even after a collection it raises `Out_of_memory` (it does
   not return).
 * There is no write barrier: the collector is not generational, so storing into
@@ -429,7 +435,8 @@ pass the address of the copy (as `caml_compare_val_double_tag` does for
 
 Writing is not a problem: stores always go to the RAM (`MOVMF` into a heap block
 is fine). Remember that the GC may move the block: the copy must be made from
-a pointer reloaded from `ACCU`/`SP[i]` (see sections 2-7).
+a pointer reloaded from `ACCU`/`SP[i]` (see sections 2-7). Where to put the
+copy is the subject of 8.6.
 
 ### 8.3 Float operands: use `caml_float_unop` / `caml_float_binop`
 
@@ -518,17 +525,80 @@ primitive*. With `Fo_NONE` it returns to `caml_syserr`, which raises
   not after a normal return: a stale value would make the handler use a stale
   stack pointer.
 
+### 8.6 Where to copy the data passed to ROM routines
+
+Never leave a ROM operand, or the buffer a ROM routine writes to, in the
+primitive's own code or data area (`!fill`, `!byte`...: if the program reaches
+`$A000` they may lie under the ROM, and the ROM would read itself), nor in the
+heap or the global data (same problem, and the GC moves them). Use a scratch
+area in RAM that is always visible and that satisfies all of the following:
+
+1. it is **below `$A000`** and outside the program: zero page and pages 1-3
+   qualify, the program starts at `$0801`;
+2. it is **not written by the ROM routine** you are about to call (8.4);
+3. it is **not in use** by the runtime, the standard library or data that must
+   survive the call.
+
+The areas, from the smallest:
+
+| Area | Size | Use and caveats |
+|---|---|---|
+| zero page cells of `TMP` that the FP routines leave alone (8.4) | a few bytes | enough for one 5-byte float operand. |
+| low page 1, above the ROM's own output | 10-16 bytes | the ROM builds the `FOUT` result at `$0100` and uses the area above it for conversions: use it only when no `FOUT` result is needed (`stdlib_format.asm` keeps two 5-byte floats at `$0110` and `$0115`). This relies on the CPU stack, which grows down from the top of the page, not reaching it: keep `JSR` nesting shallow. |
+| BASIC input buffer, `C64_BUF` (`$0200-$0258`) | 89 bytes | the natural place for strings passed to `FIN`/`STROUT`-like routines (up to 88 characters + the terminating 0). It holds the command line read by `Sys.argv` until module `Sys` is initialised (`caml_nonstd_sys_argv`), so do not overwrite it before that; the float conversions in `stdlib_floats.asm` already use it. |
+| cassette buffer, `C64_TBUFFR` (`$033C-$03FB`) | 192 bytes | not used by the runtime, the standard library or c64lib; free unless the program does tape I/O. The best choice for large or long-lived scratch data. |
+
+Procedure: reload the source pointer from a root (`ACCU`, `SP[i]`) *after* any
+`caml_alloc`, copy to the scratch area, pass its address (`A`/`Y`, or `$7A/$7B`
+for `FIN`), call the ROM routine with `+caml_JSR_BASROM`. If the routine writes
+a result into the area, allocate the heap block **first**, then copy the result
+into it with the pointer reloaded again.
+
 ## 9. Checklist for ROM calls
 
 - [ ] `+caml_JSR_BASROM`, never a bare `JSR`, for BASIC ROM routines.
-- [ ] Memory operands copied to the zero page under `caml_basic_rom_overlap`,
-      from pointers reloaded after any `caml_alloc`.
+- [ ] Memory operands copied to a scratch area (8.6) under
+      `caml_basic_rom_overlap`, from pointers reloaded after any `caml_alloc`;
+      never to the primitive's own code/data area, the heap or the globals.
 - [ ] Float arguments loaded with `caml_float_unop`/`caml_float_binop`, called
       directly from the primitive; special values handled when `C = 1`.
 - [ ] `caml_float_overflow__op` set for the operation (or left `Fo_NONE`).
 - [ ] Nothing kept in `TMP + 9 .. TMP + 37`, `$12`, `$22-$2A`, `$47-$48` across
       the call; nothing on the hardware stack to be undone after it.
 - [ ] `Y = 0` on exit.
+
+## 10. Other conventions
+
+**Integers are 15 bits.** `Val_int` values range from -16384 to 16383. A raw
+16-bit quantity (a cycle count, an address, a word read from the hardware) that
+is shifted into `Val_int` silently wraps if it exceeds that range: return a
+scaled value (e.g. `Sound.frame_cycles` returns half of the cycles of a frame,
+at most 10140) or split it into two results. In OCaml code the assembler
+rejects literals out of range (`BGTINT n p: n out of range`).
+
+**At most 256 primitives per program.** `CCALL` receives the primitive's index
+in a single byte and uses it to read the low/high address tables. The primitives
+declared with `external` in the linked modules count, plus those that the
+compiler generates itself (string and array accessors, polymorphic comparison,
+...). The `Prim.jumptbl` line of `-showmem` is the table (two bytes per entry).
+
+**Purity and `ocamlclean`.** `ocamlclean` may delete a call whose result is not
+used, only for the primitives listed as free of side effects
+(`Prim.no_side_effect`, see `ocamlclean-prim.patch`). Add a new primitive there
+only if it neither changes memory or hardware state nor *consumes* anything
+(keyboard, input stream, collision registers that clear when read), and does not
+raise exceptions the program could depend on.
+
+**Polymorphic comparison is expensive.** `<`, `=`, `compare`... on a type the
+compiler does not know to be `int`/`char` call `caml_compare_val`, about 1 KB of
+code. Annotate the types (`(x : int)`) in library code; `tools/polycmp` lists the
+places where the compiler generates a generic comparison.
+
+**Primitives that do not return.** `caml_sys_exit` shows the pattern: put the
+exit code in `C64_SAREG/C64_SXREG`, restore the CPU stack pointer
+(`LDX caml_hw_stack_ptr : TXS`) and `JMP caml_end`. Do the same for a primitive
+that must abandon the current computation; anything left on the hardware stack
+is discarded.
 
 [^1]: See the [Cheney's algorithm](https://en.wikipedia.org/wiki/Cheney%27s_algorithm)
 page on Wikipedia.
