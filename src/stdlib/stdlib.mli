@@ -1635,7 +1635,7 @@ module Either       = Stdlib__either
 (* removed: module Filename *)
 module Float        = Stdlib__float
 (* removed: module Format *)
-(* removed: module Fun *)
+module Fun          = Stdlib__fun
 (* removed: module Gc *)
 (* removed: module Genlex *)
 module Hashtbl      = Stdlib__hashtbl
@@ -1657,7 +1657,7 @@ module Option       = Stdlib__option
 (* removed: module Out_channel *)
 (* removed: module Parsing *)
 (* removed: module Pervasives *)
-(* removed: module Printexc *)
+module Printexc     = Stdlib__printexc
 (* removed: module Printf *)
 module Queue        = Stdlib__queue
 module Random       = Stdlib__random
