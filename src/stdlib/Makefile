@@ -34,8 +34,8 @@ STDLIB_MODULE_BASENAMES := camlinternalFormatBasics camlinternalAtomic stdlib \
 # Modules removed in BreadCaml
 REMOVED := atomic bigarray callback camlinternalAtomic camlinternalFormat    \
   camlinternalFormatBasics camlinternalOO digest ephemeron filename format    \
-  gc genlex in_channel lexing marshal nativeint oo out_channel parsing        \
-  pervasives printf scanf stream uchar weak
+  gc in_channel lexing marshal nativeint oo out_channel parsing           \
+  pervasives printf scanf uchar weak
 
 BASENAMES := $(filter-out $(REMOVED),$(STDLIB_MODULE_BASENAMES))
 

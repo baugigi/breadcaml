@@ -934,7 +934,7 @@ module Float        = Stdlib__float
 (* removed: module Format *)
 module Fun          = Stdlib__fun
 (* removed: module Gc *)
-(* removed: module Genlex *)
+module Genlex       = Stdlib__genlex
 module Hashtbl      = Stdlib__hashtbl
 (* removed: module In_channel *)
 module Int          = Stdlib__int
@@ -964,7 +964,7 @@ module Seq          = Stdlib__seq
 module Set          = Stdlib__set
 module Stack        = Stdlib__stack
 module StdLabels    = Stdlib__stdLabels
-(* removed: module Stream *)
+module Stream       = Stdlib__stream
 module String       = Stdlib__string
 module StringLabels = Stdlib__stringLabels
 module Sys          = Stdlib__sys
