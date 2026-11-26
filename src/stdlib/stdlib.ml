@@ -419,7 +419,9 @@ external int_of_string : string -> int = "caml_int_of_string"
 external string_of_int: int -> string = "caml_nonstd_string_of_int"
 external string_of_float: float -> string = "caml_nonstd_string_of_float"
 external float_of_string : string -> float = "caml_float_of_string"
-let int_of_string s = int_of_float (float_of_string s)
+let int_of_string s =
+  try int_of_float (float_of_string s)
+  with Failure _ -> failwith "int_of_string"
 (* ++*)
 
 let int_of_string_opt s =
@@ -450,7 +452,9 @@ let float_of_string_opt s =
   with Failure _ -> None
 --*)
 (*++ *)
-let float_of_string_opt s = Some(float_of_string s) (* never fails *)
+let float_of_string_opt s =
+  try Some (float_of_string s)
+  with Failure _ -> None
 (* ++*)
 
 (* List operations -- more in module List *)
@@ -910,7 +914,7 @@ module Unit         = Unit
 module Weak         = Weak
 --*)
 (*++ *)
-(* removed: module Arg *)
+module Arg          = Stdlib__arg
 module Array        = Stdlib__array
 module ArrayLabels  = Stdlib__arrayLabels
 (* removed: module Atomic *)

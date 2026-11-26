@@ -513,7 +513,29 @@ caml_float_of_string
         STX C64_CHRPTR
         JSR C64_CHRGOT                  ;not a BASIC ROM routine
         +caml_JSR_BASROM C64_FIN        ;String to float conversion routine
-        LDA TMP                         ;Restore the previous value of CHRPTR
+        ;; FIN never fails: it converts the longest valid prefix (0 if none) and
+        ;; leaves C64_CHRPTR at the first character it did not use. Accept only
+        ;; a string that FIN consumed up to its end (0 byte)...
+        LDY # 0
+        LDA (C64_CHRPTR),Y
+        BNE @bad                        ;trailing garbage ("12abc", "abc")
+        LDA C64_FAC
+        BNE @good                       ;...and, if the result is 0, only if
+@dig    LDA (ACCU),Y                    ; there is a mantissa digit before the
+        BEQ @bad                        ; exponent: "-", ".", "", "e5" are not
+        CMP # $45                       ; numbers, "0", "-0.0", "0e5" are.
+        BEQ @bad                        ;$45 = 'e'
+        EOR # $30
+        CMP # 10
+        BCC @good                       ;a digit
+        INY
+        BNE @dig
+@bad    LDA TMP                         ;Restore the previous value of CHRPTR
+        STA C64_CHRPTR
+        LDA TMP + 1
+        STA C64_CHRPTR + 1
+        +caml_raise Failure, "float_of_string"
+@good   LDA TMP                         ;Restore the previous value of CHRPTR
         STA C64_CHRPTR
         LDA TMP + 1
         STA C64_CHRPTR + 1

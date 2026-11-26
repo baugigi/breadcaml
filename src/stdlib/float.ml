@@ -81,7 +81,7 @@ let of_string_opt = Stdlib.float_of_string_opt
 let to_string = Stdlib.string_of_float
 --*)
 (*++ *)
-let of_string_opt s = Some (of_string s) (* never fails *)
+let of_string_opt = Stdlib.float_of_string_opt
 external to_string: float -> string = "caml_nonstd_string_of_float"
 (* ++*)
 type fpclass = Stdlib.fpclass =

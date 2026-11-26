@@ -32,7 +32,7 @@ STDLIB_MODULE_BASENAMES := camlinternalFormatBasics camlinternalAtomic stdlib \
   bigarray in_channel out_channel std_exit
 
 # Modules removed in BreadCaml
-REMOVED := arg atomic bigarray callback camlinternalAtomic camlinternalFormat \
+REMOVED := atomic bigarray callback camlinternalAtomic camlinternalFormat \
   camlinternalFormatBasics camlinternalOO digest ephemeron filename format    \
   fun gc genlex in_channel lexing marshal nativeint oo out_channel parsing    \
   pervasives printexc printf scanf stream uchar weak

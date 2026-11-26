@@ -1617,7 +1617,7 @@ module Unit         = Unit
 module Weak         = Weak
 --*)
 (*++ *)
-(* removed: module Arg *)
+module Arg          = Stdlib__arg
 module Array        = Stdlib__array
 module ArrayLabels  = Stdlib__arrayLabels
 (* removed: module Atomic *)
