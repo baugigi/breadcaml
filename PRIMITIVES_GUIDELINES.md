@@ -2,14 +2,27 @@
 
 **Audience:** authors of custom primitives (6502 assembly, ACME). Applies to
 both back-ends (native code and bytecode interpreter). Sections 1-7 are about
-heap allocation and GC safety; sections 8-9 are about calling BASIC ROM
-routines (including where to copy the data passed to them); section 10 collects
-the remaining conventions (integers, primitive table, purity, exit).
+heap allocation and GC safety; section 8 is about calling BASIC ROM routines
+(including where to copy the data passed to them, and its checklist); section 9
+collects the remaining conventions (integers, primitive table, purity, exit).
 
-BreadCaml uses a **stop-and-copy (Cheney) garbage collector**[^1]. Any call to
-`caml_alloc` may trigger a collection, and a collection **moves every live
-block**. A primitive is GC-safe if, at the moment of each `caml_alloc` call, it
-follows the rules below.
+BreadCaml has two garbage collectors, chosen when the program is built with
+`-gc`: **mark-and-compact** (the default; `memory_mc.asm`) and **stop-and-copy**
+(Cheney[^1]; `memory_sc.asm`). Any call to `caml_alloc` may trigger a
+collection, and with either collector a collection **moves every live block**.
+A primitive is GC-safe if, at the moment of each `caml_alloc` call, it follows
+the rules below, which hold for both collectors: they have the same roots and
+the same view of the values in them, and differ only in how they work:
+
+| | mark-and-compact (default) | stop-and-copy |
+|---|---|---|
+| heap | one space, about 8/9 of the area between the globals and the stack holds data (the rest is the block map and a table)[^3] | two semi-spaces: only half of the area is usable |
+| moving | live blocks slide down, **keeping their order** in memory | live blocks are copied to the other half in the order they are reached |
+| zero page used by the collector | `GC`..`GC+8` (`$3E-$46`), `$47-$48`, `BLK`, `HEAP` (restored) | `GC`..`GC+7` (`$3E-$45`), `BLK`, `HEAP` |
+
+Do not rely on the order of blocks in memory after an allocation, even though
+mark-and-compact preserves it: the program may be built with the other
+collector. `TMP` is never touched by either of them.
 
 ## 1. The root set
 
@@ -32,7 +45,7 @@ A 16-bit word in a root is interpreted by the collector as follows:
 * **lsb = 0** and **outside** the heap: ignored (code, static data, atoms, stack
   addresses such as `TRAPSP` frames);
 * **lsb = 0** and **inside** the heap: pointer to **field 0** of a block (or to
-  an infix block[^2]), which will be copied and updated.
+  an infix block[^2]), which will be moved and updated.
 
 So a root must never hold an arbitrary even value that happens to fall in the
 heap range.
@@ -82,7 +95,8 @@ heap range.
         ;;      the header (tag, size) is written; the fields are NOT initialised.
 ```
 
-* It clobbers the 8 zero-page bytes starting at `GC` ($3E-$45).
+* It clobbers the zero-page bytes starting at `GC` ($3E-$45; mark-and-compact
+  also uses `$46-$48`, see the table in the introduction).
 * `Y` is **not** required to be 0 on entry (e.g. `CLOSURE` calls it with `Y` =
   high byte of the code pointer): `caml_alloc` loads `Y = 0` before starting a
   collection, because the collector's loops rely on it. Anything *you* call
@@ -175,7 +189,7 @@ caml_second_float
         JSR caml_alloc          ;WRONG: ACCU does not point to field 0 of a
                                 ;  block. If a GC runs, it treats ACCU as the
                                 ;  start of a block (reads a bogus header) and
-                                ;  the array is not forwarded correctly.
+                                ;  the array is not updated correctly.
         +caml_move_float ACCU, BLK
         JMP caml_load_newblk
 ```
@@ -554,7 +568,7 @@ for `FIN`), call the ROM routine with `+caml_JSR_BASROM`. If the routine writes
 a result into the area, allocate the heap block **first**, then copy the result
 into it with the pointer reloaded again.
 
-## 9. Checklist for ROM calls
+### 8.7 Checklist for ROM calls
 
 - [ ] `+caml_JSR_BASROM`, never a bare `JSR`, for BASIC ROM routines.
 - [ ] Memory operands copied to a scratch area (8.6) under
@@ -567,7 +581,7 @@ into it with the pointer reloaded again.
       the call; nothing on the hardware stack to be undone after it.
 - [ ] `Y = 0` on exit.
 
-## 10. Other conventions
+## 9. Other conventions
 
 **Integers are 15 bits.** `Val_int` values range from -16384 to 16383. A raw
 16-bit quantity (a cycle count, an address, a word read from the hardware) that
@@ -603,8 +617,13 @@ is discarded.
 [^1]: See the [Cheney's algorithm](https://en.wikipedia.org/wiki/Cheney%27s_algorithm)
 page on Wikipedia.
 
+[^3]: Mark-and-compact marks the live blocks by pointer reversal
+(Deutsch-Schorr-Waite, no stack), builds a bit map with one bit per 2-byte
+word of data, and slides the live blocks down, updating every pointer. Its
+header comment in `memory_mc.asm` describes the phases and the heap layout.
+
 [^2]: `CLOSUREREC` creates a single block containing several functions; a
 pointer to the *k*-th function is an *infix pointer*, i.e., a pointer to an
 *infix block* (tag `Infix_tag`, whose size field is the offset in words from the
 start of the closure block). Such pointers may appear in `ENV`, `ACCU` and on
-the stack. The collector copies the main block and recomputes the infix pointer.
+the stack. The collector moves the main block and recomputes the infix pointer.

@@ -1,0 +1,8 @@
+Rename PRIMITIVES_GC_GUIDE.md to PRIMITIVES_GUIDELINES.md and extend it
+
+Cover both collectors (mark_and_compact, the default, and stop_and_copy)
+with a comparison table. New 8.6: where to copy the data passed to BASIC
+ROM routines (always visible RAM areas, with their caveats); the ROM
+checklist becomes 8.7. New section 9: 15-bit integers, 256 primitive limit (CCALL index), purity and
+ocamlclean, polymorphic comparison, primitives that do not return.
+caml_alloc no longer requires Y = 0.
