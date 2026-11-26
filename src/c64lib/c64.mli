@@ -508,7 +508,7 @@ end
     the lowest and highest pitch change: PAL 985248 Hz (max 3848 Hz),
     NTSC 1022727 Hz (max 3994 Hz), PAL-N 1023440 Hz. Register value
     F = Hz * 2^24 / clock. [init] measures the frame length with a CIA timer
-    to detect it (19656 cycles PAL, 17095 NTSC, 16768 old NTSC, 20280 PAL-N).
+    to detect it (19656 cycles PAL, 17095 NTSC, 16768 old NTSC, 20280 PAL-N; the count is halved to fit 15 bits).
     Voices are numbered 1..3 as in [Hw.Sid.voice]. The SID registers are
     write-only, so [Sound] keeps a shadow copy: do not mix with direct
     [Hw.Sid.poke] on the same registers. *)
@@ -516,7 +516,9 @@ module Sound : sig
   type system = Pal | Ntsc | Pal_n
 
   val frame_cycles : unit -> int
-  (** Cycles of one video frame (IRQs are masked ~3 frames while measuring). *)
+  (** Half the cycles of one video frame (a full count, up to 20280, would
+      not fit an OCaml 15-bit integer): PAL 9828, NTSC 8547, old NTSC 8384,
+      PAL-N 10140. IRQs are masked ~3 frames while measuring. *)
 
   val system_of_cycles : int -> system
   val detect : unit -> system

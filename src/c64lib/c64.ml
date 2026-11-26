@@ -428,7 +428,8 @@ module Sound = struct
   let tri = 0x10 and saw = 0x20 and pulse = 0x40 and noise = 0x80
 
   let system_of_cycles c =
-    if c >= 20000 then Pal_n else if c >= 18000 then Pal else Ntsc
+    (* c is half the frame cycles: PAL-N 10140, PAL 9828, NTSC 8547 *)
+    if c >= 10000 then Pal_n else if c >= 9000 then Pal else Ntsc
   let detect () = system_of_cycles (frame_cycles ())
   let sys = ref Pal
   let system () = !sys

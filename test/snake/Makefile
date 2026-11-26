@@ -15,14 +15,13 @@
 SHELL := /bin/bash
 
 TARGET := snake.prg
-SOURCE := iOtools snake
-EXTLIB := iOtools
+SOURCE := snake
 COMP = bcamlopt #bcamlc
-FLAGS = -otime -verbose -db snake.db -gc stop_and_copy -showmem
-ASMFLAGS = #-r snake.rep -Dcaml_globals_on_heap=1
+FLAGS = -O time -verbose -db snake.db -gc stop_and_copy -showmem
+ASMFLAGS = #-r snake.rep
 
-$(TARGET): $(EXTLIB:=.asm) $(EXTLIB:=.c) $(SOURCE:=.cmo)
-	$(COMP) $(FLAGS) -o $@ $^ -- $(ASMFLAGS)
+$(TARGET): $(SOURCE:=.cmo)
+	$(COMP) $(FLAGS) -o $@ c64lib.cma $^ -- $(ASMFLAGS)
 
 %.cmo: %.ml $(SOURCE:=.cmi)
 	$(COMP) $(FLAGS) -c $<
@@ -33,10 +32,6 @@ $(TARGET): $(EXTLIB:=.asm) $(EXTLIB:=.c) $(SOURCE:=.cmo)
 .INTERMEDIATE: $(SOURCE:=.mli)
 %.mli: %.ml
 	$(COMP) -c -i $< > $@
-
-.INTERMEDIATE: $(SOURCE:=.c)
-%.c: %.asm
-	../../tools/mkproto -p IOtools_ $< > $@
 
 .PHONY: clean
 clean:

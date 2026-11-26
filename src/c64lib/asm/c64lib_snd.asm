@@ -44,7 +44,9 @@ caml_nonstd_snd_frame_cycles
         STA ACCU
         LDA # $FF
         SBC C64_CIA2_TBHI
-        STA ACCU + 1                    ;elapsed cycles
+        STA ACCU + 1                    ;elapsed cycles (up to 20280)
+        LSR ACCU + 1
+        ROR ACCU                        ;halved: must fit 15 bits
         SEC
         ROL ACCU
         ROL ACCU + 1                    ;Val_int
