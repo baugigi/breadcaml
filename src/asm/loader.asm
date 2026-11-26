@@ -275,6 +275,10 @@ caml_init
         STA C64_IERROR + 1
         LDA # 14
         JSR C64_CHROUT                  ;Select upper+lowercase charset.
+        LDA # 0
+        STA C64_SAREG                   ;Exit code (low and high byte) returned
+        STA C64_SXREG                   ; to BASIC in A and X; see caml_end,
+                                        ; caml_uncaught_exn, caml_sys_exit.
 
         ;; Y is set to 0 here and, if not stated elsewhere, each routine/macro
         ;; assumes Y = 0 when invoked and ensures Y = 0 stands again upon exit.
@@ -383,7 +387,10 @@ caml_end
         JSR caml_BASROM_on
 }
         LDA # 14                        ;Select upper+lowercase charset
-        JMP C64_CHROUT                  ; and return to BASIC.
+        JSR C64_CHROUT
+        LDA C64_SAREG                   ;Return the exit code to BASIC in
+        LDX C64_SXREG                   ; A (low byte) and X (high byte); BASIC
+        RTS                             ; stores them in PEEK(780), PEEK(781).
 .zpsave !fill .zpend - .zpbase
         
 
@@ -557,6 +564,10 @@ caml_uncaught_exn
         @arg    = TMP + 2               ;@pr_arg
         @out    = TMP + 4               ;@pr_arg
         @count  = TMP + 6               ;@pr_arg
+        LDA # 2                         ;Exit code 2 (as in OCaml for an
+        STA C64_SAREG                   ; uncaught exception)
+        LDA # 0
+        STA C64_SXREG
         LDX # 0
 -       LDA @uncght,X                   ;Print "\rException: "
         BEQ +

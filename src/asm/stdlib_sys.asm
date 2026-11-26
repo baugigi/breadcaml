@@ -232,3 +232,23 @@ caml_nonstd_get_exec_name
         STA ACCU + 1
         RTS
 }
+
+!ifdef caml_PRIM__caml_sys_exit {
+caml_sys_exit
+        ;; Stdlib.exit n: end the program and return to BASIC.  The exit code
+        ;; n (a 15-bit OCaml int) is sign-extended to 16 bits and stored in
+        ;; the SYS register storage area: low byte in C64_SAREG ("A", PEEK(780)),
+        ;; high byte in C64_SXREG ("X", PEEK(781)).  The loader clears them at
+        ;; start, and caml_end reloads A and X from them before returning.
+        ;; ACCU = Val_int(n) = 2n + 1, so n = ACCU >> 1 (arithmetic shift).
+        LDA ACCU + 1
+        CMP # $80                       ;C := sign
+        ROR
+        STA C64_SXREG                   ;high byte of n
+        LDA ACCU
+        ROR
+        STA C64_SAREG                   ;low byte of n
+        LDX caml_hw_stack_ptr           ;Clean exit from all JSRs (see
+        TXS                             ; caml_RAISE in runtime.asm)
+        JMP caml_end
+}

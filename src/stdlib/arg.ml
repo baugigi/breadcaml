@@ -377,8 +377,10 @@ let parse l f msg =
   | Help msg -> printf "%s" msg; exit 0
 --*)
 (*++ *)
-  | Bad msg -> prerr_string msg; exit 2
-  | Help msg -> print_string msg; exit 0
+(* [exit] is not available in BreadCaml (there is no operating system to
+   return to): after the message is printed, [Exit] is raised instead. *)
+  | Bad msg -> prerr_string msg; raise Exit
+  | Help msg -> print_string msg; raise Exit
 (* ++*)
 
 
@@ -391,8 +393,8 @@ let parse_dynamic l f msg =
   | Help msg -> printf "%s" msg; exit 0
 --*)
 (*++ *)
-  | Bad msg -> prerr_string msg; exit 2
-  | Help msg -> print_string msg; exit 0
+  | Bad msg -> prerr_string msg; raise Exit
+  | Help msg -> print_string msg; raise Exit
 (* ++*)
 
 let parse_expand l f msg =
@@ -407,8 +409,8 @@ let parse_expand l f msg =
   | Help msg -> printf "%s" msg; exit 0
 --*)
 (*++ *)
-  | Bad msg -> prerr_string msg; exit 2
-  | Help msg -> print_string msg; exit 0
+  | Bad msg -> prerr_string msg; raise Exit
+  | Help msg -> print_string msg; raise Exit
 (* ++*)
 
 
@@ -474,6 +476,10 @@ let trim_cr s =
   else
     s
 
+(* Reading/writing argument files needs [open_in_bin]/[open_out_bin], which
+   are not available (channels on disk are not implemented in the Stdlib).
+   Removed: read_arg, read_arg0, write_arg, write_arg0. *)
+(*--
 let read_aux trim sep file =
   let ic = open_in_bin file in
   let buf = Buffer.create 200 in
@@ -501,14 +507,10 @@ let read_arg0 = read_aux false '\x00'
 
 let write_aux sep file args =
   let oc = open_out_bin file in
-(*--
-  Array.iter (fun s -> fprintf oc "%s%c" s sep) args;
---*)
-(*++ *)
   Array.iter (fun s -> output_string oc s; output_char oc sep) args;
-(* ++*)
   close_out oc
 
 let write_arg = write_aux '\n'
 
 let write_arg0 = write_aux '\x00'
+--*)

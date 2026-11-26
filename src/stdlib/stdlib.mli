@@ -1533,6 +1533,15 @@ val at_exit : (unit -> unit) -> unit
    The functions are called in 'last in, first out' order: the
    function most recently added with [at_exit] is called first. *)
 --*)
+(*++ *)
+val exit : int -> 'a
+(** Terminate the program and return to BASIC.  The status code is
+    sign-extended to 16 bits and left in the SYS register storage area: low
+    byte in location 780 (the accumulator) and high byte in location 781
+    (the X register), so BASIC can read it with [PEEK(780)] and [PEEK(781)].
+    Normal termination returns 0; an uncaught exception returns 2.
+    There is no [at_exit]: no function is run at termination. *)
+(* ++*)
 
 (**/**)
 

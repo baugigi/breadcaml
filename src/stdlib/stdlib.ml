@@ -785,6 +785,12 @@ let input_line (ic : in_channel) =
           end in
     loop (bytes_create 16) 0
   end
+
+(* Program termination.  There is no operating system to return to, but BASIC
+   can read the exit code (16 bits) in PEEK(780) (low byte) and PEEK(781)
+   (high byte) after the SYS call.  [at_exit] is not available. *)
+external sys_exit : int -> 'a = "caml_sys_exit"
+let exit retcode = sys_exit retcode
 (* ++*)
 
 (*--
