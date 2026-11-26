@@ -109,6 +109,38 @@ module Hw = struct
     external flag2 : unit -> bool = "caml_nonstd_up_flag2"
   end
 
+  module Kernal = struct
+    external open_file : int -> int -> int -> string -> int
+      = "caml_nonstd_kn_open"
+    external close : int -> unit = "caml_nonstd_kn_close"
+    external chkin : int -> int = "caml_nonstd_kn_chkin"
+    external chkout : int -> int = "caml_nonstd_kn_chkout"
+    external clrchn : unit -> unit = "caml_nonstd_kn_clrchn"
+    external clall : unit -> unit = "caml_nonstd_kn_clall"
+    external chrin : unit -> int = "caml_nonstd_kn_chrin"
+    external chrout : int -> unit = "caml_nonstd_kn_chrout"
+    external readst : unit -> int = "caml_nonstd_kn_readst"
+    external load_at : int -> int -> string -> int -> int -> int
+      = "caml_nonstd_kn_load"
+    external set_range : int -> int -> int -> int -> unit
+      = "caml_nonstd_kn_range"
+    external save_raw : int -> string -> int = "caml_nonstd_kn_save"
+
+    let err_too_many_files = 1 and err_file_open = 2 and err_file_not_open = 3
+    and err_file_not_found = 4 and err_device_not_present = 5
+    and err_not_input_file = 6 and err_not_output_file = 7
+    and err_missing_file_name = 8 and err_illegal_device = 9
+
+    let st_timeout_write = 0x01 and st_timeout_read = 0x02 and st_eof = 0x40
+    and st_device_not_present = 0x80
+
+    let load_end_page () = Mem.peek_view 0xAF
+    let load_end_off () = Mem.peek_view 0xAE
+    let save ~dev name spage soff epage eoff =
+      set_range spage soff epage eoff;
+      save_raw dev name
+  end
+
   module Color = struct
     external peek : int -> int = "caml_nonstd_hw_color_peek"
     external poke : int -> int -> unit = "caml_nonstd_hw_color_poke"

@@ -183,6 +183,90 @@ module Hw : sig
         CIA 2 interrupt register (this call clears all the flags). *)
   end
 
+  (** Kernal I/O routines (through the jump table), one primitive per
+      routine, for the serial bus (disk drives, SD2IEC). Low level: nothing is
+      checked and no exception is raised.
+
+      Functions that can fail return the Kernal error code ([0] = no error).
+      Most {e DOS} errors (file not found on [open_file], disk full, ...) are
+      not reported by the Kernal but by the drive error channel (logical file
+      15, secondary address 15) and, partly, by {!readst}.
+
+      Logical file numbers [lfn] are 1..255 and unique among the open files (at
+      most 10 files can be open together); [dev] is the device number (8 is the
+      first disk drive); [sa] is the secondary address (the drive channel,
+      0..15; 255 = none). File names and commands are at most 255 characters
+      (longer ones are truncated) and are used in place, so they are read while
+      the Kernal runs, with no allocation.
+
+      {b Current channels.} After {!chkin}/{!chkout} the standard input/output
+      (keyboard, screen: [print_string], [read_line], {!Key}...) is redirected
+      to the file until {!clrchn} is called. Always call {!clrchn} before
+      returning to normal I/O. Files are not closed by the end of the program
+      (use {!close} or {!clall}); a drive keeps its file open with the LED on.
+
+      Addresses are in the {e page form} [page off] (see {!Mem}): the 16 bit
+      address [page * 256 + off] with both values in [0..255]. *)
+  module Kernal : sig
+    val open_file : int -> int -> int -> string -> int
+    (** [open_file lfn dev sa name] (SETLFS, SETNAM, OPEN). For a disk
+        drive [name] is a file name with the DOS modifiers, e.g.
+        ["FILE,S,R"], ["@0:FILE,S,W"], or a command if [sa = 15]. *)
+
+    val close : int -> unit               (** [close lfn] *)
+    val chkin : int -> int                (** [chkin lfn]: input from [lfn] *)
+    val chkout : int -> int               (** [chkout lfn]: output to [lfn] *)
+    val clrchn : unit -> unit             (** restore keyboard and screen *)
+    val clall : unit -> unit              (** close all files, like [clrchn] *)
+
+    val chrin : unit -> int
+    (** Read a byte from the current input channel; check {!readst} after
+        each byte ({!st_eof} is set while reading the last byte). *)
+
+    val chrout : int -> unit
+    (** Write a byte to the current output channel. *)
+
+    val readst : unit -> int              (** the status byte (ST) *)
+
+    val load_at : int -> int -> string -> int -> int -> int
+    (** [load_at dev sa name page off] loads a file into memory (LOAD) and
+        returns the error code. With [sa = 0] the file is loaded at
+        [page * 256 + off]; with [sa <> 0] at the address stored in the first
+        two bytes of the file ([page] and [off] are ignored). {b Nothing
+        protects the program, the heap or the stack of BreadCaml from being
+        overwritten.} The end address (last byte + 1) is then given by
+        {!load_end_page} and {!load_end_off}. Kernal messages are
+        suppressed. *)
+
+    val load_end_page : unit -> int
+    val load_end_off : unit -> int
+
+    val set_range : int -> int -> int -> int -> unit
+    (** [set_range spage soff epage eoff] sets the memory area to save
+        ([\[start, end)]), for {!save_raw}. *)
+
+    val save_raw : int -> string -> int
+    (** [save_raw dev name] saves the area set by {!set_range} (SAVE) as a
+        program file (the first two bytes are the start address) and returns
+        the error code. Kernal messages are suppressed. *)
+
+    val save : dev:int -> string -> int -> int -> int -> int -> int
+    (** [save ~dev name spage soff epage eoff]: {!set_range} then
+        {!save_raw}. The area is read with the current memory configuration
+        (ROMs visible as the CPU sees them). *)
+
+    (** Kernal error codes. *)
+    val err_too_many_files : int       val err_file_open : int
+    val err_file_not_open : int        val err_file_not_found : int
+    val err_device_not_present : int   val err_not_input_file : int
+    val err_not_output_file : int      val err_missing_file_name : int
+    val err_illegal_device : int
+
+    (** Bits of the status byte. *)
+    val st_timeout_write : int  val st_timeout_read : int
+    val st_eof : int            val st_device_not_present : int
+  end
+
   (** Color RAM, base [$D800]: offsets 0..999; [peek] returns the low nybble. *)
   module Color : sig
     val peek : int -> int
