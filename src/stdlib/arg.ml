@@ -377,10 +377,8 @@ let parse l f msg =
   | Help msg -> printf "%s" msg; exit 0
 --*)
 (*++ *)
-(* [exit] is not available in BreadCaml (there is no operating system to
-   return to): after the message is printed, [Exit] is raised instead. *)
-  | Bad msg -> prerr_string msg; raise Exit
-  | Help msg -> print_string msg; raise Exit
+  | Bad msg -> prerr_string msg; exit 2
+  | Help msg -> print_string msg; exit 0
 (* ++*)
 
 
@@ -393,8 +391,8 @@ let parse_dynamic l f msg =
   | Help msg -> printf "%s" msg; exit 0
 --*)
 (*++ *)
-  | Bad msg -> prerr_string msg; raise Exit
-  | Help msg -> print_string msg; raise Exit
+  | Bad msg -> prerr_string msg; exit 2
+  | Help msg -> print_string msg; exit 0
 (* ++*)
 
 let parse_expand l f msg =
@@ -409,8 +407,8 @@ let parse_expand l f msg =
   | Help msg -> printf "%s" msg; exit 0
 --*)
 (*++ *)
-  | Bad msg -> prerr_string msg; raise Exit
-  | Help msg -> print_string msg; raise Exit
+  | Bad msg -> prerr_string msg; exit 2
+  | Help msg -> print_string msg; exit 0
 (* ++*)
 
 

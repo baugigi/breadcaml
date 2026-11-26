@@ -154,10 +154,7 @@ let catch fct arg =
 (*++ *)
     prerr_string ("Uncaught exception: " ^ to_string x ^ "\r");
 (* ++*)
-(*++ *)
-    (* no [exit] in BreadCaml *)
-    raise Exit
-(* ++*)
+    exit 2
 
 (*++ *)
 (* Backtraces: stubs *)
