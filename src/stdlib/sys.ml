@@ -73,7 +73,10 @@ external runtime_parameters : unit -> string = "caml_runtime_parameters"
 --*)
 (*++ *)
 external mem_peek : int -> int -> int = "caml_nonstd_mem_peek"
-let executable_name = ""
+external get_argv : unit -> string array = "caml_nonstd_sys_argv"
+let argv = get_argv ()
+external get_exec_name : unit -> string = "caml_nonstd_get_exec_name"
+let executable_name = get_exec_name ()
 let os_type = match mem_peek 0x80 0xFF with
   | 0xAA -> "c64 kernal r1"
   | 0x00 -> "c64 kernal r2"

@@ -49,13 +49,47 @@ external argv : string array = "%sys_argv"
    The following elements are the command-line arguments
    given to the program. *)
 --*)
+(*++ *)
+val argv : string array
+(** The command line arguments given to the process.
+   The first element is the command name used to invoke the program.
+   The following elements are the command-line arguments
+   given to the program.
+
+   {i {b BreadCaml Note} The first element is {!executable_name}.  The other
+   elements are taken from the BASIC line that started the program, which must
+   have the form [RUN:REM arg1, "arg 2", arg3].  Arguments are separated by
+   commas; unquoted arguments are stripped of leading and trailing spaces,
+   quoted ones are taken verbatim without the quotes.  The text after [REM] is
+   left untouched by the BASIC tokenizer.  If the program was not started with
+   [RUN:REM] followed by some text, [argv] is [[|executable_name|]].
+
+   The arguments are subject to the limits of the BASIC line editor:
+   - the whole line, including [RUN:REM], is at most 80 characters (the size of
+     the BASIC input buffer), so the total length of the arguments is a bit
+     less than that;
+   - a string argument cannot contain the character ['\000'] (it ends the
+     line), nor a double quote inside a quoted argument; a comma can only be
+     part of a quoted argument;
+   - the characters are PETSCII codes, as typed (e.g. letters are shifted or
+     unshifted according to the keyboard mode), not ASCII.
+
+   All arguments are strings: use [int_of_string] or [float_of_string] to
+   convert them.  [argv] is computed when module [Sys] is initialised, which
+   must happen before any floating-point conversion ([float_of_string],
+   [string_of_float], ...), since these overwrite the BASIC line.  It costs
+   nothing if unused. } *)
+(* ++*)
 val executable_name : string
 (** The name of the file containing the executable currently running.
     This name may be absolute or relative to the current directory, depending
     on the platform and whether the program was compiled to bytecode or a native
     executable.
     
-   {i {b BreadCaml Note} Return the empty string. } *)
+   {i {b BreadCaml Note} Return the name of the output file given to the
+    compiler (option [-o]), without directory and truncated to 509
+    characters (the maximum length of a string).  It is fixed at compile
+    time: it does not change if the file is renamed. } *)
 (*--
 external file_exists : string -> bool = "caml_sys_file_exists"
 (** Test if a file with the given name exists. *)

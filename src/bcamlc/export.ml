@@ -59,6 +59,23 @@ module OCamlclean = struct
     (code, Prim.clean code prim, data)
 end
 
+(* Statically allocate the OCaml string block holding the name of the output
+   file (basename only, at most 509 characters, the maximum length of an OCaml
+   string), for Sys.executable_name and Sys.argv.(0); emitted only if needed. *)
+let export_exec_name ch prgfile =
+  let name = Filename.basename prgfile in
+  let name = if String.length name > 509 then String.sub name 0 509 else name in
+  let esc = Buffer.create 16 in
+  String.iter (function
+      | ('"' | '\\') as c -> Buffer.add_char esc '\\'; Buffer.add_char esc c
+      | c -> Buffer.add_char esc c) name;
+  fprintf ch
+    "!align $01, $00\n\
+     caml_exec_name\n\
+     \t!byte String_tag, (++ - +) / 2\n\
+     +\t+caml_string \"%s\"\n\
+     ++\n" (Buffer.contents esc)
+
 let export ~bytefile ~asmfile ~prgfile ~externs ~top_of_mem ~stack_pages =
   let stack_end = top_of_mem + (top_of_mem land 1) in
   let stack_start = 256 * ((stack_end lsr 8) - stack_pages) in
@@ -74,6 +91,9 @@ let export ~bytefile ~asmfile ~prgfile ~externs ~top_of_mem ~stack_pages =
     let code, prim, data = OCamlclean.clean bytecode in
     Primitives.export_used_prims ch prim;
     Includes.source ch Config.pre_code_includes;
+    if Array.exists (fun p -> p = "caml_nonstd_get_exec_name"
+                              || p = "caml_nonstd_sys_argv") prim
+    then export_exec_name ch prgfile;
     Opcodes.export ch (OByteLib.Normalised_code.to_code code);
     fprintf ch "\n";
     Includes.source ch ~dir:"" externs;

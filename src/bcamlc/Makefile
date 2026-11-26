@@ -26,7 +26,7 @@ BCAMLC := config globals opcodes export cmdline bcamlc
 # ./ocamlclean stay untouched. For each module M listed in $(PATCH), the file
 # patches/ocamlclean-M.patch is applied to a copy of ocamlclean/M.ml in
 # $(PATCHED), and that copy is compiled instead of the original.
-PATCH     := globalise step2
+PATCH     := globalise step2 prim
 PATCHED   := ./patched
 PATCHDIR  := ./patches
 OCLEAN_ML := $(foreach m,$(OCLEAN),$(if \

@@ -1,0 +1,37 @@
+diff -ruN a/prim.ml b/prim.ml
+--- a/prim.ml	2026-11-22 07:52:46.434705545 +0000
++++ b/prim.ml	2026-11-22 07:54:12.418415615 +0000
+@@ -39,6 +39,33 @@
+ let no_side_effect prim_name =
+   match prim_name with
+     | "caml_alloc_dummy"
++    | "caml_nonstd_sys_argv"
++    | "caml_nonstd_get_exec_name"
++    | "caml_nonstd_sign_float"
++    | "caml_nonstd_string_of_int"
++    | "caml_nonstd_string_of_float"
++    | "caml_alloc_dummy_function"
++    | "caml_make_array"
++    | "caml_bytes_of_string"
++    | "caml_string_of_bytes"
++    | "caml_ml_bytes_length"
++    | "caml_bytes_compare"
++    | "caml_bytes_equal"
++    | "caml_bytes_notequal"
++    | "caml_bytes_lessthan"
++    | "caml_bytes_lessequal"
++    | "caml_bytes_greaterthan"
++    | "caml_bytes_greaterequal"
++    | "caml_copysign_float"
++    | "caml_expm1_float"
++    | "caml_log1p_float"
++    | "caml_floatarray_unsafe_get"
++    | "caml_int32_bswap"
++    | "caml_int64_bswap"
++    | "caml_int32_hash"
++    | "caml_int64_hash"
++    | "caml_int_as_pointer"
++    | "caml_obj_add_offset"
+     | "caml_alloc_dummy_float"
+     | "caml_array_unsafe_get_float"
+     | "caml_array_unsafe_get"
