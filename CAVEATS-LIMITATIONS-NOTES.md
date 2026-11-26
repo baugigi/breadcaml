@@ -71,6 +71,9 @@
   the environment is not pushed onto the stack; all arguments are
   pushed but  the first; the  result is  assumed to be  stored in
   Accumulator by the primitive.
+  The primitive must leave the pushed arguments on the stack: it is
+  `C_CALL`  itself  that  pops  them  after  the  primitive  returns
+  (so a primitive must never adjust `SP` to drop its own arguments).
 
 * **PROGRAM TERMINATION:**
   there is no operating system to return to: `exit n` ends the
