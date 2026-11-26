@@ -1,5 +1,12 @@
 #!/bin/bash
-if ./configure -s && make -s fullinstall; then
+if {
+  echo "######### CONFIGURING..."
+  ./configure -y
+  } && {
+  echo "######### BUILDING AND INSTALLING..."
+  make -s fullinstall
+  }
+then
   echo "BreadCaml built and installed successfully."
 else
   echo "FAILURE." 1>&2

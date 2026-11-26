@@ -316,7 +316,7 @@ caml_init
                 INC+1 @fetch + 1        ; SMC: INC PC
                 BNE +
                 INC+1 @fetch + 2        ; SMC: INC PC+1
-                ASL                     ; C:A = 2 * opcode
++               ASL                     ; C:A = 2 * opcode
                 STA+1 @exec + 1         ; SMC: overwrite JMP() argument
 @exec           JMP (caml_interp_jmptbl); SMC: JMP(A + >jmptbl)
   }
