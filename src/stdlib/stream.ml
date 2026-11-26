@@ -36,8 +36,16 @@ let data = function
   | None -> Sempty
   | Some { data } -> data
 
+(*-- let fill_buff b =
+  b.len <- input b.ic b.buff 0 (Bytes.length b.buff); b.ind <- 0 --*)
+(*++ *)
+(* BreadCaml channels are closures (in_channel = unit -> char) and there is no
+   [input]: the buffer holds one char at a time (so that a keyboard channel
+   does not wait for more than the char that is needed). *)
 let fill_buff b =
-  b.len <- input b.ic b.buff 0 (Bytes.length b.buff); b.ind <- 0
+  b.len <- (try Bytes.set b.buff 0 (b.ic ()); 1 with End_of_file -> 0);
+  b.ind <- 0
+(* ++*)
 
 
 let rec get_data : type v. int -> v data -> v data = fun count d -> match d with
@@ -189,7 +197,7 @@ let of_bytes s =
 
 let of_channel ic =
   Some {count = 0;
-        data = Sbuffio {ic = ic; buff = Bytes.create 4096; len = 0; ind = 0}}
+        data = Sbuffio {ic = ic; buff = Bytes.create 1; len = 0; ind = 0}}
 
 
 (* Stream expressions builders *)
