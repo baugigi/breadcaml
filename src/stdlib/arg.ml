@@ -117,7 +117,9 @@ let print_spec buf (key, spec, doc) =
         bprintf buf "  %s %s%s\n" key (make_symlist "{" "|" "}" l) doc
 --*)
 (*++ *)
-        bprints buf ["  "; key; " "; make_symlist "{" "|" "}" l; doc; "\n"]
+        (* PETSCII has no braces ("{" starts a special token for the
+           bcamlppx): square brackets are used instead. *)
+        bprints buf ["  "; key; " "; make_symlist "[" "|" "]" l; doc; "\n"]
 (* ++*)
     | _ ->
 (*--
