@@ -71,3 +71,15 @@
   the environment is not pushed onto the stack; all arguments are
   pushed but  the first; the  result is  assumed to be  stored in
   Accumulator by the primitive.
+
+* **PROGRAM TERMINATION:**
+  there is no operating system to return to: `exit n` ends the
+  program and returns to BASIC, leaving `n` (sign-extended to 16
+  bits) in the SYS register storage area, i.e. in `PEEK(780)` (low
+  byte) and `PEEK(781)` (high byte); normal termination leaves `0`.  
+  Functions registered with `at_exit` are run by `exit` and at normal
+  termination (via `Std_exit`), but _not_ when the program ends with
+  an uncaught exception: in that case the exception is printed, the
+  exit code is `2`, and open disk files (see `C64.Disk`) are not
+  closed.  Catch exceptions in your main program, or close files
+  explicitly, if this matters.
