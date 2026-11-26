@@ -255,6 +255,7 @@ caml_alloc
         STA HEAP + 1
         PLP                             ;get GC-done flag from HW stack
         BCS @oom_caml_alloc             ;check if GC done yet:
+        LDY # 0                         ;(callers may pass Y<>0, e.g. CLOSURE)
         JSR .caml_garbage_collect       ;no: call the garbage collector
         LDX .ASZ                        ; X := size
         SEC                             ; set GC-done flag

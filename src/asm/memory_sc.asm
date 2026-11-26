@@ -159,6 +159,7 @@ caml_alloc
         ;; else try a GC or, if already done, raise OOM
 @gctry  PLP                             ;get GC-done flag from HW stack
         BCS @oom                        ;check if GC done yet:
+        LDY # 0                         ;(callers may pass Y<>0, e.g. CLOSURE)
         JSR .caml_garbage_collect       ;no: call the garbage collector
         LDX @SZ                         ; X := size
         SEC                             ; set GC-done flag

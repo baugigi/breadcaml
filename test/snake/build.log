@@ -1,0 +1,28 @@
+bcamlopt -c -i snake.ml > snake.mli
+bcamlopt -O time -gc stop_and_copy -mem 0xBFFF -showmem -c snake.mli
+bcamlopt -O time -gc stop_and_copy -mem 0xBFFF -showmem -c snake.ml
+bcamlopt -O time -gc stop_and_copy -mem 0xBFFF -showmem -o snake.prg c64lib.cma snake.cmo -- -r snake.rep -Dcaml_OSIZE=1
+Info - File /home/piero/.opam/LTS/lib/bcaml/loader.asm, line 93 (Subzone caml_LOADER): !info: BASIC ROM overlap: BASIC routine calls will be wrapped.
+Warning - File /home/piero/.opam/LTS/lib/bcaml/stdlib_arrays.asm, line 23 (Subzone caml_ARRAYS): !warn: TODO: caml_array_fill
+Warning - File /home/piero/.opam/LTS/lib/bcaml/stdlib_arrays.asm, line 24 (Subzone caml_ARRAYS): !warn: TODO: caml_floatarray_blit
+Warning - File /home/piero/.opam/LTS/lib/bcaml/stdlib_stacks.asm, line 23 (Subzone caml_STACK): !warn: TODO: caml_ensure_stack_capacity
+Info - File /home/piero/.opam/LTS/lib/bcaml/showmem.asm, line 68 (Zone <untitled>): !info: 
+
+SECTION     	START ADDRESS	END ADDRESS	SIZE
+BASIC loader	$0801 (02049)	$0CCE (03278)	$04CE (01230)
+Object code 	$0CCF (03279)	$7313 (29459)	$6645 (26181)
+Custom libs 	<N/A>        	<N/A>        	<N/A>
+Runtime libs	$7314 (29460)	$7AB4 (31412)	$07A1 (01953)
+Memory GC   	$7AB5 (31413)	$7DA3 (32163)	$02EF (00751)
+Standard lib	$7DA4 (32164)	$8D66 (36198)	$0FC3 (04035)
+Prim.jumptbl	$8D67 (36199)	$8DC9 (36297)	$0063 (00099)
+Global table	$8DCA (36298)	$8EEB (36587)	$0122 (00290)
+Global data 	$8EEC (36588)	$918F (37263)	$02A4 (00676)
+      TOTAL:	$0801 (02049)	$918F (37263)	$898F (35215)
+
+       HEAP:	$9190 (37264)	$BBFF (48127)	$2A70 (10864)
+      STACK:	$BC00 (48128)	$BFFF (49151)	$0400 (01024)
+
+Opening report file "snake.rep".
+Writing output file "snake.prg".
+rm snake.mli
