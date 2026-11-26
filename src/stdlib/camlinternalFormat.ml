@@ -153,7 +153,7 @@ let string_of_formatting_lit formatting_lit = match formatting_lit with
   | Close_tag            -> [%ascii "@}"]
   | Break (str, _, _)    -> str
   | FFlush               -> "@?"
-  | Force_newline        -> "@\n"
+  | Force_newline        -> "@\r"      (* RETURN: newline on the C64 *)
   | Flush_newline        -> "@."
   | Magic_size (str, _)  -> str
   | Escaped_at           -> "@@"

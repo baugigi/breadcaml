@@ -138,7 +138,7 @@ let print fct arg =
     eprintf "Uncaught exception: %s\n" (to_string x);
 --*)
 (*++ *)
-    prerr_string ("Uncaught exception: " ^ to_string x ^ "\n");
+    prerr_string ("Uncaught exception: " ^ to_string x ^ "\r");
 (* ++*)
     flush stderr;
     raise x
@@ -152,7 +152,7 @@ let catch fct arg =
     eprintf "Uncaught exception: %s\n" (to_string x);
 --*)
 (*++ *)
-    prerr_string ("Uncaught exception: " ^ to_string x ^ "\n");
+    prerr_string ("Uncaught exception: " ^ to_string x ^ "\r");
 (* ++*)
 (*++ *)
     (* no [exit] in BreadCaml *)

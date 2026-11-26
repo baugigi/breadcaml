@@ -119,14 +119,14 @@ let print_spec buf (key, spec, doc) =
 (*++ *)
         (* PETSCII has no braces ("{" starts a special token for the
            bcamlppx): square brackets are used instead. *)
-        bprints buf ["  "; key; " "; make_symlist "[" "|" "]" l; doc; "\n"]
+        bprints buf ["  "; key; " "; make_symlist "[" "|" "]" l; doc; "\r"]
 (* ++*)
     | _ ->
 (*--
         bprintf buf "  %s %s\n" key doc
 --*)
 (*++ *)
-        bprints buf ["  "; key; " "; doc; "\n"]
+        bprints buf ["  "; key; " "; doc; "\r"]
 (* ++*)
 
 
@@ -150,7 +150,7 @@ let usage_b buf speclist errmsg =
   bprintf buf "%s\n" errmsg;
 --*)
 (*++ *)
-  bprints buf [errmsg; "\n"];
+  bprints buf [errmsg; "\r"];
 (* ++*)
   List.iter (print_spec buf) (add_help speclist)
 
@@ -203,14 +203,14 @@ let parse_and_expand_argv_dynamic_aux allow_expand current argv speclist anonfun
           bprintf b "%s: unknown option '%s'.\n" progname s
 --*)
 (*++ *)
-          bprints b [progname; ": unknown option '"; s; "'.\n"]
+          bprints b [progname; ": unknown option '"; s; "'.\r"]
 (* ++*)
       | Missing s ->
 (*--
           bprintf b "%s: option '%s' needs an argument.\n" progname s
 --*)
 (*++ *)
-          bprints b [progname; ": option '"; s; "' needs an argument.\n"]
+          bprints b [progname; ": option '"; s; "' needs an argument.\r"]
 (* ++*)
       | Wrong (opt, arg, expected) ->
 (*--
@@ -219,14 +219,14 @@ let parse_and_expand_argv_dynamic_aux allow_expand current argv speclist anonfun
 --*)
 (*++ *)
           bprints b [progname; ": wrong argument '"; arg; "'; option '"; opt;
-                     "' expects "; expected; ".\n"]
+                     "' expects "; expected; ".\r"]
 (* ++*)
       | Message s -> (* user error message *)
 (*--
           bprintf b "%s: %s.\n" progname s
 --*)
 (*++ *)
-          bprints b [progname; ": "; s; ".\n"]
+          bprints b [progname; ": "; s; ".\r"]
 (* ++*)
     end;
     usage_b b !speclist errmsg;
@@ -449,7 +449,7 @@ let add_padding len ksd =
   | (kwd, (Symbol _ as spec), msg) ->
       let cutcol = second_word msg in
       let spaces = String.make ((Int.max 0 (len - cutcol)) + 3) ' ' in
-      (kwd, spec, "\n" ^ spaces ^ replace_leading_tab msg)
+      (kwd, spec, "\r" ^ spaces ^ replace_leading_tab msg)
   | (kwd, spec, msg) ->
       let cutcol = second_word msg in
       let kwd_len = String.length kwd in

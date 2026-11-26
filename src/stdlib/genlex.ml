@@ -170,7 +170,7 @@ let make_lexer keywords =
     | _ -> raise Stream.Failure
   and escape (strm__ : _ Stream.t) =
     match Stream.peek strm__ with
-      Some 'n' -> Stream.junk strm__; '\n'
+      Some 'n' -> Stream.junk strm__; '\r'  (* newline on the C64 *)
     | Some 'r' -> Stream.junk strm__; '\r'
     | Some 't' -> Stream.junk strm__; '\t'
     | Some ('0'..'9' as c1) ->
