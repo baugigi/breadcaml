@@ -236,52 +236,43 @@ caml_gfx_locate
         ;; In: X1 in 0..width-1, Y1 in 0..199.
         ;; Out: PTR = address of the cell line, X = pixel position in the cell
         ;;      (0..npos-1), Y = line in the cell (0..7).
+        ;; The column offset is built directly in PTR: hires x & $F8 (+256 if
+        ;; x >= 256), multicolor (x & $FC) * 2 (x < 160), then added to the
+        ;; address of the cell row.
+        LDA caml_gfx_Y1
+        AND # 7
+        TAY                             ;Y := line in the cell
         LDA caml_gfx_Y1
         LSR
         LSR
         LSR
         TAX                             ;X := cell row
-        LDA caml_gfx_data__rowlo,X
+        LDA caml_gfx_data__mc
+        BNE @mc
+        LDA caml_gfx_X1                 ;hires: column * 8
+        AND # $F8
         STA caml_gfx_PTR
-        LDA caml_gfx_data__rowhi,X
+        LDA caml_gfx_X1 + 1
+        STA caml_gfx_PTR + 1
+@add    CLC
+        LDA caml_gfx_PTR
+        ADC caml_gfx_data__rowlo,X
+        STA caml_gfx_PTR
+        LDA caml_gfx_PTR + 1
+        ADC caml_gfx_data__rowhi,X
         STA caml_gfx_PTR + 1
         LDA caml_gfx_X1
         AND caml_gfx_data__pmask
-        STA caml_gfx_T + 2              ;position in the cell
-        LDA caml_gfx_X1
-        STA caml_gfx_T
-        LDA caml_gfx_X1 + 1
-        STA caml_gfx_T + 1
-        LSR caml_gfx_T + 1
-        ROR caml_gfx_T
-        LSR caml_gfx_T + 1
-        ROR caml_gfx_T
-        LDA caml_gfx_data__mc
-        BNE @c2
-        LSR caml_gfx_T + 1
-        ROR caml_gfx_T                  ;T := cell column (0..39)
-@c2     LDA caml_gfx_T
-        LSR
-        LSR
-        LSR
-        LSR
-        LSR
-        STA caml_gfx_T + 1              ;high byte of column * 8
-        LDA caml_gfx_T
-        ASL
-        ASL
-        ASL                             ;low byte of column * 8
-        CLC
-        ADC caml_gfx_PTR
-        STA caml_gfx_PTR
-        LDA caml_gfx_PTR + 1
-        ADC caml_gfx_T + 1
-        STA caml_gfx_PTR + 1
-        LDX caml_gfx_T + 2
-        LDA caml_gfx_Y1
-        AND # 7
-        TAY
+        TAX                             ;X := position in the cell
         RTS
+@mc     LDA caml_gfx_X1                 ;multicolor: column * 8
+        AND # $FC                       ; = (x & $FC) * 2, carry = bit 7
+        ASL
+        STA caml_gfx_PTR
+        LDA # 0
+        ROL
+        STA caml_gfx_PTR + 1
+        JMP @add
 }
 
 ;; ---- virtual window -------------------------------------------------------------
