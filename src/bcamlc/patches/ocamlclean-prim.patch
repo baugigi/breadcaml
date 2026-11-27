@@ -1,7 +1,7 @@
 diff -ruN a/prim.ml b/prim.ml
---- a/prim.ml	2026-11-27 10:59:00.236418805 +0000
-+++ b/prim.ml	2026-11-27 10:59:00.293588843 +0000
-@@ -55,6 +55,42 @@
+--- a/prim.ml	2026-11-27 15:19:16.712567655 +0000
++++ b/prim.ml	2026-11-27 15:19:16.733053632 +0000
+@@ -55,11 +55,46 @@
  
  let no_side_effect prim_name =
    match prim_name with
@@ -44,3 +44,8 @@ diff -ruN a/prim.ml b/prim.ml
      | "caml_alloc_dummy"
      | "caml_alloc_dummy_float"
      | "caml_array_unsafe_get_float"
+     | "caml_array_unsafe_get"
+-    | "caml_float_of_string"
+     | "caml_int_of_float"
+     | "caml_float_of_int"
+     | "caml_neg_float"

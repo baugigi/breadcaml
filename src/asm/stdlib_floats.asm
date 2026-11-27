@@ -486,7 +486,19 @@ caml_float_of_string
         STA TMP
         LDA C64_CHRPTR + 1
         STA TMP + 1
-        LDA ACCU + 1
+        LDY # 0                         ;FIN skips the blanks inside a number
+@lead   LDA (ACCU),Y                    ; ("1 2" would give 12): accept only
+        CMP # $20                       ; leading blanks, and reject the string
+        BNE @inner                      ; if a blank follows the first
+        INY                             ; character.
+        BNE @lead
+@inner  LDA (ACCU),Y
+        BEQ @spdone
+        CMP # $20
+        BEQ @bad
+        INY
+        BNE @inner
+@spdone LDA ACCU + 1
         LDX ACCU
  !ifdef caml_basic_rom_overlap {
         ;; FIN reads the string with the BASIC ROM on, but the string may be in

@@ -1,5 +1,5 @@
 misc/
-test/claude/build/
+test/testsuite
 etc/uninstall.sh
 etc/Makefile.conf
 

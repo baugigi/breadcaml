@@ -36,11 +36,11 @@ type game_params = {
 let params = {
   snake_len     = 10;
   delay_max     =  8;
-  delay_min     =  0;
-  speedup_score =  3;
-  food_at_wall  = 30;
-  bricks_score  = 10;
-  bricks_period =  3;
+  delay_min     =  1;
+  speedup_score =  5;
+  food_at_wall  = 20;
+  bricks_score  =  5;
+  bricks_period =  2;
   }
 
 (** Game status *)

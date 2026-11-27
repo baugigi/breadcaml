@@ -1,0 +1,14 @@
+stdlib: mark the changes in printf.ml and camlinternalFormat.ml/.mli
+
+Add the standard BreadCaml header (third-party notice and description of the
+(*-- --*) / (*++ ++*) convention) to printf.ml, camlinternalFormat.ml and
+camlinternalFormat.mli.
+
+In camlinternalFormat.ml and .mli the code removed from the original OCaml
+4.14.2 files is now kept inside (*-- --*) comments and the new or changed code
+is delimited by (*++ ++*), as in the other modified modules. Removing the
+(*-- --*) blocks and the markers gives back the previous files byte for byte,
+and removing the (*++ ++*) blocks and the (*-- --*) delimiters gives back the
+originals, so there is no change in behaviour.
+
+printf.ml: header only; its changes were already marked.

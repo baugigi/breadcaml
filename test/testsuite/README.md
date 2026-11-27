@@ -15,7 +15,7 @@ In ambiente senza display: `VICE_OPTS="-console"` oppure un X virtuale (`xvfb-ru
 ./run_tests.sh -k '^t06' -j 4        # solo i test che iniziano per t06, 4 VICE in parallelo
 ./run_tests.sh -l                    # elenca i test
 ```
-Opzioni: `-m nat|bc|both`, `-s suite,...`, `-k regex`, `-o dir_risultati` (default `./results`), `-j N`, `-l`.
+Opzioni: `-i` (VICE ridotto a icona), `-m nat|bc|both`, `-s suite,...`, `-k regex`, `-o dir_risultati` (default `./results`), `-j N`, `-l`.
 Variabili: `X64` (default `x64sc`), `VICE_OPTS`, `BCAMLOPT`, `BCAMLC`, `STALL` (secondi senza output prima
 di dichiarare un hang, default 90).
 

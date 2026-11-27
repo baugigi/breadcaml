@@ -90,7 +90,8 @@ module Pulse = struct
   let out ?(level = true) pin ~us =
     chk_pb "Pulse.out" pin;
     let c = Time.cycles_of_us us in
-    if us < 0 || c < 0 || c > 16383 + overhead then bad "Pulse.out: us";
+    (* NB: 16383 + overhead would not fit in 15 bits (it wraps to a negative) *)
+    if us < 0 || c < 0 || c - overhead > 16383 then bad "Pulse.out: us";
     let c = c - overhead in
     out_raw (1 lsl pin) (if level then 1 else 0) (if c < 0 then 0 else c)
 
