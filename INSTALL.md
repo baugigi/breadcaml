@@ -1,26 +1,71 @@
 # Installing BreadCaml on Linux
 
-## Prerequisites:
+## Quick install
+
+**Download and extract** the BreadCaml tarball, navigate into the root
+directory of the source tree, and run:
+
+```bash
+./quickinstall
+```
+
+It runs the environment configuration script using default options and
+automatically accepts  every installation proposed by  it: opam, OCaml
+4.14.x, OByteLib, and ACME are installed  if they are missing.  In the
+event of  a failure, or if  a configuration other than  the default is
+required,  please  refer   to  the  [Manual  install](#manual-install)
+section below for further details.
+
+---
+
+## Manual install
+
+### Prerequisites
 1. [System Requirements](#1-system-requirements)
 2. [OCaml LTS (Long Term Support) release 4.14.x](#2-ocaml-lts-long-term-support-release-414x)
 3. [OByteLib package](#3-obytelib-package)
 4. [ACME crossassembler (release 0.97 "Zem", 16 Nov 2025 or newer)](#4-acme-crossassembler-release-097-zem-16-nov-2025-or-newer)
 
-### Installing/Configuring prerequisites:
+> [!TIP]
+> _If opam, OCaml  4.14.x or OByteLib are missing, you  do not need to
+> install them by hand: the_ `./configure` _script proposes to install
+> them (see  below), as it  does for  ACME. The manual  procedures are
+> described here for those who prefer them._
+
+**Installing/Configuring prerequisites:**
 
 #### **1) System Requirements**
 
 A Bash  shell, the GNU coreutils  and standard commands as  `date` and
 `which` are assumed to be installed on your system.
 
-The configuration script also requires and checks for `ar`, `bzip2`, `gcc`,
-`make`, `sed`, and `tar`.
+The configuration script  also requires and checks  for `ar`, `bzip2`,
+`gcc`, `make`, `sed`, and `tar`.
 
 #### **2) OCaml LTS (Long Term Support) release 4.14.x** 
 
+* **Automatic installation:** `./configure`  checks for `opam`, for an
+  Opam  switch  with OCaml  4.14.x,  and  for  OByteLib. For  what  is
+  missing, it proposes (or, with `-y`, just does) the following:
+  - if  `opam`  is  not  installed, it  runs  the  official  installer
+    (`https://opam.ocaml.org/install.sh`,  which  requires  `curl`  or
+    `wget`): the  installer asks where to  put the binary and  may ask
+    for your password;
+  -_if  opam has  not been  initialised,  it runs  `opam init  --bare`
+    (without touching your shell configuration files);
+  - if the active switch has no OCaml 4.14.x, it uses another existing
+    switch that has it (the default switch of opam is not changed), or
+    else  creates the  switch  `LTS` (this  compiles  OCaml and  takes
+    several minutes);
+  - if OByteLib is not installed in that switch, it installs it.
+
+  The environment of the chosen switch  (`eval $(opam env)`) is set up
+  inside the script, and BreadCaml  is installed in that switch unless
+  a target directory option is given.
+
 * **Case 1: _OCaml is not installed_**
 
-  Please refer to the [OCaml Installation Guide](https://ocaml.org/docs/installing-ocaml) 
+  Please refer to the [OCaml Installation Guide](https://ocaml.org/docs/installing-ocaml)
   to install OCaml  on your system. Once installed,  use **Opam** (the
   OCaml package manager)  and follow **steps a) and b)**  below to set
   up the LTS compiler switch.
@@ -43,7 +88,7 @@ The configuration script also requires and checks for `ar`, `bzip2`, `gcc`,
   
 * **Case 3: _OCaml 4.14.x is already installed_**
     
-  Ensure that  the **Opam switch** with the compiler's  LTS release is
+  Ensure that the  **Opam switch** with the compiler's  LTS release is
   selected before proceeding. If it is not your default switch, select
   it manually:
   
@@ -98,22 +143,12 @@ The configuration script also requires and checks for `ar`, `bzip2`, `gcc`,
 
 ---
 
-## BreadCaml INSTALLATION
+### BreadCaml installation
 
 * **Download and  extract** the BreadCaml tarball,  then navigate into
   the root directory of the source tree.
 * Ensure that the **Opam switch**  running the LTS compiler release is
   currently active.
-
-### Option A: Quick and (not so) dirty
-
-To install BreadCaml immediately using the default options, run:
-
-```bash
-./configure --yes && make fullinstall
-```
-
-### Option B: Custom Installation
 
 #### 1. Configure the system
 
@@ -128,7 +163,7 @@ To install BreadCaml immediately using the default options, run:
 | `-m`, `--mandir` | `<dir>` | Target directory for manual pages |
 | `-d`, `--docdir` | `<dir>` | Target directory for HTML documentation |
 | `-p`, `--prefix` | `<dir>` | Shortcut for `-b <dir>/bin -l <dir>/lib/breadcaml -m <dir>/man -d <dir>/doc/bcaml` |
-| `-y`, `--yes`    |         | Automatically accept the ACME installation prompt |
+| `-y`, `--yes`    |         | Automatically accept the installation proposals (ACME, opam, OCaml 4.14.x, OByteLib) |
 | `-s`, `--silent` |         | Like '-y', also do not display messages (except errors) |
 | `-h`, `--help`   |         | Display the help message and default installation paths |
 
@@ -159,9 +194,9 @@ make
 
 #### 3. Install the system
 
-This copies the `bcamlc` and `bcamlopt` compilers, the `bcamlppx` preprocessor,
-the BreadCaml Stdlib files, and the man pages into your selected target 
-directories:
+This  copies the  `bcamlc`  and `bcamlopt`  compilers, the  `bcamlppx`
+preprocessor, the BreadCaml Stdlib files,  and the man pages into your
+selected target directories:
 
 ```bash
 make install

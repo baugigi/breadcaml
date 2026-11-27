@@ -91,7 +91,7 @@ caml_memory
 .TBLE   = .TBL + (.D / .CHUNK) * 2
 .K      = .BAMS - .DS / 16                      ;(addr >> 4) + .K = BAM byte
 
-!info .hs, .L, .CHUNK, .D, .DS, .DE, .BAMS, .BAME, .TBL, .TBLE, .K
+;!info .hs, .L, .CHUNK, .D, .DS, .DE, .BAMS, .BAME, .TBL, .TBLE, .K
 
 !ifdef .TBLE {
   !if .TBLE > caml_stack_start {

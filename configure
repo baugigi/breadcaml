@@ -14,7 +14,7 @@
 #  ——————————————————————————————————————————————————————————————————————
 
 for C in date dirname mktemp realpath; do
-  command -v &>/dev/null || {
+  command -v "$C" &>/dev/null || {
     echo "This script requires GNU coreutils." 1>&2
     exit 1
   }
@@ -50,7 +50,15 @@ MAN3EXT=3bc
 ACME_TBZ2=acme-crossass-code-0-r454-trunk.tar.bz2  # source tarball
 ACME_REL='0.97 ("Zem"), 1 May 2026'                # release
 ACME_MIN=20251116                                  # oldest compatible date
-ACME_INSTALL=''                                    # install flag
+
+# OCaml environment installation data
+OPAM_INSTALLER='https://opam.ocaml.org/install.sh' # official opam installer
+OCAML_FORMULA='["ocaml" {>= "4.14.0" & < "5.0.0"}]'  # compiler required
+OCAML_SWITCH=LTS                                   # name of the switch to create
+OBYTELIB=obytelib                                  # opam package to install
+
+# Set to 'Y' (options -y, -s) to accept all the installation proposals
+ASSUME_YES=''
 
 ##### OUTPUT
 
@@ -94,19 +102,41 @@ function message { # $1: message type; $2: message text
   esac
 }
 
-# Install ACME (and rename/retain the old release) in BINDIR, if ACME_INSTALL
-# is 'y' or 'yes', case-insensitive; if unset/null, read it from stdin.
-# Return COMMAND[acme] properly set.
+# Ask the user to confirm an installation, unless ASSUME_YES is set (options
+# -y, -s): the answer must be 'y' or 'yes' (case-insensitive) or empty.
+function confirm { # $@: the lines of text describing the proposal
+  [[ $ASSUME_YES ]] && return 0
+  local LINE ANSWER
+  for LINE in "$@"; do message cont "$LINE"; done
+  message ask "Do you want to proceed? [Y/n] "
+  read -r ANSWER || failwith "no answer"
+  [[ $ANSWER == @([Yy]|[Yy][Ee][Ss]|) ]] || failwith "aborted by user"
+}
+
+# Run a command; with option -s its output is shown only if it fails.
+function run { # $@: command and arguments
+  if [[ $ECHO == ':' ]]; then
+    local LOG
+    LOG="$(mktemp)"
+    "$@" >"$LOG" 2>&1 || { cat "$LOG" 1>&2; rm -f "$LOG"; return 1; }
+    rm -f "$LOG"
+  else
+    "$@"
+  fi
+}
+
+# Install ACME (and rename/retain the old release) in BINDIR, after asking for
+# confirmation. Return COMMAND[acme] properly set.
 function install_acme { # $1: [rename|retain] (optional)
   unset -v ACME_OLD
-  [[ -z $ACME_INSTALL ]] && {
-    message cont "This script can install the BreadCaml-compatible release"
-    message cont "$ACME_REL in '$BINDIR'."
-    [[ $1 ]] && message cont "The existing release will be ${1%e}ed."
-    message ask "Do you want to proceed? [Y/n] "
-    read -r ACME_INSTALL || failwith "no answer"
-  }
-  [[ $ACME_INSTALL == @([Yy]|[Yy][Ee][Ss]|) ]] || failwith "aborted by user"
+  if [[ $1 ]]; then
+    confirm "This script can install the BreadCaml-compatible release" \
+            "$ACME_REL in '$BINDIR'." \
+            "The existing release will be ${1%e}ed."
+  else
+    confirm "This script can install the BreadCaml-compatible release" \
+            "$ACME_REL in '$BINDIR'."
+  fi
   message cont "Installing ACME..."
   [[ -r $ACME_TBZ2 ]] || \
     failwith "file '$ACME_TBZ2' doesn't exist or is not readable"
@@ -136,6 +166,135 @@ function install_acme { # $1: [rename|retain] (optional)
   CMD[acme]="$BINDIR/acme"
 }
 
+# Succeed if $1 is a version number of OCaml 4.14.x
+function ocaml_version_ok { # $1: version (as printed by ocamlc -vnum)
+  local MAJOR MINOR PATCH
+  IFS='.' read -r MAJOR MINOR PATCH <<<"$1"
+  [[ $MAJOR == +([0-9]) && $MINOR == +([0-9]) ]] && \
+    (( MAJOR == 4 && MINOR >= 14 ))
+}
+
+# Print the version of OCaml in the opam switch $1 (nothing if there is none)
+function switch_ocaml_version { # $1: switch name
+  "${CMD[opam]}" exec --switch="$1" -- ocamlc -vnum 2>/dev/null
+}
+
+# Use the opam switch $1 for the rest of this script: set up its environment
+# (PATH, OPAM_SWITCH_PREFIX...) as 'eval $(opam env)' does, and, unless the
+# user specified the target directories, install into the switch.
+function use_switch { # $1: switch name
+  eval "$("${CMD[opam]}" env --switch="$1" --set-switch)" || \
+    failwith "cannot set the environment of the opam switch '$1'"
+  hash -r
+  [[ $DIROPT ]] || {
+    PREFIX="${OPAM_SWITCH_PREFIX:-$HOME}"
+    BINDIR="$PREFIX/bin"
+    LIBDIR="$PREFIX/lib/bcaml"
+    MANDIR="$PREFIX/man"
+    DOCDIR="$PREFIX/doc/bcaml"
+  }
+}
+
+# Install opam with the official installer, then set CMD[opam].
+function install_opam {
+  local DL INST
+  if command -v curl &>/dev/null; then DL=(curl -fsSL -o)
+  elif command -v wget &>/dev/null; then DL=(wget -q -O)
+  else failwith "opam is not installed, and neither curl nor wget is available"
+  fi
+  confirm "This script can download and run the official opam installer" \
+          "($OPAM_INSTALLER)." \
+          "It will ask where to install opam, and may ask for your password."
+  message cont "Installing opam..."
+  INST="$(mktemp)"
+  "${DL[@]}" "$INST" "$OPAM_INSTALLER" || {
+    rm -f "$INST"
+    failwith "cannot download '$OPAM_INSTALLER'"
+  }
+  sh "$INST" || { rm -f "$INST"; failwith "opam installation failed"; }
+  rm -f "$INST"
+  hash -r
+  CMD[opam]="$(command -v opam 2>/dev/null)" || {
+    # the installer may have used a directory that is not in PATH
+    local D
+    for D in /usr/local/bin "$HOME/.local/bin" "$HOME/bin"; do
+      [[ -x $D/opam ]] && { PATH="$D:$PATH"; CMD[opam]="$D/opam"; break; }
+    done
+  }
+  [[ ${CMD[opam]} ]] || \
+    failwith "opam was installed, but it is not in the search PATH"
+  message ok "opam installed successfully."
+}
+
+# Make sure that opam has been initialised (without any switch: see
+# ensure_switch) and that a switch with OCaml 4.14.x is in use; install or
+# create what is missing. Return the environment of that switch set up.
+function ensure_switch {
+  local CUR VER S FOUND
+  if [[ ! -r ${OPAMROOT:-$HOME/.opam}/config ]]; then
+    message warn "opam has not been initialised"
+    confirm "This script can initialise opam ('opam init --bare'), without" \
+            "modifying your shell configuration files."
+    run "${CMD[opam]}" init --bare --yes --no-setup || \
+      failwith "'opam init' failed (if it complains about the sandbox, run" \
+               "'opam init --bare --disable-sandboxing' and retry)"
+  fi
+  CUR="$("${CMD[opam]}" switch show 2>/dev/null)"
+  VER=''
+  [[ $CUR ]] && VER="$(switch_ocaml_version "$CUR")"
+  if ocaml_version_ok "$VER"; then
+    message ok "opam: the active switch is '$CUR' (OCaml $VER)"
+    use_switch "$CUR"
+    return 0
+  fi
+  if [[ $CUR ]]; then
+    message warn "opam: the active switch '$CUR' has no OCaml 4.14.x compiler"
+  else
+    message warn "opam: no active switch found"
+  fi
+  # another switch may have the right compiler
+  FOUND=''
+  for S in $("${CMD[opam]}" switch list --short 2>/dev/null); do
+    VER="$(switch_ocaml_version "$S")"
+    ocaml_version_ok "$VER" && { FOUND="$S"; break; }
+  done
+  if [[ $FOUND ]]; then
+    confirm "The opam switch '$FOUND' has OCaml $VER." \
+            "It will be used by BreadCaml; the default switch of opam is" \
+            "not changed."
+    message ok "opam: using the switch '$FOUND' (OCaml $VER)"
+    use_switch "$FOUND"
+    return 0
+  fi
+  # create a new switch
+  S="$OCAML_SWITCH"
+  "${CMD[opam]}" switch list --short 2>/dev/null | grep -qxF -- "$S" && \
+    S="$OCAML_SWITCH-4.14"
+  confirm "This script can create the opam switch '$S' with OCaml 4.14.x." \
+          "This compiles the compiler and may take several minutes."
+  message cont "Creating the opam switch '$S'..."
+  run "${CMD[opam]}" switch create "$S" --formula="$OCAML_FORMULA" --yes || \
+    failwith "cannot create the opam switch '$S'"
+  message ok "opam: switch '$S' created"
+  use_switch "$S"
+}
+
+# Make sure that the opam package $1 is installed in the active switch.
+function ensure_opam_package { # $1: package name
+  if [[ $("${CMD[opam]}" list -s -i "$1" 2>/dev/null) ]]; then
+    message ok "opam: $1 is installed in the active switch"
+    return 0
+  fi
+  message warn "opam: $1 is not installed in the active switch"
+  confirm "This script can install the opam package '$1'."
+  message cont "Installing $1..."
+  run "${CMD[opam]}" install --yes "$1" || {
+    message cont "Updating the opam repositories and retrying..."
+    run "${CMD[opam]}" update --yes && run "${CMD[opam]}" install --yes "$1"
+  } || failwith "cannot install the opam package '$1'"
+  message ok "opam: $1 installed successfully"
+}
+
 # show help and exit
 function usage {
   cat <<EOF
@@ -150,7 +309,8 @@ Usage: $0 [ OPTIONS... ]
                    (default: $PREFIX/doc/bcaml)
  -p, --prefix DIR  Shortcut for
                    -b DIR/bin -l DIR/lib/bcaml -m DIR/man -d DIR/doc/bcaml
- -y, --yes         Automatically accept the ACME installation prompt
+ -y, --yes         Automatically accept the installation proposals for
+                   ACME, opam, OCaml 4.14.x and OByteLib, if missing
  -s, --silent      Like -y, also do not display messages (except errors)
  -h, --help        Show this text.
 EOF
@@ -189,10 +349,10 @@ while (( $# )); do
       DOCDIR="$PREFIX/doc/bcaml"
       ;;
     -y | --yes)
-      ACME_INSTALL='Y'
+      ASSUME_YES='Y'
       ;;
     -s | --silent)
-      ACME_INSTALL='Y'
+      ASSUME_YES='Y'
       ECHO=':'
       ;;
     -h | --help)
@@ -203,64 +363,75 @@ while (( $# )); do
   shift
 done
 
-# Ensure all needed commands are available
-message start "Checking system commands and the OCaml environment..."
+# Ensure all needed system commands are available
+message start "Checking system commands..."
 declare -A CMD
 unset -v MISSING ERRORS
 NL=$'\n'
-for C in ar bzip2 gcc make sed tar opam ocamlc.opt ocamlopt.opt ocamldoc.opt; do
+for C in ar bzip2 gcc make sed tar; do
+  if CMD[$C]="$(command -v "$C" 2>/dev/null)"; then
+    message ok "$C is ${CMD[$C]}"
+  else
+    message err "$C not found"
+    MISSING+="${MISSING:+, }$C"
+  fi
+  [[ ${CMD[sed]} && $C == sed ]] && {
+    # Check that the sed command is the GNU version.
+    if "${CMD[sed]}" 'v' </dev/null >/dev/null 2>&1; then
+      message ok "sed: its version is the GNU one"
+    else
+      ERR="sed: its version is not the GNU one"
+      message err "$ERR"
+      ERRORS+="${ERRORS:+$NL}$ERR"
+    fi
+  }
+done
+message end "Done."
+if [[ $MISSING$ERRORS ]]; then
+  [[ $MISSING ]] && message err "Missing command(s): $MISSING"
+  [[ $ERRORS ]] && message err "Environment error(s):$NL$ERRORS"
+  failwith "prerequisites not met"
+fi
+
+# Ensure that opam, an OCaml 4.14.x switch and obytelib are available,
+# proposing to install what is missing
+message start "Checking opam and the OCaml environment..."
+if CMD[opam]="$(command -v opam 2>/dev/null)"; then
+  message ok "opam is ${CMD[opam]}"
+else
+  message warn "opam not found"
+  install_opam
+fi
+OPAM_MAJOR="$("${CMD[opam]}" --version 2>/dev/null)"
+[[ ${OPAM_MAJOR%%.*} == +([0-9]) ]] && (( ${OPAM_MAJOR%%.*} >= 2 )) || \
+  failwith "opam 2.x or later is required (found: '${OPAM_MAJOR:-unknown}')"
+ensure_switch
+ensure_opam_package "$OBYTELIB"
+unset -v MISSING ERRORS
+for C in ocamlc.opt ocamlopt.opt ocamldoc.opt; do
   KEY=${C%.opt}
   if CMD[$KEY]="$(command -v "$C" 2>/dev/null)"; then
     message ok "$C is ${CMD[$KEY]}"
-  elif [[ $C == *.opt ]] && CMD[$KEY]="$(command -v "$KEY" 2>/dev/null)"; then
+  elif CMD[$KEY]="$(command -v "$KEY" 2>/dev/null)"; then
     message warn "$C not found, failsafe to ${CMD[$KEY]}"
   else
     message err "$C not found"
     MISSING+="${MISSING:+, }$C"
   fi
-  [[ ${CMD[$KEY]} ]] && case "$KEY" in
-    sed)
-      # Check that the sed command is the GNU version.
-      if "${CMD[sed]}" 'v' </dev/null >/dev/null 2>&1; then
-        message ok "sed: its version is the GNU one"
-      else
-        ERR="sed: its version is not the GNU one"
-        message err "$ERR"
-        ERRORS+="${ERRORS:+$NL}$ERR"
-      fi
-      ;;
-    opam)
-      # Check that an active opam switch exists and that obytelib is installed.
-      if OPAM_SW="$("${CMD[opam]}" switch show 2>/dev/null)"; then
-        message ok "opam: the active switch is '$OPAM_SW'"
-        if [[ $("${CMD[opam]}" list -s -i obytelib 2>/dev/null) ]]; then
-          message ok "opam: obytelib is installed in the active switch"
-        else
-          ERR="opam: obytelib is not installed in the active switch"
-          message err "$ERR"
-          ERRORS+="${ERRORS:+$NL}$ERR"
-        fi
-      else
-        ERR="opam: no active switch found"
-        message err "$ERR"
-        ERRORS+="${ERRORS:+$NL}$ERR"
-      fi
-      ;;
-    ocamlc)
-      # Check that the version of ocamlc is correct.
-      IFS='.' read -r MAJOR MINOR PATCH < <("${CMD[ocamlc]}" -vnum)
-      if (( MAJOR == 4 && MINOR >= 14 )); then
-        OCAMLSTDLIB="$("${CMD[ocamlc]}" -where)"
-        OCAMLSAFEOPTS="-safe-string -strict-formats -strict-sequence"
-        message ok "ocamlc: version is $MAJOR.$MINOR.$PATCH"
-      else
-        ERR="ocamlc: incompatible version $MAJOR.$MINOR.$PATCH"
-        ERR+=" (required: 4.14.0 <= ver < 5.0.0)"
-        message err "$ERR"
-        ERRORS+="${ERRORS:+$NL}$ERR"
-      fi
-      ;;
-  esac
+  [[ $KEY == ocamlc && ${CMD[ocamlc]} ]] && {
+    # Check that the version of ocamlc is correct.
+    VER="$("${CMD[ocamlc]}" -vnum)"
+    if ocaml_version_ok "$VER"; then
+      OCAMLSTDLIB="$("${CMD[ocamlc]}" -where)"
+      OCAMLSAFEOPTS="-safe-string -strict-formats -strict-sequence"
+      message ok "ocamlc: version is $VER"
+    else
+      ERR="ocamlc: incompatible version $VER"
+      ERR+=" (required: 4.14.0 <= ver < 5.0.0)"
+      message err "$ERR"
+      ERRORS+="${ERRORS:+$NL}$ERR"
+    fi
+  }
 done
 message end "Done."
 if [[ $MISSING$ERRORS ]]; then
