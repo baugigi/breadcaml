@@ -1,0 +1,1 @@
+void bk_addr () {}

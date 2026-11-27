@@ -1,0 +1,6 @@
+log on
+trace f1ca
+break a480
+ignore 2 2
+command 2 "log off; quit"
+g
