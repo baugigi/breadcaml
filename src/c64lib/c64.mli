@@ -37,30 +37,34 @@ module Hw : sig
     val peek_at : ?ram:bool -> int -> int -> int
     (** [peek_at page off]: same as {!peek}, page form. *)
 
-    val peek_view : int -> int   (** Faster {!peek} (CPU view). *)
-    val peek_ram : int -> int    (** Faster [peek ~ram:true]. *)
-    val peek_at_view : int -> int -> int
-    val peek_at_ram : int -> int -> int
+    external peek_view : int -> int = "caml_nonstd_hw_peek"
+      (** Faster {!peek} (CPU view). *)
+    external peek_ram : int -> int = "caml_nonstd_hw_peek_ram"
+      (** Faster [peek ~ram:true]. *)
+    external peek_at_view : int -> int -> int = "caml_nonstd_hw_peek_at"
+    external peek_at_ram : int -> int -> int = "caml_nonstd_hw_peek_at_ram"
 
-    val poke : int -> int -> unit
+    external poke : int -> int -> unit = "caml_nonstd_hw_poke"
     (** [poke a v] writes [v] at [a]. Raises [Invalid_argument] if [a] is
         below the end of the BreadCaml stack (program, heap, stack, zero page
         and system area are protected). *)
 
-    val poke_at : int -> int -> int -> unit
+    external poke_at : int -> int -> int -> unit = "caml_nonstd_hw_poke_at"
     (** [poke_at page off v]: same as {!poke}, page form. *)
 
-    val unsafe_poke : int -> int -> unit
+    external unsafe_poke : int -> int -> unit = "caml_nonstd_hw_unsafe_poke"
     (** Like {!poke}, no check at all. *)
 
-    val unsafe_poke_at : int -> int -> int -> unit
+    external unsafe_poke_at : int -> int -> int -> unit
+      = "caml_nonstd_hw_unsafe_poke_at"
 
     val fill : int -> int -> int -> unit
     (** [fill a len v] writes [v] (8 bit) in [len] bytes from [a] (short
         form), [0 <= len <= 16383]. Raises [Invalid_argument] like {!poke},
         and if [len] is negative or the range wraps past [0xFFFF]. *)
 
-    val fill_at : int -> int -> int -> int -> unit
+    external fill_at : int -> int -> int -> int -> unit
+      = "caml_nonstd_hw_fill_at"
     (** [fill_at page off len v]: same as {!fill}, page form. *)
 
     val blit : int -> int -> int -> unit
@@ -68,23 +72,26 @@ module Hw : sig
         forms); source and destination may overlap. Only [dst] is checked
         (as in {!fill}). *)
 
-    val blit_at : int -> int -> int -> int -> int -> unit
+    external blit_at : int -> int -> int -> int -> int -> unit
+      = "caml_nonstd_hw_blit_at"
     (** [blit_at spage soff dpage doff len]: same as {!blit}, page form. *)
 
     val unsafe_fill : int -> int -> int -> unit
-    val unsafe_fill_at : int -> int -> int -> int -> unit
+    external unsafe_fill_at : int -> int -> int -> int -> unit
+      = "caml_nonstd_hw_unsafe_fill_at"
     val unsafe_blit : int -> int -> int -> unit
-    val unsafe_blit_at : int -> int -> int -> int -> int -> unit
+    external unsafe_blit_at : int -> int -> int -> int -> int -> unit
+      = "caml_nonstd_hw_unsafe_blit_at"
   end
 
   (** Blocking of the non maskable interrupt. *)
   module Nmi : sig
-    val block : unit -> unit
+    external block : unit -> unit = "caml_nonstd_hw_nmi_block"
     (** Makes NMIs (RESTORE key included) harmless: required before
         [peek ~ram:true] / [peek_at ~ram:true], which switch all ROMs off for a
         few cycles. The state is cleared by {!unblock} or at program exit. *)
 
-    val unblock : unit -> unit
+    external unblock : unit -> unit = "caml_nonstd_hw_nmi_unblock"
     (** Restores the Kernal NMI vector and re-enables NMIs. *)
   end
 
@@ -93,8 +100,8 @@ module Hw : sig
 
   (** VIC-II, base [$D000]. *)
   module Vic : sig
-    val peek : int -> int
-    val poke : int -> int -> unit
+    external peek : int -> int = "caml_nonstd_hw_vic_peek"
+    external poke : int -> int -> unit = "caml_nonstd_hw_vic_poke"
     val mx : int -> int   (** offset of the X position of sprite [n] (0..7) *)
     val my : int -> int   (** offset of the Y position of sprite [n] *)
     val mc : int -> int   (** offset of the color of sprite [n] *)
@@ -108,8 +115,8 @@ module Hw : sig
 
   (** SID, base [$D400]. Most registers are write-only. *)
   module Sid : sig
-    val peek : int -> int
-    val poke : int -> int -> unit
+    external peek : int -> int = "caml_nonstd_hw_sid_peek"
+    external poke : int -> int -> unit = "caml_nonstd_hw_sid_poke"
     val voice : int -> int  (** [voice n]: offset of voice [n] (1..3); add
                                 [fl], [fh], [pwl], [pwh], [cr], [ad], [sr]. *)
     val fl : int  val fh : int  val pwl : int  val pwh : int
@@ -129,14 +136,14 @@ module Hw : sig
   (** CIA 1, base [$DC00] (keyboard, joysticks, IRQ). Reading [Cia.icr]
       clears the interrupt flags. *)
   module Cia1 : sig
-    val peek : int -> int
-    val poke : int -> int -> unit
+    external peek : int -> int = "caml_nonstd_hw_cia1_peek"
+    external poke : int -> int -> unit = "caml_nonstd_hw_cia1_poke"
   end
 
   (** CIA 2, base [$DD00] (serial bus, user port, VIC bank, NMI). *)
   module Cia2 : sig
-    val peek : int -> int
-    val poke : int -> int -> unit
+    external peek : int -> int = "caml_nonstd_hw_cia2_peek"
+    external poke : int -> int -> unit = "caml_nonstd_hw_cia2_poke"
   end
 
   (** User port (CIA 2 port B, PA2, /FLAG2). The pins PB0..PB7 are the port B
@@ -163,22 +170,32 @@ module Hw : sig
       use timer A and PB6/PB7): do not mix them with {!Nmi.block} or
       {!Cia2.poke} on the timer registers. *)
   module Userport : sig
-    val read : unit -> int          (** pins PB0..PB7 *)
-    val write : int -> unit         (** output latch of port B *)
-    val ddr : unit -> int           (** direction register *)
-    val set_ddr : int -> unit
+    external read : unit -> int = "caml_nonstd_up_read"  (** pins PB0..PB7 *)
+    external write : int -> unit = "caml_nonstd_up_write"
+      (** output latch of port B *)
+    external ddr : unit -> int = "caml_nonstd_up_ddr"
+      (** direction register *)
+    external set_ddr : int -> unit = "caml_nonstd_up_set_ddr"
 
-    val set_bits : int -> unit      (** [PRB <- PRB lor mask] *)
-    val clear_bits : int -> unit    (** [PRB <- PRB land (lnot mask)] *)
-    val toggle_bits : int -> unit   (** [PRB <- PRB lxor mask] *)
-    val dir_out : int -> unit       (** the pins in [mask] become outputs *)
-    val dir_in : int -> unit        (** the pins in [mask] become inputs *)
+    external set_bits : int -> unit = "caml_nonstd_up_set"
+      (** [PRB <- PRB lor mask] *)
+    external clear_bits : int -> unit = "caml_nonstd_up_clear"
+      (** [PRB <- PRB land (lnot mask)] *)
+    external toggle_bits : int -> unit = "caml_nonstd_up_toggle"
+      (** [PRB <- PRB lxor mask] *)
+    external dir_out : int -> unit = "caml_nonstd_up_dir_out"
+      (** the pins in [mask] become outputs *)
+    external dir_in : int -> unit = "caml_nonstd_up_dir_in"
+      (** the pins in [mask] become inputs *)
 
-    val pa2_read : unit -> bool     (** level of PA2 *)
-    val pa2_write : bool -> unit    (** output latch of PA2 *)
-    val pa2_output : bool -> unit   (** direction of PA2: [true] = output *)
+    external pa2_read : unit -> bool = "caml_nonstd_up_pa2_read"
+      (** level of PA2 *)
+    external pa2_write : bool -> unit = "caml_nonstd_up_pa2_write"
+      (** output latch of PA2 *)
+    external pa2_output : bool -> unit = "caml_nonstd_up_pa2_dir"
+      (** direction of PA2: [true] = output *)
 
-    val flag2 : unit -> bool
+    external flag2 : unit -> bool = "caml_nonstd_up_flag2"
     (** [true] if a negative edge arrived on /FLAG2 since the last read of the
         CIA 2 interrupt register (this call clears all the flags). *)
   end
@@ -208,27 +225,34 @@ module Hw : sig
       Addresses are in the {e page form} [page off] (see {!Mem}): the 16 bit
       address [page * 256 + off] with both values in [0..255]. *)
   module Kernal : sig
-    val open_file : int -> int -> int -> string -> int
+    external open_file : int -> int -> int -> string -> int
+      = "caml_nonstd_kn_open"
     (** [open_file lfn dev sa name] (SETLFS, SETNAM, OPEN). For a disk
         drive [name] is a file name with the DOS modifiers, e.g.
         ["FILE,S,R"], ["@0:FILE,S,W"], or a command if [sa = 15]. *)
 
-    val close : int -> unit               (** [close lfn] *)
-    val chkin : int -> int                (** [chkin lfn]: input from [lfn] *)
-    val chkout : int -> int               (** [chkout lfn]: output to [lfn] *)
-    val clrchn : unit -> unit             (** restore keyboard and screen *)
-    val clall : unit -> unit              (** close all files, like [clrchn] *)
+    external close : int -> unit = "caml_nonstd_kn_close"  (** [close lfn] *)
+    external chkin : int -> int = "caml_nonstd_kn_chkin"
+      (** [chkin lfn]: input from [lfn] *)
+    external chkout : int -> int = "caml_nonstd_kn_chkout"
+      (** [chkout lfn]: output to [lfn] *)
+    external clrchn : unit -> unit = "caml_nonstd_kn_clrchn"
+      (** restore keyboard and screen *)
+    external clall : unit -> unit = "caml_nonstd_kn_clall"
+      (** close all files, like [clrchn] *)
 
-    val chrin : unit -> int
+    external chrin : unit -> int = "caml_nonstd_kn_chrin"
     (** Read a byte from the current input channel; check {!readst} after
         each byte ({!st_eof} is set while reading the last byte). *)
 
-    val chrout : int -> unit
+    external chrout : int -> unit = "caml_nonstd_kn_chrout"
     (** Write a byte to the current output channel. *)
 
-    val readst : unit -> int              (** the status byte (ST) *)
+    external readst : unit -> int = "caml_nonstd_kn_readst"
+      (** the status byte (ST) *)
 
-    val load_at : int -> int -> string -> int -> int -> int
+    external load_at : int -> int -> string -> int -> int -> int
+      = "caml_nonstd_kn_load"
     (** [load_at dev sa name page off] loads a file into memory (LOAD) and
         returns the error code. With [sa = 0] the file is loaded at
         [page * 256 + off]; with [sa <> 0] at the address stored in the first
@@ -241,11 +265,12 @@ module Hw : sig
     val load_end_page : unit -> int
     val load_end_off : unit -> int
 
-    val set_range : int -> int -> int -> int -> unit
+    external set_range : int -> int -> int -> int -> unit
+      = "caml_nonstd_kn_range"
     (** [set_range spage soff epage eoff] sets the memory area to save
         ([\[start, end)]), for {!save_raw}. *)
 
-    val save_raw : int -> string -> int
+    external save_raw : int -> string -> int = "caml_nonstd_kn_save"
     (** [save_raw dev name] saves the area set by {!set_range} (SAVE) as a
         program file (the first two bytes are the start address) and returns
         the error code. Kernal messages are suppressed. *)
@@ -269,21 +294,21 @@ module Hw : sig
 
   (** Color RAM, base [$D800]: offsets 0..999; [peek] returns the low nybble. *)
   module Color : sig
-    val peek : int -> int
-    val poke : int -> int -> unit
+    external peek : int -> int = "caml_nonstd_hw_color_peek"
+    external poke : int -> int -> unit = "caml_nonstd_hw_color_poke"
   end
 end
 
 (** Keyboard and joysticks. *)
 module Key : sig
-  val get : unit -> char
+  external get : unit -> char = "caml_nonstd_get_key"
   (** The next key from the keyboard buffer (a PETSCII code, as returned by
       the Kernal), or ['\000'] if no key is waiting. Never blocks. *)
 
-  val wait : unit -> char
+  external wait : unit -> char = "caml_nonstd_wait_key"
   (** Waits for a key and returns it. No echo, no cursor. *)
 
-  val joy : int -> int
+  external joy : int -> int = "caml_nonstd_joystick"
   (** [joy port] (port 1 or 2) returns a bit mask: {!joy_up}, {!joy_down},
       {!joy_left}, {!joy_right}, {!joy_fire}; a bit is set when the
       corresponding switch is closed. Reading port 1 briefly interferes with
@@ -306,7 +331,9 @@ module Screen : sig
 
   val clear : unit -> unit            (** Clears the screen, cursor at home. *)
   val home : unit -> unit             (** Cursor at the top left corner. *)
-  val locate : int -> int -> unit     (** [locate x y] moves the cursor. *)
+  external locate : int -> int -> unit = "caml_nonstd_scr_locate"
+  (** [locate x y] moves the cursor. Out-of-range coordinates are saturated
+      to the screen (see "Direct access" below). *)
   val cursor : unit -> int * int      (** Cursor position [(x, y)]. *)
   val reverse : bool -> unit          (** Reverse video on/off for printing. *)
   val lower_case : bool -> unit
@@ -317,27 +344,26 @@ module Screen : sig
   val border : int -> unit            (** Border color. *)
   val background : int -> unit        (** Background color. *)
 
-  (** {2 Direct access (screen codes)} *)
+  (** {2 Direct access (screen codes)}
 
-  val get : int -> int -> int
-  val put : int -> int -> int -> unit
+      Coordinates are never checked: [x] is saturated to [0..39] and [y] to
+      [0..24] (a value outside the range is replaced by the nearest edge), so
+      no exception is raised. *)
+
+  external get : int -> int -> int = "caml_nonstd_scr_peek"
+  external put : int -> int -> int -> unit = "caml_nonstd_scr_poke"
   (** [put x y code] stores the screen code [code] (0..255). *)
 
-  val unsafe_get : int -> int -> int
-  val unsafe_put : int -> int -> int -> unit
-
-  val get_color : int -> int -> int
-  val put_color : int -> int -> int -> unit
+  external get_color : int -> int -> int = "caml_nonstd_scr_color_peek"
+  external put_color : int -> int -> int -> unit
+    = "caml_nonstd_scr_color_poke"
   (** Color RAM, colors 0..15; reading returns the low nybble. *)
 
-  val unsafe_get_color : int -> int -> int
-  val unsafe_put_color : int -> int -> int -> unit
-
-  val code_of_char : char -> int
+  external code_of_char : char -> int = "caml_nonstd_scr_code_of_char"
   (** Screen code of a PETSCII character. Control codes ([0x00-0x1F],
       [0x80-0x9F]) give the space code ([0x20]). *)
 
-  val char_of_code : int -> char
+  external char_of_code : int -> char = "caml_nonstd_scr_char_of_code"
   (** PETSCII character for a screen code (the reverse video bit is ignored). *)
 
   val put_char : int -> int -> char -> unit
@@ -347,8 +373,9 @@ module Screen : sig
 
   val print_at : ?color:int -> int -> int -> string -> unit
   (** [print_at ?color x y s] writes [s] directly in the screen RAM, from
-      column [x] of row [y]; characters beyond column 39 are dropped. With
-      [~color] the color RAM is set too. The cursor does not move. *)
+      column [x] of row [y]; characters outside columns 0..39 are dropped
+      ([y] is saturated to [0..24]). With [~color] the color RAM is set too.
+      The cursor does not move. *)
 
   val fill : int -> unit              (** Fills the whole screen with a code. *)
   val fill_color : int -> unit        (** Fills the whole color RAM. *)
@@ -421,23 +448,25 @@ module Gfx : sig
   val pen : int -> unit
   (** Hires: 0 (erase) or 1. Multicolor: 0..3. *)
 
-  val plot : int -> int -> unit
+  external plot : int -> int -> unit = "caml_nonstd_gfx_plot"
   (** Pixel with the current pen; silently clipped. *)
 
-  val point : int -> int -> int
+  external point : int -> int -> int = "caml_nonstd_gfx_point"
   (** Pen value of the pixel, or [-1] if outside. *)
 
-  val line : int -> int -> int -> int -> unit
+  external line : int -> int -> int -> int -> unit = "caml_nonstd_gfx_line"
   (** [line x1 y1 x2 y2]: Bresenham line, clipped. Fully visible lines use a
       self-modifying fast loop. *)
 
-  val window : int -> int -> int -> int -> unit
+  external window : int -> int -> int -> int -> unit
+    = "caml_nonstd_gfx_window"
   (** [window x0 y0 x1 y1] defines virtual coordinates: [(x0,y0)] maps to the
       top left pixel and [(x1,y1)] to the bottom right one (spans may be
       reversed, giving flipped axes; coordinates are saturated to +-16383).
       Must be called after [init]. @raise Invalid_argument if a span is < 2. *)
 
-  val unwindow : unit -> unit  (** Back to physical coordinates. *)
+  external unwindow : unit -> unit = "caml_nonstd_gfx_unwindow"
+    (** Back to physical coordinates. *)
 
   (** {b Shapes} are drawn with [line]/[plot], so they are clipped and follow
       the window (in virtual coordinates; with a window that enlarges, rows of
@@ -515,7 +544,7 @@ end
 module Sound : sig
   type system = Pal | Ntsc | Pal_n
 
-  val frame_cycles : unit -> int
+  external frame_cycles : unit -> int = "caml_nonstd_snd_frame_cycles"
   (** Half the cycles of one video frame (a full count, up to 20280, would
       not fit an OCaml 15-bit integer): PAL 9828, NTSC 8547, old NTSC 8384,
       PAL-N 10140. IRQs are masked ~3 frames while measuring. *)
@@ -531,7 +560,8 @@ module Sound : sig
   val init : ?detect_clock:bool -> unit -> unit
   (** Clears the SID, volume 15, detects the clock (default). *)
 
-  val wait_frame : unit -> unit  (** Waits for raster line 248. *)
+  external wait_frame : unit -> unit = "caml_nonstd_snd_wait_frame"
+    (** Waits for raster line 248. *)
 
   (** {2 Voices} *)
 
@@ -642,11 +672,11 @@ module Mcu : sig
     (** Microseconds to cycles for the current video standard (no range check:
         the result is only valid up to 16383). *)
 
-    val cycles_of_rate : int -> int
+    external cycles_of_rate : int -> int = "caml_nonstd_up_cycles_of_rate"
     (** [cycles_of_rate hz]: cycles in a period at [hz] Hz, exactly rounded;
         [-1] if [hz = 0] or the result exceeds 16383 (hz < 61 PAL / 63 NTSC). *)
 
-    val delay_cycles : int -> unit
+    external delay_cycles : int -> unit = "caml_nonstd_up_delay"
     (** [delay_cycles n] waits about [n + 45] cycles (0 <= n <= 16383). *)
 
     val delay_us : int -> unit
@@ -654,10 +684,10 @@ module Mcu : sig
     (** Long delays are split in chunks of 10 ms; each chunk adds the call
         overhead (a few tenths of per cent). *)
 
-    val clock_start : unit -> unit
+    external clock_start : unit -> unit = "caml_nonstd_up_clock_start"
     (** Starts the clock (timer B, free running). *)
 
-    val clock_ticks : unit -> int
+    external clock_ticks : unit -> int = "caml_nonstd_up_clock_read"
     (** Ticks since {!clock_start}: 1 tick = 4 cycles (~4 us); 0..16383, then
         it wraps (~64 ms). *)
 

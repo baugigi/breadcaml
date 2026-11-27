@@ -159,29 +159,16 @@ module Screen = struct
   let cols = 40
   let rows = 25
 
-  external unsafe_get : int -> int -> int = "caml_nonstd_scr_peek"
-  external unsafe_put : int -> int -> int -> unit = "caml_nonstd_scr_poke"
-  external unsafe_get_color : int -> int -> int = "caml_nonstd_scr_color_peek"
-  external unsafe_put_color : int -> int -> int -> unit
-    = "caml_nonstd_scr_color_poke"
-  external unsafe_locate : int -> int -> unit = "caml_nonstd_scr_locate"
+  (* Out-of-range coordinates are saturated by the primitives: no check here *)
+  external get : int -> int -> int = "caml_nonstd_scr_peek"
+  external put : int -> int -> int -> unit = "caml_nonstd_scr_poke"
+  external get_color : int -> int -> int = "caml_nonstd_scr_color_peek"
+  external put_color : int -> int -> int -> unit = "caml_nonstd_scr_color_poke"
+  external locate : int -> int -> unit = "caml_nonstd_scr_locate"
   external cursor_pos : unit -> int = "caml_nonstd_scr_cursor"
+  external code_of_char : char -> int = "caml_nonstd_scr_code_of_char"
+  external char_of_code : int -> char = "caml_nonstd_scr_char_of_code"
 
-  let inside x y = x >= 0 && x < 40 && y >= 0 && y < 25
-
-  let get x y =
-    if inside x y then unsafe_get x y else invalid_arg "C64.Screen.get"
-  let put x y v =
-    if inside x y then unsafe_put x y v else invalid_arg "C64.Screen.put"
-  let get_color x y =
-    if inside x y then unsafe_get_color x y
-    else invalid_arg "C64.Screen.get_color"
-  let put_color x y v =
-    if inside x y then unsafe_put_color x y v
-    else invalid_arg "C64.Screen.put_color"
-  let locate x y =
-    if inside x y then unsafe_locate x y
-    else invalid_arg "C64.Screen.locate"
   let cursor () = let p = cursor_pos () in (p land 255, p lsr 8)
 
   let clear () = print_char '\147'
@@ -189,44 +176,25 @@ module Screen = struct
   let reverse b = print_char (if b then '\018' else '\146')
   let lower_case b = print_char (if b then '\014' else '\142')
   let text_color c = Hw.Mem.unsafe_poke 646 c
-  let border c = Hw.Vic.poke Hw.Vic.ec c
-  let background c = Hw.Vic.poke Hw.Vic.b0c c
-
-  let code_of_char c =
-    let n = Char.code c in
-    if n < 0x20 then 0x20
-    else if n < 0x40 then n
-    else if n < 0x60 then n - 0x40
-    else if n < 0x80 then n - 0x20
-    else if n < 0xA0 then 0x20
-    else if n < 0xC0 then n - 0x40
-    else if n < 0xFF then n - 0x80
-    else 0x5E
-
-  let char_of_code code =
-    let c = code land 0x7F in
-    Char.chr (if c < 0x20 then c + 0x40
-              else if c < 0x40 then c
-              else if c < 0x60 then c + 0x20
-              else c + 0x40)
+  let border c = Hw.Vic.poke 0x20 c
+  let background c = Hw.Vic.poke 0x21 c
 
   let put_char x y c = put x y (code_of_char c)
   let get_char x y = char_of_code (get x y)
 
   let print_at ?color x y s =
-    if not (inside x y) then invalid_arg "C64.Screen.print_at"
-    else
-      for i = 0 to String.length s - 1 do
-        let xx = x + i in
-        if xx < 40 then begin
-          unsafe_put xx y (code_of_char s.[i]);
-          match color with
-            Some c -> unsafe_put_color xx y c
-          | None -> ()
-        end
-      done
+    let n = String.length s in
+    let first = if x < 0 then - x else 0
+    and last = if x + n > 40 then 39 - x else n - 1 in
+    for i = first to last do
+      let xx = x + i in
+      put xx y (code_of_char (String.unsafe_get s i));
+      match color with
+        Some c -> put_color xx y c
+      | None -> ()
+    done
 
-  let page () = Hw.Mem.peek 648
+  let page () = Hw.Mem.peek_view 648
   let fill code = Hw.Mem.unsafe_fill_at (page ()) 0 1000 code
   let fill_color c = Hw.Mem.unsafe_fill_at 0xD8 0 1000 c
 
@@ -290,7 +258,7 @@ module Gfx = struct
   let fill_color v = Hw.Mem.unsafe_fill_at 0xD8 0 1000 v
 
   let pen p = prim_pen p
-  let background c = Hw.Vic.poke Hw.Vic.b0c c
+  let background c = Hw.Vic.poke 0x21 c
 
   let hline x1 x2 y = line x1 y x2 y
   let vline x y1 y2 = line x y1 x y2
