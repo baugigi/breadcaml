@@ -43,20 +43,38 @@ LIBRUN := $(CPROTO:.c=.o)
 .PHONY: all
 all: lib man doc
 
+# One compilation unit per submodule (C64_hw, C64_screen, ...): ocamlclean
+# works on whole units, so a program that uses a single function of C64.Screen
+# does not carry along the other submodules. C64 itself (c64.ml/c64.mli) is
+# only a facade made of module aliases: C64.Screen is C64_screen.
+UNITS := c64_hw c64_key c64_screen c64_gfx c64_sprite c64_sound c64_mcu \
+         c64_disk c64_sd2iec c64
+MLIS  := $(UNITS:=.mli)
+
 .PHONY: lib
-lib_tgt := c64.cmi c64.cmo c64lib.cma libc64lib.a
+lib_tgt := $(UNITS:=.cmi) $(UNITS:=.cmo) c64lib.cma libc64lib.a
 lib:
 	@$(MAKE) -q $(lib_tgt) 2> /dev/null || \
 	  $(call message,COMPILE: ,C64 library)
 	$(MAKE) $(lib_tgt)
 
-c64.cmi: c64.mli
+%.cmi: %.mli
 	$(OCAMLC_UNSAFE) $(OCFLAGS) -c $<
 
-c64.cmo: c64.ml c64.cmi
+%.cmo: %.ml %.cmi
 	$(OCAMLC_UNSAFE) $(PPX) $(OCFLAGS) -c $<
 
-c64lib.cma: c64.cmo
+# dependencies among the units (aliases need the .cmi of the target)
+c64_screen.cmo c64_screen.cmi c64_gfx.cmo c64_gfx.cmi c64_sound.cmo \
+  c64_sound.cmi c64_mcu.cmo c64_mcu.cmi c64_disk.cmo c64_disk.cmi: c64_hw.cmi
+c64_sprite.cmo c64_sprite.cmi: c64_hw.cmi c64_gfx.cmi
+c64_sd2iec.cmo c64_sd2iec.cmi: c64_hw.cmi c64_disk.cmi
+c64.cmo c64.cmi: $(filter-out c64.cmi,$(UNITS:=.cmi))
+c64_sprite.cmo: c64_gfx.cmo
+c64_screen.cmo c64_gfx.cmo c64_sound.cmo c64_mcu.cmo c64_disk.cmo: c64_hw.cmo
+c64_sd2iec.cmo: c64_disk.cmo
+
+c64lib.cma: $(UNITS:=.cmo)
 	$(OCAMLC) -nostdlib -I $(STDLIBDIR) -a -cclib -lc64lib $^ -o $@
 
 libc64lib.a: $(LIBRUN)
@@ -73,7 +91,7 @@ $(CPROTO): $(ASMSRC)
 .PHONY: man
 man: .man_timestamp
 
-.man_timestamp: c64.mli
+.man_timestamp: $(MLIS)
 	@$(call message,GENERATE:,C64 library man pages)
 	mkdir -p man3
 	$(OCAMLDOC) -hide-warnings -nostdlib -I $(STDLIBDIR) -d man3 \
@@ -84,7 +102,7 @@ man: .man_timestamp
 .PHONY: doc
 doc: .doc_timestamp
 
-.doc_timestamp: c64.mli
+.doc_timestamp: $(MLIS)
 	@$(call message,GENERATE:,C64 library HTML documentation)
 	mkdir -p html
 	$(OCAMLDOC) -hide-warnings -nostdlib -I $(STDLIBDIR) -d html \
