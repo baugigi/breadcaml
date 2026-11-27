@@ -488,16 +488,16 @@ caml_float_of_string
         STA TMP + 1
         LDA ACCU + 1
         LDX ACCU
-!ifdef caml_basic_rom_overlap {
+ !ifdef caml_basic_rom_overlap {
         ;; FIN reads the string with the BASIC ROM on, but the string may be in
         ;; the RAM under it ($A000-$BFFF): copy it (0-terminated, max 80 chars)
         ;; to the BASIC input buffer and convert the copy.
         CMP # > (C64_BASROM - 79)       ;If the first 80 characters of the
         BCC @setptr                     ; string are below $A000, skip the copy
-        BNE @setptr                     ; and set the pointer to ACCU;
+        BNE @copy                       ; and set the pointer to ACCU;
         CPX # < (C64_BASROM - 79)
         BCC @setptr
-        LDY # 0                         ;else copy the string to the buffer
+@copy   LDY # 0                         ;else copy the string to the buffer
 -       LDA (ACCU),Y
         STA C64_BUF,Y
         BEQ +
@@ -508,7 +508,7 @@ caml_float_of_string
         STA C64_BUF,Y
 +       LDA # >C64_BUF                  ; and set the pointer to it.
         LDX # <C64_BUF
-}
+ }
 @setptr STA C64_CHRPTR + 1              ;CHRPTR := A:X
         STX C64_CHRPTR
         JSR C64_CHRGOT                  ;not a BASIC ROM routine
@@ -672,7 +672,8 @@ caml_add_float
         JMP caml_float_special2
 @fin    LDX # Fo_ADD                        ;(overflow: +-infinity)
         STX caml_float_overflow__op
-        +caml_JSR_BASROM C64_FADDT
+        LDA C64_FAC                         ;FADDT tests .Z (FAC exp = 0?): the
+        +caml_JSR_BASROM C64_FADDT          ; LDX above (Fo_ADD = 0) has set it
         JMP caml_float_alloc_result
 }
 

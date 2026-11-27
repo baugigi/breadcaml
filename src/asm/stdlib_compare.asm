@@ -614,7 +614,7 @@ caml_compare_val_double_tag
         ORA (.V2),Y
         BNE @spec
         JSR caml_float_unop             ;copy .V1 to FAC
-!ifdef caml_basic_rom_overlap {
+ !ifdef caml_basic_rom_overlap {
         LDY # 4                         ;FCOMP reads its memory operand with the
 -       LDA (.V2),Y                     ; BASIC ROM on, but the float may be in
         STA TMP + 8,Y                   ; the RAM under it ($A000-$BFFF): copy
@@ -622,10 +622,10 @@ caml_compare_val_double_tag
         BPL -                           ; with the copy.
         LDA # TMP + 8
         LDY # 0
-} else {
+ } else {
         LDY .V2 + 1
         LDA .V2
-}
+ }
         +caml_JSR_BASROM C64_FCOMP
         LDY # 0
         ORA # 0                         ;set status byte according to A
