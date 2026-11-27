@@ -82,7 +82,7 @@ caml_memory
 .hs     = (caml_glob_end + 15) AND $FFF0        ;heap start, multiple of 16
 .L      = caml_stack_start - .hs
 .CHUNK  = 32                                    ;bytes of data per table entry
-.D      = (((.L * 8) DIV 9) DIV .CHUNK) * .CHUNK
+.D      = ((((.L - 2) * 8) DIV 9) DIV .CHUNK) * .CHUNK   ;(-2: sentinel + table alignment)
 .DS     = .hs                                   ;start of data
 .DE     = .hs + .D                              ;end of data + 1
 .BAMS   = .DE                                   ;start of BAM
