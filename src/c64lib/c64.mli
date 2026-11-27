@@ -320,9 +320,7 @@ end
 
 (** 40x25 text screen. [x] is the column (0..39), [y] the row (0..24).
     Direct access functions use {e screen codes} (the values stored in the
-    screen RAM), not PETSCII: see {!code_of_char} and {!char_of_code}.
-    Functions without [unsafe_] raise [Invalid_argument] when the coordinates
-    are out of range. *)
+    screen RAM), not PETSCII: see {!code_of_char} and {!char_of_code}. *)
 module Screen : sig
   val cols : int
   val rows : int
@@ -479,7 +477,7 @@ module Gfx : sig
   (** [rect x1 y1 x2 y2]: outline. *)
   val fill_rect : int -> int -> int -> int -> unit
   val circle : int -> int -> int -> unit
-  (** [circle cx cy r]: midpoint algorithm. @raise Invalid_argument if [r < 0]. *)
+  (** [circle cx cy r]: midpoint algorithm. A negative [r] is taken as 0. *)
   val fill_circle : int -> int -> int -> unit
 end
 

@@ -17,7 +17,7 @@ SHELL := /bin/bash
 TARGET := snake.prg
 SOURCE := snake
 COMP = bcamlopt
-FLAGS = -O time -mem 0xCFFF -showmem
+FLAGS = -O time -showmem
 ASMFLAGS = -r snake.rep
 
 $(TARGET): $(SOURCE:=.cmo)

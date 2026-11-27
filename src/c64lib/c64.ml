@@ -11,6 +11,11 @@
    2, come specificato nel file  LICENZA-it nella cartella principale del
    progetto.
    —————————————————————————————————————————————————————————————————————— *)
+
+(* Out-of-range arguments are saturated to the nearest edge of the interval,
+   instead of raising an exception. The annotation avoids the polymorphic
+   caml_lessthan/caml_greaterthan. *)
+let clamp lo hi (x : int) = if x < lo then lo else if x > hi then hi else x
 module Hw = struct
   module Mem = struct
     external peek_view : int -> int = "caml_nonstd_hw_peek"
@@ -272,7 +277,7 @@ module Gfx = struct
 
   (* midpoint circle, 8-fold symmetry *)
   let circle cx cy r =
-    if r < 0 then invalid_arg "C64.Gfx.circle";
+    let r = if r < 0 then 0 else r in
     let x = ref r and y = ref 0 and d = ref (1 - r) in
     while !x >= !y do
       let a = !x and b = !y in
@@ -286,7 +291,7 @@ module Gfx = struct
     done
 
   let fill_circle cx cy r =
-    if r < 0 then invalid_arg "C64.Gfx.fill_circle";
+    let r = if r < 0 then 0 else r in
     let x = ref r and y = ref 0 and d = ref (1 - r) in
     while !x >= !y do
       let a = !x and b = !y in
@@ -304,7 +309,7 @@ module Sprite = struct
   let layout () = !lay
 
   let ptr_page () = !lay.Gfx.bank * 64 + (!lay.Gfx.screen lsr 8) + 3
-  let chk n = if n < 0 || n > 7 then invalid_arg "C64.Sprite"
+  let sn n = clamp 0 7 n
 
   let setb reg n b =
     let v = Hw.Vic.peek reg in
@@ -314,21 +319,24 @@ module Sprite = struct
   let off blk = (blk land 3) * 64
 
   let define blk data =
-    if blk < 0 || blk > 255 || Array.length data < 63 then
+    if Array.length data < 63 then
       invalid_arg "C64.Sprite.define";
+    let blk = clamp 0 255 blk in
     let p = page blk and o = off blk in
     for i = 0 to 62 do Hw.Mem.poke_at p (o + i) (data.(i) land 255) done
 
   let define_string blk s =
-    if blk < 0 || blk > 255 || String.length s < 63 then
+    if String.length s < 63 then
       invalid_arg "C64.Sprite.define_string";
+    let blk = clamp 0 255 blk in
     let p = page blk and o = off blk in
     for i = 0 to 62 do Hw.Mem.poke_at p (o + i) (Char.code s.[i]) done
 
   (* 21 rows of 24 chars; any char other than ' ' and '.' sets the pixel *)
   let define_art blk rows =
-    if blk < 0 || blk > 255 || Array.length rows < 21 then
+    if Array.length rows < 21 then
       invalid_arg "C64.Sprite.define_art";
+    let blk = clamp 0 255 blk in
     let p = page blk and o = off blk in
     for r = 0 to 20 do
       let row = rows.(r) in
@@ -345,8 +353,9 @@ module Sprite = struct
 
   (* multicolor: 21 rows of 12 chars '0'..'3' (pen of each double pixel) *)
   let define_art_mc blk rows =
-    if blk < 0 || blk > 255 || Array.length rows < 21 then
+    if Array.length rows < 21 then
       invalid_arg "C64.Sprite.define_art_mc";
+    let blk = clamp 0 255 blk in
     let p = page blk and o = off blk in
     for r = 0 to 20 do
       let row = rows.(r) in
@@ -361,27 +370,28 @@ module Sprite = struct
       done
     done
 
-  let assign n blk = chk n; Hw.Mem.poke_at (ptr_page ()) (0xF8 + n) blk
+  let assign n blk = Hw.Mem.poke_at (ptr_page ()) (0xF8 + sn n) blk
 
-  let enable n b = chk n; setb Hw.Vic.me n b
-  let multicolor n b = chk n; setb Hw.Vic.mmc n b
-  let expand_x n b = chk n; setb Hw.Vic.mxe n b
-  let expand_y n b = chk n; setb Hw.Vic.mye n b
-  let behind n b = chk n; setb Hw.Vic.mdp n b
-  let color n c = chk n; Hw.Vic.poke (Hw.Vic.mc n) c
-  let mcolors c1 c2 = Hw.Vic.poke Hw.Vic.mm0 c1; Hw.Vic.poke Hw.Vic.mm1 c2
+  (* VIC registers: $15 enable, $1C multicolor, $1D expand x, $17 expand y,
+     $1B priority, $27+n color, $25/$26 shared colors, $10 x bit 8 *)
+  let enable n b = setb 0x15 (sn n) b
+  let multicolor n b = setb 0x1C (sn n) b
+  let expand_x n b = setb 0x1D (sn n) b
+  let expand_y n b = setb 0x17 (sn n) b
+  let behind n b = setb 0x1B (sn n) b
+  let color n c = Hw.Vic.poke (0x27 + sn n) c
+  let mcolors c1 c2 = Hw.Vic.poke 0x25 c1; Hw.Vic.poke 0x26 c2
 
   let pos n x y =
-    chk n;
-    if x < 0 || x > 511 then invalid_arg "C64.Sprite.pos";
-    Hw.Vic.poke (Hw.Vic.mx n) (x land 255);
-    setb Hw.Vic.mx8 n (x > 255);
-    Hw.Vic.poke (Hw.Vic.my n) (y land 255)
+    let n = sn n and x = clamp 0 511 x in
+    Hw.Vic.poke (2 * n) (x land 255);
+    setb 0x10 n (x > 255);
+    Hw.Vic.poke (2 * n + 1) (y land 255)
 
   let move n x y = pos n (x + 24) (y + 50)
 
-  let hit_sprites () = Hw.Vic.peek Hw.Vic.mm
-  let hit_background () = Hw.Vic.peek Hw.Vic.md
+  let hit_sprites () = Hw.Vic.peek 0x1E
+  let hit_background () = Hw.Vic.peek 0x1F
 end
 
 module Sound = struct
@@ -421,13 +431,12 @@ module Sound = struct
   let shadow r = sh.(r)
   let w r v = sh.(r) <- v; Sid.poke r v
 
-  let chk v = if v < 1 || v > 3 then invalid_arg "C64.Sound.voice"
-  let vb v = chk v; Sid.voice v
+  let vb v = Sid.voice (clamp 1 3 v)
 
   let rh = ref 0 and rl = ref 0   (* result of the frequency computations *)
 
   let note_regs n =
-    if n < 0 || n > 95 then invalid_arg "C64.Sound.note";
+    let n = clamp 0 95 n in
     let o = n / 12 and k = n mod 12 in
     let th, tl = match !sys with
       | Pal -> pal_h, pal_l | Ntsc -> ntsc_h, ntsc_l | Pal_n -> paln_h, paln_l in
@@ -445,7 +454,7 @@ module Sound = struct
 
   (* F = hz * 2^17 / (clock/128), 17 fractional bits of hz / c2 *)
   let hz_regs hz =
-    if hz < 0 || hz > max_hz () then invalid_arg "C64.Sound.freq_hz";
+    let hz = clamp 0 (max_hz ()) hz in
     let c = c2 () in
     let r = ref hz and qh = ref 0 and ql = ref 0 in
     for _ = 1 to 17 do
@@ -458,7 +467,7 @@ module Sound = struct
 
   (* quarter units: F / 4, in 0..16383 *)
   let f4_of_hz hz =
-    if hz < 0 || hz > max_hz () then invalid_arg "C64.Sound.f4_of_hz";
+    let hz = clamp 0 (max_hz ()) hz in
     let c = c2 () in
     let r = ref hz and q = ref 0 in
     for _ = 1 to 15 do
@@ -495,7 +504,7 @@ module Sound = struct
   let resonance r = w Sid.resflt ((sh.(Sid.resflt) land 0x0F) lor ((r land 15) lsl 4))
   (* voice 1..3, or 4 for the external input *)
   let route v b =
-    if v < 1 || v > 4 then invalid_arg "C64.Sound.route";
+    let v = clamp 1 4 v in
     let m = 1 lsl (v - 1) in
     w Sid.resflt (if b then sh.(Sid.resflt) lor m else sh.(Sid.resflt) land (lnot m))
   let filter_mode ~lp ~bp ~hp =
@@ -523,7 +532,7 @@ module Sound = struct
 
   (* ---- OSC3 / ENV3: voice 3 as a free LFO / random source ---- *)
   let lfo ?(wave = tri) f =
-    if f < 0 || f > 16383 then invalid_arg "C64.Sound.lfo";
+    let f = clamp 0 16383 f in
     freq_raw 3 ~hi:(f lsr 8) ~lo:(f land 255);
     w (vb 3 + 4) (wave land 0xF0);   (* control reg of voice 3, gate off *)
     mute_voice3 true
@@ -535,8 +544,6 @@ module Sound = struct
 
   (* s in -128..127, d any int in +-16383: s * d / 128 without overflow *)
   let scale s d = s * (d asr 7) + ((s * (d land 127)) asr 7)
-  (* the annotation avoids the polymorphic caml_lessthan/caml_greaterthan *)
-  let clamp lo hi (x : int) = if x < lo then lo else if x > hi then hi else x
 
   let modulate src dst ~base ~depth =
     let d = scale (sample src - 128) depth in
