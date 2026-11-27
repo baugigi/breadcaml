@@ -45,57 +45,59 @@ The configuration script  also requires and checks  for `ar`, `bzip2`,
 #### **2) OCaml LTS (Long Term Support) release 4.14.x** 
 
 * **Automatic installation:** `./configure`  checks for `opam`, for an
-  Opam  switch  with OCaml  4.14.x,  and  for  OByteLib. For  what  is
+  `opam` switch with  OCaml 4.14.x,  and  for OByteLib.  For what  is
   missing, it proposes (or, with `-y`, just does) the following:
   - if  `opam`  is  not  installed, it  runs  the  official  installer
     (`https://opam.ocaml.org/install.sh`,  which  requires  `curl`  or
     `wget`): the  installer asks where to  put the binary and  may ask
     for your password;
-  -_if  opam has  not been  initialised,  it runs  `opam init  --bare`
+  - if `opam`  has not  been initialised, it  runs `opam  init --bare`
     (without touching your shell configuration files);
   - if the active switch has no OCaml 4.14.x, it uses another existing
-    switch that has it (the default switch of opam is not changed), or
-    else  creates the  switch  `LTS` (this  compiles  OCaml and  takes
-    several minutes);
+    switch that  has it (the default  switch is not changed),  or else
+    creates the  switch `LTS` _(this  compiles OCaml and  takes several
+    minutes);_
   - if OByteLib is not installed in that switch, it installs it.
 
   The environment of the chosen switch  (`eval $(opam env)`) is set up
   inside the script, and BreadCaml  is installed in that switch unless
   a target directory option is given.
 
-* **Case 1: _OCaml is not installed_**
+* **Manual installation and set-up:**
 
-  Please refer to the [OCaml Installation Guide](https://ocaml.org/docs/installing-ocaml)
-  to install OCaml  on your system. Once installed,  use **Opam** (the
-  OCaml package manager)  and follow **steps a) and b)**  below to set
-  up the LTS compiler switch.
-
-* **Case 2: _OCaml is installed, but the LTS release is missing_**
-      
-  **a)** Create a  new Opam switch (e.g., LTS) with  the correct OCaml
-  compiler version:
-  
-  ```bash
-  opam switch create --formula='["ocaml" {>= "4.14.0" & < "5.0.0"}]' LTS
-  ```
-
-  **b)** Select the newly created LTS switch:
-  
-  ```bash
-  opam switch set LTS
-  eval $(opam env)
-  ```
-  
-* **Case 3: _OCaml 4.14.x is already installed_**
+  * **Case 1: _OCaml is not installed_**
     
-  Ensure that the  **Opam switch** with the compiler's  LTS release is
-  selected before proceeding. If it is not your default switch, select
-  it manually:
+	Please refer to the [OCaml Installation Guide](https://ocaml.org/docs/installing-ocaml)
+    to install  `opam` (the OCaml  package manager) and OCaml  on your
+    system. Once installed, use `opam`  and follow **steps a) and b)**
+    below to set up the LTS compiler switch.
+
+  * **Case 2: _OCaml is installed, but the LTS release is missing_**
+      
+    **a)**  **Create** a  new  `opam` switch  (e.g.,  `LTS`) with  the
+    correct OCaml compiler version:
   
-  ```bash
-  opam switch set <your_LTS_switch_name>
-  eval $(opam env)
-  ```
+    ```bash
+    opam switch create --formula='["ocaml" {>= "4.14.0" & < "5.0.0"}]' LTS
+    ```
+
+    **b)** **Select** the newly created LTS switch:
+  
+    ```bash
+    opam switch set LTS
+    eval $(opam env)
+    ```
+  
+  * **Case 3: _OCaml 4.14.x is already installed_**
+    
+    Ensure that the  `opam` switch with the compiler's  LTS release is
+    **selected** before proceeding.  If it is not your default switch,
+    select it manually:
+  
+    ```bash
+    opam switch set your_LTS_switch_name
+    eval $(opam env)
+    ```
 
 > [!IMPORTANT]
 > _The_  `eval $(opam  env)`  _step  is important  -  it updates  your
@@ -111,11 +113,11 @@ The configuration script  also requires and checks  for `ar`, `bzip2`,
 
 #### **3) OByteLib package**
 
-* Ensure that  the **Opam switch** with the compiler's  LTS release is
-  selected before proceeding. If it is not your default switch, select
-  it manually.
+* Ensure  that the `opam`  switch with  the compiler's LTS  release is
+  **selected** before  proceeding. If it  is not your  default switch,
+  select it manually.
 
-* Install OBytelib:
+* Install OByteLib:
 
   ```bash
   opam update
@@ -132,8 +134,9 @@ The configuration script  also requires and checks  for `ar`, `bzip2`,
 
 * If ACME  is missing or obsolete, the  BreadCaml configuration script
   will  offer  to  automatically  compile  and  install  a  compatible
-  release.  Alternatively,  you can  download and install  it manually
-  from the [ACME Crossassembler SourceForge Project](https://sourceforge.net/projects/acme-crossass/).
+  release.  
+  Alternatively, you can download and install it manually from the
+  [ACME Crossassembler SourceForge Project](https://sourceforge.net/projects/acme-crossass/).
 
 > [!TIP] 
 > _Upgrading will not cause compatibility issues. Recent ACME releases
@@ -147,8 +150,8 @@ The configuration script  also requires and checks  for `ar`, `bzip2`,
 
 * **Download and  extract** the BreadCaml tarball,  then navigate into
   the root directory of the source tree.
-* Ensure that the **Opam switch**  running the LTS compiler release is
-  currently active.
+* Ensure  that the `opam` switch  running the LTS compiler  release is
+  currently **selected**.
 
 #### 1. Configure the system
 
@@ -164,7 +167,7 @@ The configuration script  also requires and checks  for `ar`, `bzip2`,
 | `-d`, `--docdir` | `<dir>` | Target directory for HTML documentation |
 | `-p`, `--prefix` | `<dir>` | Shortcut for `-b <dir>/bin -l <dir>/lib/breadcaml -m <dir>/man -d <dir>/doc/bcaml` |
 | `-y`, `--yes`    |         | Automatically accept the installation proposals (ACME, opam, OCaml 4.14.x, OByteLib) |
-| `-s`, `--silent` |         | Like '-y', also do not display messages (except errors) |
+| `-s`, `--silent` |         | Like `-y`, also do not display messages (except errors) |
 | `-h`, `--help`   |         | Display the help message and default installation paths |
 
 > [!IMPORTANT]
@@ -195,8 +198,8 @@ make
 #### 3. Install the system
 
 This  copies the  `bcamlc`  and `bcamlopt`  compilers, the  `bcamlppx`
-preprocessor, the BreadCaml Stdlib files,  and the man pages into your
-selected target directories:
+preprocessor, the BreadCaml library files, the man pages, and the HTML
+documentation into your selected target directories:
 
 ```bash
 make install
@@ -210,11 +213,13 @@ Remove temporary build files to complete the installation:
 make clean
 ```
 
+**Have fun with BreadCaml! :-)**
+
 ---
 
 ## Uninstallation
 
-To remove BreadCaml, run the following command from the root directory
+To remove BreadCaml **:'(** run the following command from the root directory
 of the source tree:
 
 ```bash
