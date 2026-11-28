@@ -562,12 +562,27 @@ module Make(H: HashedType): (S with type key = H.t) =
 module MakeSeeded(H: SeededHashedType): (SeededS with type key = H.t) =
 (* ++*)
   struct
+(*--
+    include MakeSeeded(struct
+--*)
+(*++ *)
     include Make(struct
+(* ++*)
         type t = H.t
         let equal = H.equal
+(*--
+        let hash (_seed: int) x = H.hash x
+--*)
+(*++ *)
         let hash x = H.hash 0 x
+(* ++*)
       end)
+(*--
+    let create sz = create ~random:false sz
+--*)
+(*++ *)
     let create ?(random=false) sz = create sz
+(* ++*)
     let of_seq i =
       let tbl = create 16 in
       replace_seq tbl i;
@@ -749,4 +764,4 @@ let rebuild ?(random = false) h =
   } in
   insert_all_buckets (key_index h') false h.data h'.data;
   h'
-(*++ *)
+(* ++*)

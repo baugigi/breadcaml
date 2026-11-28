@@ -347,7 +347,7 @@ val hypot : float -> float -> float
     even if the other is [nan]. *)
 
 (*-- external cosh : float -> float = "caml_cosh_float" "cosh"
-[@@unboxed] [@@noalloc] ---**)
+[@@unboxed] [@@noalloc] --*)
 (*++ *)
 val cosh : float -> float
 (* ++*)

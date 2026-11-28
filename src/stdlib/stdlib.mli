@@ -459,6 +459,22 @@ external ( asr ) : int -> int -> int = "%asrint"
     Right-associative operator, see {!Ocaml_operators} for more information.
 *)
 
+(*--
+(** {1 Floating-point arithmetic}
+
+   OCaml's floating-point numbers follow the
+   IEEE 754 standard, using double precision (64 bits) numbers.
+   Floating-point operations never raise an exception on overflow,
+   underflow, division by zero, etc.  Instead, special IEEE numbers
+   are returned as appropriate, such as [infinity] for [1.0 /. 0.0],
+   [neg_infinity] for [-1.0 /. 0.0], and [nan] ('not a number')
+   for [0.0 /. 0.0].  These special numbers then propagate through
+   floating-point computations as expected: for instance,
+    [1.0 /. infinity] is [0.0], basic arithmetic operations
+    ([+.], [-.], [*.], [/.]) with [nan] as an argument return [nan], ...
+*)
+--*)
+(*++ *)
 (** {1:fp Floating-point arithmetic}
    OCaml's floating-point numbers follow the
    IEEE 754 standard, using double precision (64 bits) numbers.
@@ -488,6 +504,7 @@ external ( asr ) : int -> int -> int = "%asrint"
     rely on C64 routines stored in the BASIC ROM, which are not fully reliable.}
     @see <https://www.c64-wiki.com/wiki/Multiply_bug> C64 Multiply bug
  *)
+(* ++*)
 
 external ( ~-. ) : float -> float = "%negfloat"
 (** Unary negation. You can also write [-. e] instead of [~-. e].

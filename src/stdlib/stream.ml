@@ -1,3 +1,26 @@
+(* ——————————————————————————————————————————————————————————————————————
+   The BreadCaml Project / Progetto BreadCaml
+   Copyright (C) 21-Apr-2026 Piero Furiesi
+
+                   3RD PARTY SOFTWARE / SOFTWARE DI TERZI
+           OCaml Core System - (C) 1996 INRIA <https://ocaml.org>
+
+   Modifications / Modifiche: 21-Apr-2026 Piero Furiesi
+
+   This file  is distributed under  the terms  of the GNU  LESSER GENERAL
+   PUBLIC LICENSE  (LGPL) version 2.1,  with the exception stated  in the
+   LICENSE  file.
+   Modifications:  (*-- and  --*)  enclose original  code  that has  been
+   commented out; (*++  and ++*) delimit new code sections;  new notes in
+   OCamldoc comments are marked with {i {b BreadCaml Note} text…  }.
+
+   Questo file è distribuito nei  termini della GNU LESSER GENERAL PUBLIC
+   LICENSE (LGPL) versione 2.1, con l’eccezione indicata nel file LICENSE
+   (in inglese).
+   Modifiche: il codice originale  escluso tramite commentatura è incluso
+   tra (*-- e --*); (*++ e  ++*) delimitano il nuovo codice; il marcatore
+   {i {b BreadCaml Note} testo…  } indica note ai commenti di OCamldoc.
+   —————————————————————————————————————————————————————————————————————— *)
 (**************************************************************************)
 (*                                                                        *)
 (*                                 OCaml                                  *)
@@ -197,7 +220,12 @@ let of_bytes s =
 
 let of_channel ic =
   Some {count = 0;
+(*--
+        data = Sbuffio {ic = ic; buff = Bytes.create 4096; len = 0; ind = 0}}
+--*)
+(*++ *)
         data = Sbuffio {ic = ic; buff = Bytes.create 1; len = 0; ind = 0}}
+(* ++*)
 
 
 (* Stream expressions builders *)
@@ -215,17 +243,32 @@ let lsing f = Some {count = 0; data = Slazy (lazy(Scons (f (), Sempty)))}
 let sempty = None
 let slazy f = Some {count = 0; data = Slazy (lazy(data (f ())))}
 
+(*--
+(* For debugging use *)
+--*)
+(*++ *)
 (* For debugging use.
    Note: PETSCII has no braces, and '{' in a string literal starts a special
    token ({CLR}, {HOME}...) for the bcamlppx: square brackets are printed
    instead of the braces of the original [dump]. *)
+(* ++*)
 
 let rec dump : type v. (v -> unit) -> v t -> unit = fun f s ->
+(*--
+  print_string "{count = ";
+--*)
+(*++ *)
   print_string "[count = ";
+(* ++*)
   print_int (count s);
   print_string "; data = ";
   dump_data f (data s);
+(*--
+  print_string "}";
+--*)
+(*++ *)
   print_string "]";
+(* ++*)
   print_newline ()
 and dump_data : type v. (v -> unit) -> v data -> unit = fun f ->
   function

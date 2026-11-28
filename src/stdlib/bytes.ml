@@ -201,6 +201,21 @@ let trim_aux is_space s =
     empty
 let trim s = trim_aux is_space s
 (* ++*)
+(*--
+  let len = length s in
+  let i = ref 0 in
+  while !i < len && is_space (unsafe_get s !i) do
+    incr i
+  done;
+  let j = ref (len - 1) in
+  while !j >= !i && is_space (unsafe_get s !j) do
+    decr j
+  done;
+  if !j >= !i then
+    sub s !i (!j - !i + 1)
+  else
+    empty
+--*)
 
 let escaped s =
   let n = ref 0 in

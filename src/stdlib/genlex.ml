@@ -1,3 +1,26 @@
+(* ——————————————————————————————————————————————————————————————————————
+   The BreadCaml Project / Progetto BreadCaml
+   Copyright (C) 21-Apr-2026 Piero Furiesi
+
+                   3RD PARTY SOFTWARE / SOFTWARE DI TERZI
+           OCaml Core System - (C) 1996 INRIA <https://ocaml.org>
+
+   Modifications / Modifiche: 21-Apr-2026 Piero Furiesi
+
+   This file  is distributed under  the terms  of the GNU  LESSER GENERAL
+   PUBLIC LICENSE  (LGPL) version 2.1,  with the exception stated  in the
+   LICENSE  file.
+   Modifications:  (*-- and  --*)  enclose original  code  that has  been
+   commented out; (*++  and ++*) delimit new code sections;  new notes in
+   OCamldoc comments are marked with {i {b BreadCaml Note} text…  }.
+
+   Questo file è distribuito nei  termini della GNU LESSER GENERAL PUBLIC
+   LICENSE (LGPL) versione 2.1, con l’eccezione indicata nel file LICENSE
+   (in inglese).
+   Modifiche: il codice originale  escluso tramite commentatura è incluso
+   tra (*-- e --*); (*++ e  ++*) delimitano il nuovo codice; il marcatore
+   {i {b BreadCaml Note} testo…  } indica note ai commenti di OCamldoc.
+   —————————————————————————————————————————————————————————————————————— *)
 (**************************************************************************)
 (*                                                                        *)
 (*                                 OCaml                                  *)
@@ -61,9 +84,14 @@ let make_lexer keywords =
     match Stream.peek strm__ with
       Some (' ' | '\010' | '\013' | '\009' | '\026' | '\012') ->
         Stream.junk strm__; next_token strm__
+(*--
+    | Some ('A'..'Z' | 'a'..'z' | '_' | '\192'..'\255' as c) ->
+--*)
+(*++ *)
     (* The PETSCII code of '|' is 221: it must not be taken as a letter. *)
     | Some ('A'..'Z' | 'a'..'z' | '_' | '\192'..'\220' | '\222'..'\255'
             as c) ->
+(* ++*)
         Stream.junk strm__;
         let s = strm__ in reset_buffer (); store c; ident s
     | Some
@@ -94,8 +122,13 @@ let make_lexer keywords =
   and ident (strm__ : _ Stream.t) =
     match Stream.peek strm__ with
       Some
+(*--
+        ('A'..'Z' | 'a'..'z' | '\192'..'\255' | '0'..'9' | '_' | '\'' as c) ->
+--*)
+(*++ *)
         ('A'..'Z' | 'a'..'z' | '\192'..'\220' | '\222'..'\255' | '0'..'9' | '_'
          | '\'' as c) ->
+(* ++*)
         Stream.junk strm__; let s = strm__ in store c; ident s
     | _ -> Some (ident_or_keyword (get_string ()))
   and ident2 (strm__ : _ Stream.t) =
@@ -170,7 +203,12 @@ let make_lexer keywords =
     | _ -> raise Stream.Failure
   and escape (strm__ : _ Stream.t) =
     match Stream.peek strm__ with
+(*--
+      Some 'n' -> Stream.junk strm__; '\n'
+--*)
+(*++ *)
       Some 'n' -> Stream.junk strm__; '\r'  (* newline on the C64 *)
+(* ++*)
     | Some 'r' -> Stream.junk strm__; '\r'
     | Some 't' -> Stream.junk strm__; '\t'
     | Some ('0'..'9' as c1) ->

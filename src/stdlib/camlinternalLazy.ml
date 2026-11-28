@@ -42,7 +42,6 @@ type 'a t = 'a lazy_t
 
 exception Undefined
 
-
 let raise_undefined = Obj.repr (fun () -> raise Undefined)
 
 external make_forward : Obj.t -> Obj.t -> unit = "caml_obj_make_forward"
@@ -56,7 +55,18 @@ let force_lazy_block (blk : 'arg lazy_t) =
     make_forward (Obj.repr blk) (Obj.repr result);
     result
   with e ->
-    Obj.set_field (Obj.repr blk) 0 (Obj.repr (fun () -> raise e));
+    let raise_e = Obj.repr (fun () -> raise e) in
+    (* The allocation of [raise_e] below can result in
+       concurrent/asynchronous code execution, and modify [blk]
+       itself. We protect against this scenario by checking that the
+       [set_field] below only happens on [Lazy_tag] blocks, to
+       preserve type-safety. *)
+    let tag = Obj.tag (Obj.repr blk) in
+    if tag <> Obj.lazy_tag then
+      (* #13434: at this point we believe that [e] must be
+         [Undefined], but the reasoning is rather delicate. *)
+      raise Undefined;
+    Obj.set_field (Obj.repr blk) 0 raise_e;
     raise e
 
 

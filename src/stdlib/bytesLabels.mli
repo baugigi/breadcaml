@@ -451,7 +451,7 @@ module Ascii: sig
 (*++ *)
   [@@ocaml.deprecated
    "Use Bytes.Ascii.lowercase_ascii/BytesLabels.Ascii.lowercase_ascii instead."]
-(*++ *)
+(* ++*)
   (** Return a copy of the argument, with all uppercase letters
       translated to lowercase, including accented letters of the ISO
       Latin-1 (8859-1) character set.
@@ -465,7 +465,7 @@ module Ascii: sig
 (*++ *)
   [@@ocaml.deprecated
    "Use Bytes.Ascii.capitalize_ascii/BytesLabels.Ascii.capitalize_ascii instead."]
-(*++ *)
+(* ++*)
   (** Return a copy of the argument, with the first character set to uppercase,
       using the ISO Latin-1 (8859-1) character set.
       @deprecated Functions operating on Latin-1 character set are deprecated. *)

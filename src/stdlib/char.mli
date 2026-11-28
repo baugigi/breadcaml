@@ -222,13 +222,25 @@ val uppercase_ascii : char -> char
     world. *)
 module Ascii: sig
 (* ++*)
+(*--
+external code : char -> int = "%identity"
+(** Return the ASCII code of the argument. *)
+--*)
 
+(*--
+val chr : int -> char
+(** Return the character with the given ASCII code.
+   @raise Invalid_argument if the argument is
+   outside the range 0--255. *)
+--*)
+(*++ *)
   val escaped : char -> string
   (** Return a string representing the given character,
       with special characters escaped following the lexical conventions
       of OCaml.
       All characters outside the ASCII printable range (32..126) are
       escaped, as well as backslash, and single-quote. *)
+(* ++*)
 
   val lowercase : char -> char
     [@@ocaml.deprecated (*-- "Use Char.lowercase_ascii instead." --*)
@@ -244,15 +256,33 @@ module Ascii: sig
       using the ISO Latin-1 (8859-1) character set.
       @deprecated Functions operating on Latin-1 character set are deprecated. *)
 
+(*--
+val lowercase : char -> char
+  [@@ocaml.deprecated "Use Char.lowercase_ascii instead."]
+(** Convert the given character to its equivalent lowercase character,
+   using the ISO Latin-1 (8859-1) character set.
+   @deprecated Functions operating on Latin-1 character set are deprecated. *)
+--*)
+(*++ *)
   val lowercase_ascii : char -> char
   (** Convert the given character to its equivalent lowercase character,
       using the US-ASCII character set.
       @since 4.03.0 *)
+(* ++*)
 
+(*--
+val uppercase : char -> char
+  [@@ocaml.deprecated "Use Char.uppercase_ascii instead."]
+(** Convert the given character to its equivalent uppercase character,
+   using the ISO Latin-1 (8859-1) character set.
+   @deprecated Functions operating on Latin-1 character set are deprecated. *)
+--*)
+(*++ *)
   val uppercase_ascii : char -> char
   (** Convert the given character to its equivalent uppercase character,
       using the US-ASCII character set.
       @since 4.03.0 *)
+(* ++*)
 
 (*++ *)
   val to_petscii: char -> char
@@ -701,6 +731,17 @@ end
 
 (** {1 Comparison and equality} *)
 (* ++*)
+(*--
+val lowercase_ascii : char -> char
+(** Convert the given character to its equivalent lowercase character,
+   using the US-ASCII character set.
+   @since 4.03.0 *)
+
+val uppercase_ascii : char -> char
+(** Convert the given character to its equivalent uppercase character,
+   using the US-ASCII character set.
+   @since 4.03.0 *)
+--*)
 
 type t = char
 

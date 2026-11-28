@@ -463,7 +463,7 @@ module Suspension = struct
     fun () ->
       let f = (let cur = !action in action := failure; cur) in
       f()
-(*++ *)
+(* ++*)
 end (* Suspension *)
 
 let rec memoize xs =
