@@ -372,3 +372,90 @@ let rec parse status res splitted_str_lst = match status, splitted_str_lst with
 let translate_string str =
   parse `Out [] Str.(full_split (regexp "[{}]") str)
 
+
+(**/**)
+
+(* Length of the printf/Format directive starting at [str.[i]] (a ['%'] or an
+   ['@']), or 0 if there is none.  Syntax follows the OCaml format-string
+   parser (CamlinternalFormat.fmt_ebb_of_string).  The space flag is accepted
+   only if the conversion letter is not followed by a letter: "% d" and
+   "% 5d|" are directives, "100% done" and "50% sure" are plain text. *)
+let directive_len str i =
+  let n = String.length str in
+  let get j = if j < n then str.[j] else '\000' in
+  let is_digit c = c >= '0' && c <= '9' in
+  let skip_while p j = let j = ref j in while !j < n && p str.[!j] do incr j done; !j in
+  (* closing ">" of an optional "<...>" starting at [j]; returns the position
+     after it, or [j] if there is no well-formed "<...>" *)
+  let angle j =
+    if get j = '<' then
+      (match String.index_from_opt str j '>' with
+       | Some k -> k + 1
+       | None -> j)
+    else j in
+  match str.[i] with
+  | '%' ->
+    let j = skip_while (function '-' | '0' | '+' | '#' | '_' | ' ' -> true | _ -> false) (i + 1) in
+    let space = String.contains (String.sub str (i + 1) (j - i - 1)) ' ' in
+    let j = if get j = '*' then j + 1 else skip_while is_digit j in
+    let j =
+      if get j = '.' then
+        (if get (j + 1) = '*' then j + 2 else skip_while is_digit (j + 1))
+      else j in
+    let j =
+      match get j, get (j + 1) with
+      | ('l' | 'n' | 'L'), ('d' | 'i' | 'u' | 'x' | 'X' | 'o') -> j + 1
+      | _ -> j in
+    (match get j with
+     | 'd' | 'i' | 'u' | 'x' | 'X' | 'o' | 's' | 'S' | 'c' | 'C'
+     | 'f' | 'F' | 'e' | 'E' | 'g' | 'G' | 'h' | 'H' | 'b' | 'B'
+     | 'a' | 't' | 'r' | 'n' | 'N' | 'l' | 'L'
+     | '!' | '%' | '@' | ',' | '{' | '}' | '(' | ')' ->
+       if space && (match get (j + 1) with 'a'..'z' | 'A'..'Z' -> true | _ -> false)
+       then 0 else j + 1 - i
+     | '[' ->                           (* scanf character set *)
+       let k = if get (j + 1) = '^' then j + 2 else j + 1 in
+       let k = if get k = ']' then k + 1 else k in
+       let k = skip_while (fun c -> c <> ']') k in
+       if k < n then k + 1 - i else 0
+     | _ -> 0)
+  | '@' ->
+    (match get (i + 1) with
+     | '[' | '{' | ';' -> angle (i + 2) - i
+     | '<' -> let k = angle (i + 1) in if k > i + 1 then k - i else 0
+     | ']' | '}' | ',' | ' ' | '.' | '?' | '@' | '%' | '\n' -> 2
+     | _ -> 0)
+  | _ -> 0
+
+(** [translate_string_fmt str] is like {!translate_string}, except that the
+    printf/Format directives that [str] contains ("%d", "%5.2f", "%-8s",
+    "%%", "%{", "%(", "%[a-z]", "@[<hov 2>", "@]", "@;", ...) are copied
+    unchanged, so that the OCaml compiler can still parse [str] as a format
+    string.  The text between the directives is translated as usual. *)
+let translate_string_fmt str =
+  let n = String.length str in
+  let b = Buffer.create n in            (* output *)
+  let text = Buffer.create n in         (* pending text, to be translated *)
+  let flush () =
+    if Buffer.length text > 0 then begin
+      Buffer.add_string b (translate_string (Buffer.contents text));
+      Buffer.clear text
+    end in
+  let i = ref 0 in
+  while !i < n do
+    let l = if str.[!i] = '%' || str.[!i] = '@' then directive_len str !i else 0 in
+    if str.[!i] = '{' then begin        (* a PETSCII token: "{...}" (may contain "@") *)
+      let k = try String.index_from str !i '}' + 1 with Not_found -> n in
+      Buffer.add_string text (String.sub str !i (k - !i));
+      i := k
+    end else if l > 0 then begin
+      flush ();
+      Buffer.add_string b (String.sub str !i l);
+      i := !i + l
+    end else begin
+      Buffer.add_char text str.[!i];
+      incr i
+    end
+  done;
+  flush ();
+  Buffer.contents b

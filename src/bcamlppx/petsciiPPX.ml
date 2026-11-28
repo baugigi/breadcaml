@@ -18,6 +18,7 @@ open Ast_helper
 
 let err_token = "invalid PETSCII token in string literal."
 let err_ascii = "%%ascii: invalid payload."
+let err_petscii = "%%petscii: invalid payload."
 let error ~loc err =
   extension_of_error (Location.errorf ~loc (Scanf.format_from_string err ""))
 
@@ -31,8 +32,18 @@ let expr_rewriter mapper expr = match expr.pexp_desc with
        Exp.constant ~loc ~attrs k
      | _ ->
        Exp.extension ~loc (error ~loc err_ascii))
+  | Pexp_extension({ txt = "petscii"; loc }, PStr[item]) ->
+    (match item.pstr_desc with
+     | Pstr_eval
+         ({ pexp_desc = Pexp_constant(Pconst_string(str, str_loc, delim)) },
+          attrs) ->
+       (match Petscii.translate_string str with
+        | petstr -> Exp.constant ~loc ~attrs (Pconst_string(petstr, str_loc, delim))
+        | exception Failure _ -> Exp.extension ~loc (error ~loc:str_loc err_token))
+     | _ ->
+       Exp.extension ~loc (error ~loc err_petscii))
   | Pexp_constant(Pconst_string(str, str_loc, delim)) ->
-    (match Petscii.translate_string str with
+    (match Petscii.translate_string_fmt str with
      | petstr ->
        Exp.constant ~loc:expr.pexp_loc ~attrs:expr.pexp_attributes
          (Pconst_string(petstr, str_loc, delim))
